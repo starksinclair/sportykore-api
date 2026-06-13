@@ -96,16 +96,16 @@ services:
       timeout: 3s
       retries: 10
 
-  redisinsight:
-    image: redis/redisinsight:latest
-    container_name: sportykore_redisinsight
-    ports:
-      - '5540:5540'
-    depends_on:
-      redis:
-        condition: service_healthy
-    volumes:
-      - redisinsightdata:/data
+  # redisinsight:
+  #   image: redis/redisinsight:latest
+  #   container_name: sportykore_redisinsight
+  #   ports:
+  #     - '5540:5540'
+  #   depends_on:
+  #     redis:
+  #       condition: service_healthy
+  #   volumes:
+  #     - redisinsightdata:/data
 
 volumes:
   node_modules:

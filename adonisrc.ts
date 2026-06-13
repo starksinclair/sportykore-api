@@ -79,6 +79,7 @@ export default defineConfig({
     () => import('#start/kernel'),
     () => import('#start/validator'),
     () => import('#start/events'),
+    () => import('#start/transmit'),
   ],
 
   /*

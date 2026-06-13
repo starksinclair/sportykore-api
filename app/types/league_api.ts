@@ -18,7 +18,16 @@ export type TeamRef = {
   logoUrl?: string
 }
 
-export type MatchStatus = 'scheduled' | 'live' | 'break' | 'completed' | 'postponed' | 'cancelled'
+export type MatchStatus =
+  | 'scheduled'
+  | 'first_half'
+  | 'half_time'
+  | 'second_half'
+  | 'extra_time'
+  | 'full_time'
+  | 'cancelled'
+  | 'postponed'
+  | 'paused'
 
 export type ApiMatch = {
   id: string

@@ -18,6 +18,12 @@ function attachFreshDatabaseMigration(group: Group) {
   const sqlitePath = app.tmpPath('db.sqlite3')
 
   group.setup(async () => {
+    if (process.env.DB_CONNECTION !== 'sqlite') {
+      throw new Error(
+        `Tests must use an isolated SQLite database (DB_CONNECTION=sqlite). Got "${process.env.DB_CONNECTION ?? 'unset'}".`
+      )
+    }
+
     await db.manager.closeAll()
     if (existsSync(sqlitePath)) {
       unlinkSync(sqlitePath)

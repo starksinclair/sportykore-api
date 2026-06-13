@@ -11,6 +11,8 @@
 */
 
 process.env.NODE_ENV = 'test'
+/** Isolated SQLite DB for tests — never use developer Postgres (e.g. docker-compose). */
+process.env.DB_CONNECTION = 'sqlite'
 
 import 'reflect-metadata'
 import { Ignitor, prettyPrintError } from '@adonisjs/core'

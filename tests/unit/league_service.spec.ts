@@ -168,7 +168,7 @@ test.group('LeagueService', (group) => {
     const oldSeason = await Season.create({
       leagueId: league.id,
       name: 'Old',
-      status: 'completed',
+      status: 'full_time',
     })
     const activeSeason = await Season.create({
       leagueId: league.id,
@@ -186,7 +186,7 @@ test.group('LeagueService', (group) => {
       homeTeamId: home.id,
       awayTeamId: away.id,
       playedAt,
-      status: 'completed',
+      status: 'full_time',
       homeScore: 9,
       awayScore: 0,
     })
@@ -268,7 +268,7 @@ test.group('LeagueService', (group) => {
       homeTeamId: teamA.id,
       awayTeamId: teamB.id,
       playedAt,
-      status: 'completed',
+      status: 'full_time',
       homeScore: 2,
       awayScore: 0,
     })
@@ -304,7 +304,7 @@ test.group('LeagueService', (group) => {
     const detail = await service.getLeagueDetail(league.id)
     assert.equal(detail.season?.id, season.id)
     assert.lengthOf(detail.games, 1)
-    assert.equal(detail.games[0].status, 'completed')
+    assert.equal(detail.games[0].status, 'full_time')
     const matchJson = new ApiMatchTransformer(detail.games[0], String(league.id), 'NG').toObject()
     assert.equal(matchJson.scoreline, '2 - 0')
 

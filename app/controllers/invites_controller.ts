@@ -1,7 +1,7 @@
 import { inject } from '@adonisjs/core'
 import type { HttpContext } from '@adonisjs/core/http'
 import InviteService from '#services/invite_service'
-import { generateInviteValidator } from '#validators/invite'
+import { completeProfileAndAcceptValidator, generateInviteValidator } from '#validators/invite'
 
 @inject()
 export default class InvitesController {
@@ -29,11 +29,13 @@ export default class InvitesController {
 
   async completeProfileAndAccept({ params, request, auth, response }: HttpContext) {
     const user = auth.getUserOrFail()
-    const { name, bio } = request.body()
+    const data = await request.validateUsing(completeProfileAndAcceptValidator)
 
     const result = await this.inviteService.completeProfileAndAccept(params.token, user.id, {
-      name,
-      bio,
+      name: data.name,
+      countryId: data.countryId,
+      bio: data.bio,
+      avatar: data.avatar,
     })
 
     return response.ok({ leagueId: result.leagueId })

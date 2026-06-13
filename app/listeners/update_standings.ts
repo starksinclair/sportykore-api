@@ -1,6 +1,6 @@
 import { inject } from '@adonisjs/core'
 import StandingService from '#services/standing_service'
-import transmit from '#config/transmit'
+import transmit from '@adonisjs/transmit/services/main'
 import GameResultUpdated from '#events/game_updated'
 
 @inject()

@@ -8,6 +8,7 @@ import {
   formatMatchStatusLabel,
   formatScoreline,
 } from '#helpers/match_format'
+import { isLiveGameStatus } from '#types/game_status'
 import type { CountryDetailFeaturedPlayer, CountryDetailStats } from '#services/country_service'
 
 export type CountryDetailPayload = {
@@ -82,7 +83,7 @@ function transformRecentMatch(game: Game, fallbackCountry: Country) {
       game.$extras.matchday !== null && game.$extras.matchday !== undefined
         ? `Matchday ${game.$extras.matchday}`
         : null,
-    live: status === 'live',
+    live: isLiveGameStatus(status),
     isoDate: formatIsoDate(game.playedAt),
   }
 }

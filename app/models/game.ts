@@ -25,7 +25,12 @@ export default class Game extends GameSchema {
 
   @afterSave()
   static async onSave(game: Game) {
-    if (game.$dirty.homeScore !== undefined || game.$dirty.awayScore !== undefined) {
+    const resultChanged =
+      game.$dirty.homeScore !== undefined ||
+      game.$dirty.awayScore !== undefined ||
+      (game.$dirty.status !== undefined && game.status === 'full_time')
+
+    if (resultChanged) {
       await events.GameUpdated.dispatch(game, 'result')
     }
   }

@@ -19,7 +19,7 @@ export default class extends BaseSchema {
         .references('id')
         .inTable('players')
         .onDelete('CASCADE')
-        .notNullable()
+        .nullable()
       table
         .integer('league_id')
         .unsigned()

@@ -39,8 +39,36 @@ export default class extends BaseSchema {
       table.integer('away_score').unsigned().nullable()
       table.timestamp('played_at').notNullable()
       table.integer('current_minute').unsigned().defaultTo(0)
+
+      table.integer('first_half_duration').unsigned().notNullable().defaultTo(45)
+      table.integer('second_half_duration').unsigned().notNullable().defaultTo(45)
+      table.integer('extra_time_duration').unsigned().nullable()
+
+      table.timestamp('first_half_started_at').nullable()
+      table.timestamp('second_half_started_at').nullable()
+      table.timestamp('extra_time_started_at').nullable()
+
+      table.timestamp('paused_at').nullable()
       table
-        .enum('status', ['scheduled', 'live', 'break', 'completed', 'postponed', 'cancelled'])
+        .enum('paused_from_status', [
+          'first_half',
+          'second_half',
+          'extra_time',
+        ])
+        .nullable()
+
+      table
+        .enum('status', [
+          'scheduled',
+          'first_half',
+          'half_time',
+          'second_half',
+          'extra_time',
+          'full_time',
+          'cancelled',
+          'postponed',
+          'paused',
+        ])
         .defaultTo('scheduled')
 
       table.string('venue_name').nullable()

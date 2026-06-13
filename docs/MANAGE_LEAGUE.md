@@ -123,9 +123,9 @@ Three sections on the Games tab, driven by **`season.games`** from league show. 
 
 | Section | `status` values |
 | --- | --- |
-| **Live Now** | `live`, `break` |
+| **Live Now** | `first_half`, `second_half`, `extra_time`, `half_time`, `paused` |
 | **Upcoming** | `scheduled`, `postponed` |
-| **Results** | `completed`, `cancelled` |
+| **Results** | `full_time`, `cancelled` |
 
 Sort within each section by `playedAt` ascending (upcoming/live) or descending (results), as you prefer.
 
@@ -148,6 +148,8 @@ Content-Type: application/json
 | `playedAt` | yes | ISO 8601 or `YYYY-MM-DD` |
 | `venueName` | no | |
 | `status` | no | Default `scheduled` |
+| `firstHalfDuration`, `secondHalfDuration` | no | Default `45` each |
+| `extraTimeDuration` | no | Optional |
 | `homeScore`, `awayScore` | no | Usually null for new fixtures |
 
 After success, refetch `GET /leagues/:leagueId?seasonId=…`.
@@ -166,24 +168,39 @@ Returns game + `stats[]` (with `type`, `team`, `player`, `relatedPlayer`) + `lea
 
 **Optional realtime:** Backend broadcasts on Transmit channel `games/{gameId}` when scores or stats change. Subscribe if you use SSE in RN.
 
-#### Scoreboard
+#### Scoreboard (hybrid scoring)
 
-| Mode | UI | API |
-| --- | --- | --- |
-| **Auto** | Tap player → pick event (Goal, Assist, Own Goal, Yellow, Red) | See events below |
-| **Manual** | +/- buttons per side | `PUT /api/v1/leagues/games/:id` with `homeScore`, `awayScore` |
-
-**Important:** The API does **not** change the score when you `POST` a stat. In Auto mode, when recording a goal or own goal you must:
-
-1. `POST` the stat (player + team + type), **and**
-2. `PUT` the game with the new `homeScore` / `awayScore` (client is source of truth for score).
-
-#### Match controls
+Use **`+` / `−`** per side — score and unaccredited goal stat stay in sync. See [hybrid-scoring-prompt.md](hybrid-scoring-prompt.md).
 
 | Action | API |
 | --- | --- |
-| Start match (from Upcoming) | `PUT /leagues/games/:id` → `{ "status": "live" }` then open Match Center |
-| End match | `PUT` → `{ "status": "completed" }` |
+| Increment score | `POST /api/v1/games/:gameId/score` `{ "team": "home" \| "away", "action": "increment" }` → returns `statId` for accredit |
+| Decrement score | `POST .../score` `{ "action": "decrement" }` — removes latest unaccredited goal for that team |
+| Accredit goal | `PATCH /api/v1/games/:gameId/stats/:statId/accredit` `{ playerId, assistPlayerId?, isOwnGoal, minute }` |
+| Skip accredit | No API — placeholder already created on increment; reset UI only |
+
+**SSE:** `score_updated` (scores), `stat_accredited` (refetch stats).
+
+Legacy manual score: `PUT /api/v1/leagues/games/:id` with `homeScore` / `awayScore` still works for league owners.
+
+#### Match controls
+
+Live match clock uses **period timestamps** (not DB minute polling). See [CHANGE_GAME.md](CHANGE_GAME.md).
+
+| Action | API |
+| --- | --- |
+| Start first half | `POST /api/v1/games/:gameId/start-first-half` |
+| Half time | `POST /api/v1/games/:gameId/half-time` |
+| Start second half | `POST /api/v1/games/:gameId/start-second-half` |
+| Extra time | `POST /api/v1/games/:gameId/extra-time` |
+| Pause | `POST /api/v1/games/:gameId/pause` |
+| Resume | `POST /api/v1/games/:gameId/resume` |
+| Full time (with score) | `POST /api/v1/games/:gameId/full-time` → `{ "homeScore", "awayScore" }` |
+
+All game-time routes require **`apiAuth` + `teamOwner`** (league owner or either team's `addedBy` user). Each action broadcasts SSE `status_changed` on `games/{gameId}`.
+
+| Action | API |
+| --- | --- |
 | Undo last event | `DELETE /leagues/stats/:id` (delete the most recent stat row; adjust score manually if needed) |
 | Delete single event | `DELETE /leagues/stats/:id` |
 
@@ -223,14 +240,14 @@ Use `GET /games/:id` → `stats[]`. Show `type.displayName`, player name, team n
 
 | Action | API |
 | --- | --- |
-| **Start** | `PUT /leagues/games/:id` `{ "status": "live" }` → navigate to Match Center |
+| **Start** | `POST /api/v1/games/:gameId/start-first-half` → navigate to Match Center |
 
-### Results (completed)
+### Results (full time)
 
 | Action | API |
 | --- | --- |
 | Edit score inline | `PUT /leagues/games/:id` `{ "homeScore", "awayScore" }` |
-| Reopen match | `PUT` `{ "status": "live" }` or `"scheduled"` |
+| Reopen match | `POST /api/v1/games/:gameId/start-first-half` or set `scheduled` via `PUT` |
 | Delete | `DELETE /leagues/games/:id` |
 
 ---
@@ -398,9 +415,12 @@ All mutation routes except invite accept require **`apiAuth` + league owner** (u
 ```ts
 export const GameStatus = {
   Scheduled: 'scheduled',
-  Live: 'live',
-  Break: 'break',
-  Completed: 'completed',
+  FirstHalf: 'first_half',
+  HalfTime: 'half_time',
+  SecondHalf: 'second_half',
+  ExtraTime: 'extra_time',
+  FullTime: 'full_time',
+  Paused: 'paused',
   Postponed: 'postponed',
   Cancelled: 'cancelled',
 } as const

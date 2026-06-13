@@ -65,7 +65,7 @@ export class FavouriteLeagueSchema extends BaseModel {
 }
 
 export class GameSchema extends BaseModel {
-  static $columns = ['awayScore', 'awayTeamId', 'createdAt', 'currentMinute', 'homeScore', 'homeTeamId', 'id', 'leagueId', 'playedAt', 'seasonId', 'status', 'updatedAt', 'venueName'] as const
+  static $columns = ['awayScore', 'awayTeamId', 'createdAt', 'currentMinute', 'extraTimeDuration', 'extraTimeStartedAt', 'firstHalfDuration', 'firstHalfStartedAt', 'homeScore', 'homeTeamId', 'id', 'leagueId', 'pausedAt', 'pausedFromStatus', 'playedAt', 'seasonId', 'secondHalfDuration', 'secondHalfStartedAt', 'status', 'updatedAt', 'venueName'] as const
   $columns = GameSchema.$columns
   @column()
   declare awayScore: number | null
@@ -76,6 +76,14 @@ export class GameSchema extends BaseModel {
   @column()
   declare currentMinute: number | null
   @column()
+  declare extraTimeDuration: number | null
+  @column.dateTime()
+  declare extraTimeStartedAt: DateTime | null
+  @column()
+  declare firstHalfDuration: number
+  @column.dateTime()
+  declare firstHalfStartedAt: DateTime | null
+  @column()
   declare homeScore: number | null
   @column()
   declare homeTeamId: number
@@ -84,9 +92,17 @@ export class GameSchema extends BaseModel {
   @column()
   declare leagueId: number
   @column.dateTime()
+  declare pausedAt: DateTime | null
+  @column()
+  declare pausedFromStatus: string | null
+  @column.dateTime()
   declare playedAt: DateTime
   @column()
   declare seasonId: number
+  @column()
+  declare secondHalfDuration: number
+  @column.dateTime()
+  declare secondHalfStartedAt: DateTime | null
   @column()
   declare status: string | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })
@@ -307,7 +323,7 @@ export class StatSchema extends BaseModel {
   @column()
   declare numericValue: number | null
   @column()
-  declare playerId: number
+  declare playerId: number | null
   @column()
   declare relatedPlayerId: number | null
   @column()

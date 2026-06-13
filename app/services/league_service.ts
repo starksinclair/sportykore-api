@@ -7,6 +7,7 @@ import League from '#models/league'
 import Season from '#models/season'
 import StatType from '#models/stat_type'
 import Team from '#models/team'
+import { LIVE_GAME_STATUSES } from '#types/game_status'
 
 export type CreateLeagueInput = {
   name: string
@@ -239,14 +240,22 @@ export default class LeagueService {
   private applyMatchDayFilters(
     query: {
       where: (column: string, operator: string, value: string) => void
+      whereIn?: (column: string, values: string[]) => void
     },
     { playedAtStartUtc, playedAtEndUtc, gameStatus }: MatchDayWindow
   ) {
     query.where('played_at', '>=', playedAtStartUtc)
     query.where('played_at', '<=', playedAtEndUtc)
 
-    if (gameStatus) {
-      query.where('status', '=', gameStatus)
+    if (!gameStatus) {
+      return
     }
+
+    if (gameStatus === 'live' && query.whereIn) {
+      query.whereIn('status', [...LIVE_GAME_STATUSES])
+      return
+    }
+
+    query.where('status', '=', gameStatus)
   }
 }

@@ -7,7 +7,7 @@ export const createStatValidator = vine.create({
   leagueId: resourceId('leagues'),
   seasonId: resourceId('seasons'),
   teamId: resourceId('teams'),
-  statTypeId: resourceId('statTypes'),
+  statTypeId: resourceId('stat_types'),
   relatedPlayerId: resourceId('players').nullable().optional(),
   minute: vine.number().withoutDecimals().min(0).max(130).nullable().optional(),
   isStoppageTime: vine.boolean().optional(),

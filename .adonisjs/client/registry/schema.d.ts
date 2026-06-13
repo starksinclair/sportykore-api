@@ -19,6 +19,42 @@ export interface Registry {
       errorResponse: unknown
     }
   }
+  'event_stream': {
+    methods: ["GET","HEAD"]
+    pattern: '/__transmit/events'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: unknown
+      errorResponse: unknown
+    }
+  }
+  'subscribe': {
+    methods: ["POST"]
+    pattern: '/__transmit/subscribe'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: unknown
+      errorResponse: unknown
+    }
+  }
+  'unsubscribe': {
+    methods: ["POST"]
+    pattern: '/__transmit/unsubscribe'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: unknown
+      errorResponse: unknown
+    }
+  }
   'home': {
     methods: ["GET","HEAD"]
     pattern: '/'
@@ -347,12 +383,12 @@ export interface Registry {
     methods: ["POST"]
     pattern: '/api/v1/invites/complete-profile-and-accept/:token'
     types: {
-      body: {}
+      body: ExtractBody<InferInput<(typeof import('#validators/invite').completeProfileAndAcceptValidator)>>
       paramsTuple: [ParamValue]
       params: { token: ParamValue }
-      query: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/invite').completeProfileAndAcceptValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/invites_controller').default['completeProfileAndAccept']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/invites_controller').default['completeProfileAndAccept']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/invites_controller').default['completeProfileAndAccept']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'players.accept_league_player_request': {
@@ -383,24 +419,132 @@ export interface Registry {
     methods: ["POST"]
     pattern: '/api/v1/leagues/:leagueId/favorite'
     types: {
-      body: {}
+      body: ExtractBody<InferInput<(typeof import('#validators/favourite_league').favouriteLeagueParamsValidator)>>
       paramsTuple: [ParamValue]
       params: { leagueId: ParamValue }
-      query: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/favourite_league').favouriteLeagueParamsValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/favourite_leagues_controller').default['store']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/favourite_leagues_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/favourite_leagues_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'favourite_leagues.destroy': {
     methods: ["DELETE"]
     pattern: '/api/v1/leagues/:leagueId/favorite'
     types: {
-      body: {}
+      body: ExtractBody<InferInput<(typeof import('#validators/favourite_league').favouriteLeagueParamsValidator)>>
       paramsTuple: [ParamValue]
       params: { leagueId: ParamValue }
-      query: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/favourite_league').favouriteLeagueParamsValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/favourite_leagues_controller').default['destroy']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/favourite_leagues_controller').default['destroy']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/favourite_leagues_controller').default['destroy']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'game_score.update': {
+    methods: ["POST"]
+    pattern: '/api/v1/games/:gameId/score'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/game_score').updateGameScoreValidator)>>
+      paramsTuple: [ParamValue]
+      params: { gameId: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/game_score').updateGameScoreValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/game_score_controller').default['update']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/game_score_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'game_score.accredit': {
+    methods: ["PATCH"]
+    pattern: '/api/v1/games/:gameId/stats/:statId/accredit'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/game_score').accreditStatValidator)>>
+      paramsTuple: [ParamValue, ParamValue]
+      params: { gameId: ParamValue; statId: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/game_score').accreditStatValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/game_score_controller').default['accredit']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/game_score_controller').default['accredit']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'game_time.start_first_half': {
+    methods: ["POST"]
+    pattern: '/api/v1/games/:gameId/start-first-half'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { gameId: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/game_time_controller').default['startFirstHalf']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/game_time_controller').default['startFirstHalf']>>>
+    }
+  }
+  'game_time.start_half_time': {
+    methods: ["POST"]
+    pattern: '/api/v1/games/:gameId/half-time'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { gameId: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/game_time_controller').default['startHalfTime']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/game_time_controller').default['startHalfTime']>>>
+    }
+  }
+  'game_time.start_second_half': {
+    methods: ["POST"]
+    pattern: '/api/v1/games/:gameId/start-second-half'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { gameId: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/game_time_controller').default['startSecondHalf']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/game_time_controller').default['startSecondHalf']>>>
+    }
+  }
+  'game_time.start_extra_time': {
+    methods: ["POST"]
+    pattern: '/api/v1/games/:gameId/extra-time'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { gameId: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/game_time_controller').default['startExtraTime']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/game_time_controller').default['startExtraTime']>>>
+    }
+  }
+  'game_time.pause': {
+    methods: ["POST"]
+    pattern: '/api/v1/games/:gameId/pause'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { gameId: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/game_time_controller').default['pause']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/game_time_controller').default['pause']>>>
+    }
+  }
+  'game_time.resume': {
+    methods: ["POST"]
+    pattern: '/api/v1/games/:gameId/resume'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { gameId: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/game_time_controller').default['resume']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/game_time_controller').default['resume']>>>
+    }
+  }
+  'game_time.end_game': {
+    methods: ["POST"]
+    pattern: '/api/v1/games/:gameId/full-time'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/game_time').endGameValidator)>>
+      paramsTuple: [ParamValue]
+      params: { gameId: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/game_time').endGameValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/game_time_controller').default['endGame']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/game_time_controller').default['endGame']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'leagues.update': {

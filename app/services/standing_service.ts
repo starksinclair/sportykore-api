@@ -6,7 +6,7 @@ export default class StandingService {
     const games = await Game.query()
       .where('season_id', seasonId)
       .where((q) => q.where('home_team_id', teamId).orWhere('away_team_id', teamId))
-      .where('status', 'completed')
+      .where('status', 'full_time')
 
     let played = 0
     let wins = 0

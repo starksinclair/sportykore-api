@@ -10,6 +10,9 @@
 import { middleware } from '#start/kernel'
 import { controllers } from '#generated/controllers'
 import router from '@adonisjs/core/services/router'
+import transmit from '@adonisjs/transmit/services/main'
+
+transmit.registerRoutes()
 
 router.on('/').renderInertia('home', {}).as('home')
 
@@ -91,6 +94,21 @@ router
     router
       .delete('leagues/:leagueId/favorite', [controllers.FavouriteLeagues, 'destroy'])
       .use(middleware.apiAuth())
+
+    router
+      .group(() => {
+        router.post('games/:gameId/score', [controllers.GameScore, 'update'])
+        router.patch('games/:gameId/stats/:statId/accredit', [controllers.GameScore, 'accredit'])
+        router.post('games/:gameId/start-first-half', [controllers.GameTime, 'startFirstHalf'])
+        router.post('games/:gameId/half-time', [controllers.GameTime, 'startHalfTime'])
+        router.post('games/:gameId/start-second-half', [controllers.GameTime, 'startSecondHalf'])
+        router.post('games/:gameId/extra-time', [controllers.GameTime, 'startExtraTime'])
+        router.post('games/:gameId/pause', [controllers.GameTime, 'pause'])
+        router.post('games/:gameId/resume', [controllers.GameTime, 'resume'])
+        router.post('games/:gameId/full-time', [controllers.GameTime, 'endGame'])
+      })
+      .use(middleware.apiAuth())
+      .use(middleware.teamOwner())
 
     router
       .group(() => {

@@ -7,6 +7,9 @@ export interface ApiDefinition {
       serve: typeof routes['drive.fs.serve']
     }
   }
+  eventStream: typeof routes['event_stream']
+  subscribe: typeof routes['subscribe']
+  unsubscribe: typeof routes['unsubscribe']
   home: typeof routes['home']
   newAccount: {
     create: typeof routes['new_account.create']
@@ -70,6 +73,19 @@ export interface ApiDefinition {
   favouriteLeagues: {
     store: typeof routes['favourite_leagues.store']
     destroy: typeof routes['favourite_leagues.destroy']
+  }
+  gameScore: {
+    update: typeof routes['game_score.update']
+    accredit: typeof routes['game_score.accredit']
+  }
+  gameTime: {
+    startFirstHalf: typeof routes['game_time.start_first_half']
+    startHalfTime: typeof routes['game_time.start_half_time']
+    startSecondHalf: typeof routes['game_time.start_second_half']
+    startExtraTime: typeof routes['game_time.start_extra_time']
+    pause: typeof routes['game_time.pause']
+    resume: typeof routes['game_time.resume']
+    endGame: typeof routes['game_time.end_game']
   }
   seasons: {
     store: typeof routes['seasons.store']

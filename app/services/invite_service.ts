@@ -1,10 +1,17 @@
+import type { MultipartFile } from '@adonisjs/core/bodyparser'
+import { inject } from '@adonisjs/core'
+import { Exception } from '@adonisjs/core/exceptions'
+import string from '@adonisjs/core/helpers/string'
 import { DateTime } from 'luxon'
 import Invite from '#models/invite'
 import Player from '#models/player'
 import LeaguePlayer from '#models/league_player'
-import { Exception } from '@adonisjs/core/exceptions'
+import FileService from '#services/file_service'
 
+@inject()
 export default class InviteService {
+  constructor(private fileService: FileService) {}
+
   async generate(leagueId: number, seasonId: number, teamId?: number, invitedUserId?: number) {
     const token = crypto.randomUUID()
 
@@ -71,20 +78,32 @@ export default class InviteService {
     userId: number,
     profileData: {
       name: string
-      bio?: string
+      countryId: number
+      bio?: string | null
+      avatar?: MultipartFile
     }
   ) {
     // make sure the user doesn't already have a player profile
     const existing = await Player.query().where('user_id', userId).first()
 
     if (existing) {
+      console.log('Player profile already exists', existing)
       throw new Exception('Player profile already exists', { status: 409 })
+    }
+
+    let avatarUrl: string | null = null
+
+    if (profileData.avatar) {
+      const key = `players/${string.uuid()}.${profileData.avatar.extname}`
+      avatarUrl = await this.fileService.upload(profileData.avatar, key, 'fs')
     }
 
     await Player.create({
       userId,
       name: profileData.name,
+      countryId: profileData.countryId,
       bio: profileData.bio ?? null,
+      avatarUrl,
     })
 
     return this.accept(token, userId)

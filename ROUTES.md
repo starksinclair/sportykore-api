@@ -22,7 +22,7 @@ Types below reflect **transformer output** (`app/transformers/*`). Nullable DB f
 | **Player** | `id`, `name`, `avatarUrl` (string \| null) |
 | **Player (with stats)** | **Player** + `stats` → **Stat[]** |
 | **StatType** | `id`, `name`, `displayName`, `iconName` (string \| null), `category` (string \| null) |
-| **Stat** | `id`, `minute` (number \| null), `isStoppageTime` (boolean \| null), `numericValue` (number \| null), `type` → **StatType** \| omitted, `team` → **Team** \| omitted, `player` → **Player** \| omitted, `relatedPlayer` → **Player** \| omitted |
+| **Stat** | `id`, `minute` (number \| null), `isStoppageTime` (boolean \| null), `numericValue` (number \| null), `isUnaccredited` (boolean), `type` → **StatType** \| omitted, `team` → **Team** \| omitted, `player` → **Player** \| omitted, `relatedPlayer` → **Player** \| omitted |
 | **Standing** | `id`, `position`, `played`, `wins`, `draws`, `losses`, `goalsFor`, `goalsAgainst`, `goalDifference`, `points`, `form` (string \| null), `team` → **Team** \| omitted |
 | **Game** | `id`, `status`, `playedAt`, `homeScore`, `awayScore`, `venueName`, `currentMinute`, `homeTeam` → **Team** \| omitted, `awayTeam` → **Team** \| omitted |
 | **Game (detail)** | **Game** + `league` → **League** \| omitted, `stats` → **Stat[]** |
@@ -36,7 +36,10 @@ Types below reflect **transformer output** (`app/transformers/*`). Nullable DB f
 
 ### Game `status` values
 
-`scheduled` \| `live` \| `break` \| `completed` \| `postponed` \| `cancelled`
+`scheduled` \| `first_half` \| `half_time` \| `second_half` \| `extra_time` \| `full_time` \| `cancelled` \| `postponed` \| `paused`
+
+- **`currentMinute`** in API responses is **computed** from period start timestamps (`firstHalfStartedAt`, etc.) — not polled/stored every minute. See [docs/CHANGE_GAME.md](docs/CHANGE_GAME.md).
+- Query param **`gameStatus=live`** on `GET /api/v1/leagues` matches any in-play status (`first_half`, `second_half`, `extra_time`, `paused`).
 
 ### Season `status` values
 
@@ -78,8 +81,8 @@ All routes require `apiAuth` (Bearer token). Responses use `{ data: ... }` unles
 | `GET` | `/api/v1/leagues` | none | **Query:** `countryId?`, `gameStatus?`, `gameDate?` (`YYYY-MM-DD`, default today), `timeZone?` (IANA, e.g. `Africa/Lagos`; default `UTC`). `matches` filters `played_at` to that **local calendar day** converted to UTC. See [docs/TIME_AND_TIMEZONE.md](docs/TIME_AND_TIMEZONE.md). | **`{ data: { leagues, matches } }`** — `leagues` unfiltered list; `matches` game feed | `400` invalid `gameDate` / `timeZone`; empty `matches` if no games that day |
 | `GET` | `/api/v1/leagues/:leagueId` | none | **Params:** `leagueId`. **Query:** `seasonId?` (positive integer; defaults to the league's `active` season, else the newest) | **`{ data: { seasons, season, statTypes } }`** — see below | `400` invalid `leagueId` or `seasonId`; `404` league/season not found |
 | `POST` | `/api/v1/leagues` | `apiAuth` | **Body:** `createLeagueWithSeasonValidator` — see below | **`201`** `{ inviteUrl: string }` (not wrapped in `data`) | Validation `422`; creates league + active season + optional teams |
-| `POST` | `/api/v1/leagues/:leagueId/favorite` | `apiAuth` | **Params:** `leagueId` (number). No body. | `{ message: "League added to favorites" }` | `401` unauthorized; duplicate favourite may error (unique `user_id` + `league_id`) |
-| `DELETE` | `/api/v1/leagues/:leagueId/favorite` | `apiAuth` | **Params:** `leagueId` (number). No body. | `{ message: "League removed from favorites" }` | `401` unauthorized; idempotent if not favourited |
+| `POST` | `/api/v1/leagues/:leagueId/favorite` | `apiAuth` | **Params:** `leagueId` (positive integer; must exist in `leagues`). No body. | `{ message: "League added to favorites" }` | `401` unauthorized; `409` already favourited; `422` invalid or missing league |
+| `DELETE` | `/api/v1/leagues/:leagueId/favorite` | `apiAuth` | **Params:** `leagueId` (positive integer; must exist in `leagues`). No body. | `{ message: "League removed from favorites" }` | `401` unauthorized; `422` invalid or missing league; idempotent if not favourited |
 | `PUT` | `/api/v1/leagues/:leagueId` | `apiAuth` + `leagueOwner` | **Params:** `leagueId`. **Body:** `updateLeagueValidator` | `{ message: "League updated successfully" }` | `400` invalid id; `403` not owner; `404` league |
 | `GET` | `/api/v1/search` | none | **Query:** `q` (string, trimmed; empty → no search), `limit?` (number 1–100, default 24) | **`{ data: { query: string, results: SearchHit[] } }`** | Always `200`; empty `q` → `results: []` |
 | `GET` | `/api/v1/games/:id` | none | **Params:** `id` (game id) | **`{ data: GameDetail }`** | `404` if game missing |
@@ -87,7 +90,7 @@ All routes require `apiAuth` (Bearer token). Responses use `{ data: ... }` unles
 | `GET` | `/api/v1/players/:id` | none | **Params:** `id` (player id) | **`{ data: { player, leagues, statTypes } }`** — see below | `404` if player missing |
 | `GET` | `/api/v1/invites/generate` | `apiAuth` + `leagueOwner` | **Query:** `leagueId`, `seasonId`, `teamId`, `invitedUserId?` | `{ inviteLink: string }` (not wrapped in `data`) | See [docs/PLAYER_INVITE.md](docs/PLAYER_INVITE.md) |
 | `GET` | `/api/v1/invites/accept/:token` | session/API user required (`getUserOrFail`) | **Params:** `token` | If no player profile: `{ requiresProfile: true, token: string }`. Else: `{ requiresProfile: false, leagueId: number \| null }` | `403` wrong user; `409` already on roster; `404` invalid/expired invite |
-| `POST` | `/api/v1/invites/complete-profile-and-accept/:token` | `apiAuth` | **Params:** `token`. **Body:** `name` (string, required), `bio?` (string, optional) — no Vine validator yet | `{ leagueId: number \| null }` | `409` if player profile already exists |
+| `POST` | `/api/v1/invites/complete-profile-and-accept/:token` | `apiAuth` | **Params:** `token`. **Body:** `multipart/form-data` or JSON — `name` (string, required), `countryId` (required FK to `countries`), `bio?` (string, optional), `avatar?` (image file, max 2 MB, jpg/jpeg/png/webp) | `{ leagueId: number \| null }` | `409` if player profile already exists; `422` validation |
 | `GET` | `/api/v1/leagues/league-player-requests` | `apiAuth` | none | **LeaguePlayerWithLeague[]** (not wrapped in `data`) | Lists `league_players` where `player_id = auth user id` and `status = pending` |
 | `POST` | `/api/v1/leagues/accept-league-player-request` | `apiAuth` | **Body:** `acceptLeaguePlayerRequestValidator` | `{ message: "League player request accepted successfully" }` | `404` row missing; `409` already active |
 | `POST` | `/api/v1/leagues/:leagueId/seasons` | `apiAuth` + `leagueOwner` | **Params:** `leagueId`. **Body:** `createSeasonValidator` | **`201`** raw season row: `{ id, leagueId, name, status, createdAt, updatedAt }` | Validation `422` |
@@ -103,6 +106,36 @@ All routes require `apiAuth` (Bearer token). Responses use `{ data: ... }` unles
 | `POST` | `/api/v1/leagues/stats` | `apiAuth` + `leagueOwner` | **Body:** `createStatValidator` | **`201`** `{ message: "Stat created successfully" }` | Validates player on active roster + correct team side; does **not** auto-update game score |
 | `PUT` | `/api/v1/leagues/stats/:id` | `apiAuth` + `leagueOwner` | **Params:** `id` (stat id). **Body:** `updateStatValidator` | `{ message: "Stat updated successfully" }` | `404` stat |
 | `DELETE` | `/api/v1/leagues/stats/:id` | `apiAuth` + `leagueOwner` | **Params:** `id` (stat id) | `{ message: "Stat deleted successfully" }` | Recalculates standings / broadcasts game update |
+
+### Live game time (`apiAuth` + `teamOwner`)
+
+League owner **or** home/away team owner (`teams.added_by`) may control match clock. Each action broadcasts SSE `status_changed` on channel `games/{gameId}`. See [docs/CHANGE_GAME.md](docs/CHANGE_GAME.md).
+
+| Method | Path | Body | Success | Notes |
+| --- | --- | --- | --- | --- |
+| `POST` | `/api/v1/games/:gameId/start-first-half` | none | `{ message: "First half started" }` | From `scheduled` or `postponed`; sets `firstHalfStartedAt` |
+| `POST` | `/api/v1/games/:gameId/half-time` | none | `{ message: "Half time" }` | From `first_half` |
+| `POST` | `/api/v1/games/:gameId/start-second-half` | none | `{ message: "Second half started" }` | From `half_time`; sets `secondHalfStartedAt` |
+| `POST` | `/api/v1/games/:gameId/extra-time` | none | `{ message: "Extra time started" }` | From `second_half`; sets `extraTimeStartedAt` |
+| `POST` | `/api/v1/games/:gameId/pause` | none | `{ message: "Game paused" }` | From `first_half`, `second_half`, or `extra_time`; stores `pausedAt` + `pausedFromStatus` |
+| `POST` | `/api/v1/games/:gameId/resume` | none | `{ message: "Game resumed" }` | From `paused`; shifts period start timestamp by pause duration |
+| `POST` | `/api/v1/games/:gameId/full-time` | `{ homeScore, awayScore }` (required) | `{ message: "Full time" }` | From `second_half` or `extra_time`; fires `GameUpdated` → standings |
+
+### Hybrid scoring (`apiAuth` + `teamOwner`)
+
+Live match score +/- with unaccredited goal placeholders. See [docs/hybrid-scoring-prompt.md](docs/hybrid-scoring-prompt.md).
+
+| Method | Path | Body | Success | Notes |
+| --- | --- | --- | --- | --- |
+| `POST` | `/api/v1/games/:gameId/score` | `{ team: "home" \| "away", action: "increment" \| "decrement" }` | `{ message, homeScore, awayScore, statId }` | `increment` creates unaccredited goal stat (`playerId: null`); `statId` returned for accredit flow; SSE `score_updated`; `GameUpdated` reason `result` |
+| `PATCH` | `/api/v1/games/:gameId/stats/:statId/accredit` | `{ playerId, assistPlayerId?, isOwnGoal, minute }` | `{ message: "Goal accredited", statId }` | Updates placeholder; optional assist stat; SSE `stat_accredited`; `GameUpdated` reason `stat` |
+
+**SSE on `games/{gameId}`:**
+
+| `type` | Payload |
+| --- | --- |
+| `score_updated` | `{ homeScore, awayScore }` |
+| `stat_accredited` | `{ statId }` |
 
 ---
 

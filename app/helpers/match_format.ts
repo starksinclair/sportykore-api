@@ -1,10 +1,13 @@
 import type { DateTime } from 'luxon'
 
 const STATUS_LABELS: Record<string, string> = {
-  completed: 'FT',
-  live: 'LIVE',
   scheduled: 'NS',
-  break: 'HT',
+  first_half: 'LIVE',
+  half_time: 'HT',
+  second_half: 'LIVE',
+  extra_time: 'LIVE',
+  full_time: 'FT',
+  paused: 'PAUSED',
   postponed: 'PP',
   cancelled: 'CANC',
 }

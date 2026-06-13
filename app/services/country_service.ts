@@ -7,6 +7,7 @@ import League from '#models/league'
 import LeaguePlayer from '#models/league_player'
 import Player from '#models/player'
 import Team from '#models/team'
+import { LIVE_GAME_STATUSES } from '#types/game_status'
 import { avatarInitialsFromName, formatPlayerPosition } from '#helpers/player_format'
 
 export type CountryDetailStats = {
@@ -137,7 +138,7 @@ export default class CountryService {
         .count('* as total'),
       Player.query().where('country_id', countryId).count('* as total'),
       Game.query()
-        .where('status', 'live')
+        .whereIn('status', LIVE_GAME_STATUSES)
         .whereHas('league', (leagueQuery) => leagueQuery.where('country_id', countryId))
         .count('* as total'),
     ])

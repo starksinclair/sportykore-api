@@ -258,7 +258,7 @@ export default class DataSeeder extends BaseSeeder {
     countryName: string,
     playersByTeam: Map<number, Player[]>
   ) {
-    // Games start 8 days ago: indices 0–7 are completed (past), index 8 is live (today), 9+ are scheduled (future)
+    // Games start 8 days ago: indices 0–7 are full_time (past), index 8 is first_half (today), 9+ are scheduled (future)
     const baseDate = DateTime.now().startOf('day').minus({ days: 8 })
     const eventStatTypes = [
       this.statTypesByName.get('goals')!,
@@ -268,10 +268,10 @@ export default class DataSeeder extends BaseSeeder {
 
     for (const [index, fixture] of fixtures.entries()) {
       const playedAt = baseDate.plus({ days: index })
-      const status = index < 8 ? 'completed' : index === 8 ? 'live' : 'scheduled'
-      const homeScore = status === 'scheduled' ? null : (index % 4) + (status === 'live' ? 1 : 0)
+      const status = index < 8 ? 'full_time' : index === 8 ? 'first_half' : 'scheduled'
+      const homeScore = status === 'scheduled' ? null : (index % 4) + (status === 'first_half' ? 1 : 0)
       const awayScore =
-        status === 'scheduled' ? null : ((index + 1) % 3) + (status === 'live' ? 1 : 0)
+        status === 'scheduled' ? null : ((index + 1) % 3) + (status === 'first_half' ? 1 : 0)
 
       const game = await Game.create({
         leagueId: league.id,
@@ -281,7 +281,15 @@ export default class DataSeeder extends BaseSeeder {
         playedAt,
         homeScore,
         awayScore,
-        currentMinute: status === 'live' ? 63 : status === 'completed' ? 90 : 0,
+        firstHalfDuration: 45,
+        secondHalfDuration: 45,
+        firstHalfStartedAt:
+          status === 'full_time'
+            ? playedAt
+            : status === 'first_half'
+              ? DateTime.utc().minus({ minutes: 63 })
+              : undefined,
+        secondHalfStartedAt: status === 'full_time' ? playedAt.plus({ hours: 1 }) : undefined,
         status,
         venueName: `${countryName} Stadium ${index + 1}`,
       })

@@ -8,6 +8,7 @@ export default class StatTransformer extends BaseTransformer<Stat> {
   toObject() {
     return {
       ...this.pick(this.resource, ['id', 'minute', 'isStoppageTime', 'numericValue']),
+      isUnaccredited: this.resource.playerId === null,
       type: StatTypeTransformer.transform(this.whenLoaded(this.resource.type)),
       team: TeamTransformer.transform(this.whenLoaded(this.resource.team)),
       player: PlayerTransformer.transform(this.whenLoaded(this.resource.player)),
