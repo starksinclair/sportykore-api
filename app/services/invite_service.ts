@@ -95,7 +95,7 @@ export default class InviteService {
 
     if (profileData.avatar) {
       const key = `players/${string.uuid()}.${profileData.avatar.extname}`
-      avatarUrl = await this.fileService.upload(profileData.avatar, key, 'fs')
+      avatarUrl = await this.fileService.upload(profileData.avatar, key)
     }
 
     await Player.create({

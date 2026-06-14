@@ -43,7 +43,7 @@ The core domain covers countries, leagues, seasons, teams, players, games, match
 | Cache / infra (Docker) | Redis 7 (+ RedisInsight on port 5540) |
 | Auth | Session (`web` guard) + Bearer access tokens (`api` guard) |
 | OAuth | Google via `@adonisjs/ally` |
-| File storage | `@adonisjs/drive` — S3 and local `fs` disks |
+| File storage | `@adonisjs/drive` — local `fs`, S3, or GCS (`DRIVE_DISK`) |
 | Email | Amazon SES via `@adonisjs/mail` |
 | Live updates | `@adonisjs/transmit` (SSE broadcast on game updates) |
 | Dates | [Luxon](https://moment.github.io/luxon/) (UTC in DB; clients send IANA timezones) |
@@ -167,7 +167,28 @@ docker compose run --rm --no-deps api npm ci
 docker compose up api -d
 ```
 
-Production Docker stages in `Dockerfile` are commented out; dev target is the supported path today.
+Production deploys the `production` stage in `Dockerfile` (Cloud Run). `docker-compose.prod.yml` is only for local smoke tests of that image.
+
+---
+
+## Cloud Run (production)
+
+Cloud Run builds and runs the **`Dockerfile` `production` target** — not `docker-compose.prod.yml`. Set environment variables in the Cloud Run service (or copy from `.env.prod.example`).
+
+| Setting | Value |
+| --- | --- |
+| `NODE_ENV` | `production` |
+| `HOST` | `0.0.0.0` |
+| `PORT` | `8080` (Cloud Run sets this automatically) |
+| `APP_URL` | Your Cloud Run URL, e.g. `https://your-service-xxxxx.run.app` |
+| `DRIVE_DISK` | `gcs` |
+| `GCS_BUCKET` | Your bucket name |
+| `GCS_KEY` | **Omit** — Cloud Run uses the attached service account (ADC) |
+| `DB_*` | Neon / managed Postgres (`DB_SSL=true` for Neon) |
+
+Run migrations separately (Cloud Run Job or deploy hook): `node ace migration:run --force`.
+
+Local smoke test of the prod image: `cp .env.prod.example .env.prod`, fill in values, then `npm run prod:build`.
 
 ---
 
@@ -183,18 +204,44 @@ Validated in `start/env.ts`. Copy `.env.example` and fill in values.
 | `APP_URL` | Public app URL |
 | `LOG_LEVEL` | Pino log level |
 | `SESSION_DRIVER` | `cookie` \| `memory` \| `database` |
-| `DB_CONNECTION` | `sqlite` (default) or `pg` (Docker) |
-| `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_DATABASE` | PostgreSQL when `DB_CONNECTION=pg` |
+| `DB_CONNECTION` | `sqlite` (default) or `pg` |
+| `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_DATABASE`, `DB_SSL` | PostgreSQL when `DB_CONNECTION=pg` |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google OAuth for mobile |
 | `MOBILE_OAUTH_DEEP_LINK` | Optional redirect after Google login (e.g. `sportykore://auth/callback`) |
 | `MOBILE_APP_URL` | Base URL for invite deep links in emails |
-| `DRIVE_DISK` | Default drive disk (`s3` in schema) |
-| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` | S3 + SES |
-| `S3_BUCKET` | S3 bucket for uploads |
+| `DRIVE_DISK` | `fs` (local dev/Docker), `s3`, or `gcs` (GCP prod) |
+| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` | S3 disk + SES mail |
+| `S3_BUCKET` | S3 bucket when `DRIVE_DISK=s3` |
+| `GCS_BUCKET` | GCS bucket when `DRIVE_DISK=gcs` |
+| `GCS_KEY` | Optional path to service account JSON (`file://…`); omit on Cloud Run with ADC |
+
+Uploads (league/team logos, player avatars) use `DRIVE_DISK` via `FileService`.
 | `MAIL_MAILER` | `ses` |
 | `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` | Outbound email identity |
 
-**Note:** League and team logo uploads in controllers use the local **`fs`** disk (`storage/`, served under `/uploads`) regardless of `DRIVE_DISK`. S3 is available for other drive usage via `FileService`.
+**Note:** Local dev uses `DRIVE_DISK=fs`. Cloud Run production uses `DRIVE_DISK=gcs` and `GCS_BUCKET` with ADC (no `GCS_KEY`).
+
+### GCS bucket setup (production)
+
+1. **Create a bucket** in [Google Cloud Console](https://console.cloud.google.com/storage) (e.g. `your-project-uploads`). Pick a region close to your Cloud Run service.
+2. **Uniform bucket-level access** — leave enabled (FlyDrive default). Do not rely on per-object ACLs.
+3. **Public read** (required for `visibility: 'public'` in `config/drive.ts`):
+   - Bucket → **Permissions** → **Grant access**
+   - Principal: `allUsers`, Role: **Storage Object Viewer**
+   - Confirm public access (logos and avatars are served via `getUrl()`).
+4. **Service account** (local dev or when not using the Cloud Run runtime identity):
+   - IAM → **Service accounts** → create one (e.g. `sportykore-uploads`)
+   - Grant **Storage Object Admin** on the bucket (upload + delete)
+   - Keys → **Add key** → JSON → save as `gcs_key.json` in the project root (gitignored)
+5. **Environment:**
+
+```env
+DRIVE_DISK=gcs
+GCS_BUCKET=your-project-uploads
+GCS_KEY=file://gcs_key.json
+```
+
+On **Cloud Run**, omit `GCS_KEY` and assign the Cloud Run service account **Storage Object Admin** on the bucket; the `@google-cloud/storage` client uses Application Default Credentials automatically.
 
 ---
 
@@ -375,7 +422,7 @@ node ace db:seed --files database/seeders/data_seeder.ts
 ## File uploads
 
 - **Config:** `config/drive.ts` — `s3` and `fs` services
-- **League / team logos:** uploaded to **`fs`** disk → `storage/` directory, public URL under `/uploads/...`
+- **Uploads:** `DRIVE_DISK=fs` → `storage/` + `/uploads/…`; `gcs` → public GCS URLs; `s3` → S3 URLs
 - **Service:** `app/services/file_service.ts`
 - Validators: `optionalImage()` in `app/validators/common.ts` (max 2 MB, jpg/png/webp)
 

@@ -33,7 +33,7 @@ export default class TeamsController {
 
     if (data.logo) {
       const key = `teams/${string.uuid()}.${data.logo.extname}`
-      logoUrl = await this.fileService.upload(data.logo, key, 'fs')
+      logoUrl = await this.fileService.upload(data.logo, key)
     }
     await Team.create({
       leagueId: data.leagueId,

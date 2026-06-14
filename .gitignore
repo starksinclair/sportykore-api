@@ -7,8 +7,13 @@ tmp/*
 # Secrets
 .env
 .env.local
+.env.prod
 .env.production.local
 .env.development.local
+gcs_key.json
+
+# Local Drive uploads (DRIVE_DISK=fs)
+storage/
 
 # Frontend assets compiled code
 public/assets

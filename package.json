@@ -10,11 +10,17 @@
   "scripts": {
     "start": "node bin/server.js",
     "build": "node ace build",
-    "dev": "node ace serve --hmr",
+    "dev:server": "node ace serve --hmr",
     "test": "node ace test",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "typecheck": "tsc --noEmit && tsc --noEmit --project inertia/tsconfig.json"
+    "typecheck": "tsc --noEmit && tsc --noEmit --project inertia/tsconfig.json",
+    "dev": "docker compose -f docker-compose.dev.yml up",
+    "dev:build": "docker compose -f docker-compose.dev.yml up --build",
+    "dev:down": "docker compose -f docker-compose.dev.yml down",
+    "prod": "docker compose -f docker-compose.prod.yml up -d",
+    "prod:build": "docker compose -f docker-compose.prod.yml up -d --build",
+    "prod:down": "docker compose -f docker-compose.prod.yml down"
   },
   "imports": {
     "#controllers/*": "./app/controllers/*.js",
@@ -79,6 +85,7 @@
     "@aws-sdk/client-s3": "^3.1049.0",
     "@aws-sdk/client-sesv2": "^3.1053.0",
     "@aws-sdk/s3-request-presigner": "^3.1049.0",
+    "@google-cloud/storage": "^7.21.0",
     "@inertiajs/react": "^2.3.18",
     "@tuyau/core": "^1.2.2",
     "@vinejs/vine": "^4.3.1",

@@ -1,0 +1,16 @@
+# Local smoke test of the production Docker image only.
+# Cloud Run deploys the Dockerfile production target directly — no compose file.
+# Uses Neon (or other remote Postgres) from .env.prod; no bundled postgres service.
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: sportykore_api_prod
+    ports:
+      - '8080:8080'
+    env_file:
+      - .env.prod
+    restart: unless-stopped

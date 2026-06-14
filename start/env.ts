@@ -13,6 +13,7 @@ import { Env } from '@adonisjs/core/env'
 
 export default await Env.create(new URL('../', import.meta.url), {
   // Node
+  TZ: Env.schema.string.optional(),
   NODE_ENV: Env.schema.enum(['development', 'production', 'test'] as const),
   PORT: Env.schema.number(),
   HOST: Env.schema.string({ format: 'host' }),
@@ -44,11 +45,30 @@ export default await Env.create(new URL('../', import.meta.url), {
   | Variables for configuring the drive package
   |----------------------------------------------------------
   */
-  DRIVE_DISK: Env.schema.enum(['s3'] as const),
-  AWS_ACCESS_KEY_ID: Env.schema.string(),
-  AWS_SECRET_ACCESS_KEY: Env.schema.string(),
-  AWS_REGION: Env.schema.string(),
-  S3_BUCKET: Env.schema.string(),
+  DRIVE_DISK: Env.schema.enum(['fs', 's3', 'gcs'] as const),
+  AWS_ACCESS_KEY_ID: Env.schema.string.optional(),
+  AWS_SECRET_ACCESS_KEY: Env.schema.string.optional(),
+  AWS_REGION: Env.schema.string.optional(),
+  S3_BUCKET: Env.schema.string.optional(),
+  GCS_BUCKET: Env.schema.string.optional(),
+  /**
+   * Path to a GCS service account JSON key (e.g. file://gcs_key.json).
+   * Omit on GCP when using Application Default Credentials (Cloud Run, GKE).
+   */
+  GCS_KEY: Env.schema.string.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | Variables for configuring the database
+  |----------------------------------------------------------
+  */
+  DB_CONNECTION: Env.schema.enum(['sqlite', 'pg'] as const),
+  DB_HOST: Env.schema.string.optional(),
+  DB_PORT: Env.schema.number.optional(),
+  DB_USER: Env.schema.string.optional(),
+  DB_PASSWORD: Env.schema.string.optional(),
+  DB_DATABASE: Env.schema.string.optional(),
+  DB_SSL: Env.schema.boolean.optional(),
 
   /*
   |----------------------------------------------------------
@@ -70,5 +90,5 @@ export default await Env.create(new URL('../', import.meta.url), {
   | Variables for configuring the mail package
   |----------------------------------------------------------
   */
-  MAIL_MAILER: Env.schema.enum(['ses'] as const)
+  MAIL_MAILER: Env.schema.enum(['ses'] as const),
 })

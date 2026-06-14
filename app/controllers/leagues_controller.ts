@@ -29,7 +29,7 @@ export default class LeaguesController {
 
     if (data.logo) {
       const key = `leagues/${string.uuid()}.${data.logo.extname}`
-      logoUrl = await this.fileService.upload(data.logo, key, 'fs')
+      logoUrl = await this.fileService.upload(data.logo, key)
     }
     const result = await this.leagueService.createWithSeason(user.id, {
       name: data.name,
@@ -43,7 +43,9 @@ export default class LeaguesController {
     const inviteUrl = await this.inviteService.generate(result.league.id, result.season.id)
 
     const baseUrl = env.get('MOBILE_APP_URL') ?? env.get('APP_URL')
-    await mail.sendLater(new LeagueCreatedNotification(user, result.league, `${baseUrl}${inviteUrl}`))
+    await mail.sendLater(
+      new LeagueCreatedNotification(user, result.league, `${baseUrl}${inviteUrl}`)
+    )
 
     return response.created({ inviteUrl })
   }

@@ -6,7 +6,7 @@ const dbConfig = defineConfig({
   /**
    * Default connection used for all queries.
    */
-  connection: env.get('DB_CONNECTION', 'sqlite'),
+  connection: env.get('DB_CONNECTION'),
 
   connections: {
     /**
@@ -46,11 +46,12 @@ const dbConfig = defineConfig({
     pg: {
       client: 'pg',
       connection: {
-        host: env.get('DB_HOST', '127.0.0.1'),
-        port: Number(env.get('DB_PORT', '5432')),
-        user: env.get('DB_USER', 'kpakore'),
-        password: env.get('DB_PASSWORD', ''),
-        database: env.get('DB_DATABASE', 'kpakore_dev'),
+        host: env.get('DB_HOST') ?? '127.0.0.1',
+        port: env.get('DB_PORT') ?? 5432,
+        user: env.get('DB_USER') ?? 'sportykore',
+        password: env.get('DB_PASSWORD') ?? '',
+        database: env.get('DB_DATABASE') ?? 'sportykore_dev',
+        ssl: env.get('DB_SSL') ?? false,
       },
       migrations: {
         naturalSort: true,
