@@ -15,7 +15,7 @@ test.group('UserAuthService', (group) => {
   withFreshDatabase(group)
 
   test('toUserDto returns public fields only', async ({ assert }) => {
-    const service = new UserAuthService(hash)
+    const service = new UserAuthService()
     const user = new User()
     user.merge({ id: 42, email: 'fan@kpakore.test', fullName: 'Sam Fan' })
 
@@ -50,7 +50,7 @@ test.group('UserAuthService', (group) => {
 
   test('loginWithPassword rejects invalid credentials', async ({ assert }) => {
     const ctx = await testUtils.createHttpContext()
-    const service = new UserAuthService(hash)
+    const service = new UserAuthService()
 
     await User.create({
       email: 'badcreds@kpakore.test',
@@ -59,7 +59,7 @@ test.group('UserAuthService', (group) => {
     })
 
     try {
-      await service.loginWithPassword(ctx.auth, 'badcreds@kpakore.test', 'wrong-password')
+        await service.loginWithPassword(ctx.auth, 'badcreds@kpakore.test', 'wrong-password', 'key')
       assert.fail('expected login to throw')
     } catch (error) {
       assert.instanceOf(error, Error)
@@ -68,7 +68,7 @@ test.group('UserAuthService', (group) => {
   })
 
   test('requestPasswordReset is a no-op for unknown email', async ({ assert }) => {
-    const service = new UserAuthService(hash)
+    const service = new UserAuthService()
     await service.requestPasswordReset('missing@kpakore.test')
 
     const rows = await db.from('password_resets').select('*')
@@ -76,7 +76,7 @@ test.group('UserAuthService', (group) => {
   })
 
   test('requestPasswordReset stores hashed token for existing user', async ({ assert }) => {
-    const service = new UserAuthService(hash)
+    const service = new UserAuthService()
     const user = await User.create({
       email: 'resetme@kpakore.test',
       password: 'password1',
@@ -91,7 +91,7 @@ test.group('UserAuthService', (group) => {
   })
 
   test('resetPasswordWithToken updates password and clears reset row', async ({ assert }) => {
-    const service = new UserAuthService(hash)
+    const service = new UserAuthService()
     const user = await User.create({
       email: 'tokenuser@kpakore.test',
       password: 'password1',
@@ -111,14 +111,14 @@ test.group('UserAuthService', (group) => {
     await service.resetPasswordWithToken(plain, 'newpassword1')
 
     await user.refresh()
-    assert.isTrue(await hash.verify(user.password, 'newpassword1'))
+    assert.isTrue(await hash.verify(user.password ?? 'password1', 'newpassword1'))
 
     const remaining = await db.from('password_resets').where('user_id', user.id)
     assert.lengthOf(remaining, 0)
   })
 
   test('resetPasswordWithToken throws for invalid token', async ({ assert }) => {
-    const service = new UserAuthService(hash)
+    const service = new UserAuthService()
     await User.create({
       email: 'onlyuser@kpakore.test',
       password: 'password1',
@@ -136,7 +136,7 @@ test.group('UserAuthService', (group) => {
   })
 
   test('findOrCreateFromGoogle creates then returns existing by email', async ({ assert }) => {
-    const service = new UserAuthService(hash)
+    const service = new UserAuthService()
 
     const first = await service.findOrCreateFromGoogle({
       email: 'google@kpakore.test',

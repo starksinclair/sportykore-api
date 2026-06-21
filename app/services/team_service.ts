@@ -1,6 +1,5 @@
 import Game from '#models/game'
 import LeaguePlayer from '#models/league_player'
-import Player from '#models/player'
 import Season from '#models/season'
 import Standing from '#models/standing'
 import StatType from '#models/stat_type'

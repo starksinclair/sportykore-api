@@ -1,5 +1,5 @@
 import type { HttpContext } from '@adonisjs/core/http'
-import Season from '../models/season'
+import Season from '#models/season'
 import { createSeasonValidator } from '#validators/season'
 
 export default class SeasonsController {

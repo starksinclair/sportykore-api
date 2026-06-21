@@ -9,7 +9,7 @@ import mail from '@adonisjs/mail/services/main'
 
 import User from '#models/user'
 import WelcomeNotification from '#mails/welcome_notification'
-import type limiter from '@adonisjs/limiter/services/main'
+import limiter from '@adonisjs/limiter/services/main'
 import hash from '@adonisjs/core/services/hash'
 const PASSWORD_RESET_TTL_MINUTES = 60
 const MOBILE_TOKEN_EXPIRES = '30d'
@@ -65,17 +65,24 @@ export default class UserAuthService {
     auth: HttpContext['auth'],
     email: string,
     password: string,
-    loginLimiter: typeof limiter,
     key: string
-  ): Promise<{ user: User; accessToken: AccessToken; error: any }> {
+  ): Promise<{ user: User | undefined; accessToken: AccessToken | undefined; error: any | undefined }> {
+    const loginLimiter = limiter.use({
+      requests: 5,
+      duration: '1 min',
+      blockDuration: '20 mins'
+    })
     const [error, user] = await loginLimiter.penalize(key, () => {
       return User.verifyCredentials(email, password)
     })
+    if (!user) {
+      return { user: undefined as unknown as User, accessToken: undefined as unknown as AccessToken, error: undefined as unknown as any }
+    }
     const accessToken = await auth.use('api').createToken(user, ['*'], {
       name: 'mobile',
       expiresIn: MOBILE_TOKEN_EXPIRES,
     })
-    return { user, accessToken, error }
+    return { user: user, accessToken: accessToken, error: error }
   }
 
   /**
