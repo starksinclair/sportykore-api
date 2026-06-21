@@ -1,5 +1,4 @@
 import type { HttpContext } from '@adonisjs/core/http'
-import hash from '@adonisjs/core/services/hash'
 import env from '#start/env'
 import {
   forgotPasswordValidator,
@@ -11,18 +10,23 @@ import UserAuthService from '#services/user_auth_service'
 import AuthSessionTransformer from '#transformers/auth_session_transformer'
 import WelcomeNotification from '#mails/welcome_notification'
 import mail from '@adonisjs/mail/services/main'
+import limiter from '@adonisjs/limiter/services/main'
+import { inject } from '@adonisjs/core'
+import User from '#models/user'
 
-const userAuth = new UserAuthService(hash)
-
+@inject()
 export default class UsersController {
+  constructor(protected userAuth: UserAuthService) {}
+  private readonly MOBILE_TOKEN_EXPIRES = '30d'
   async signup({ request, auth, response, serialize }: HttpContext) {
     const data = await request.validateUsing(signupValidator)
     try {
-      const { user, accessToken } = await userAuth.registerWithPassword(auth, {
+      const { user, accessToken } = await this.userAuth.registerWithPassword(auth, {
         email: data.email,
         password: data.password,
         fullName: data.fullName,
       })
+      await mail.send(new WelcomeNotification(user))
       return response.created(
         await serialize({
           auth: AuthSessionTransformer.transform({ user, accessToken }),
@@ -35,8 +39,27 @@ export default class UsersController {
 
   async login({ request, auth, response, serialize }: HttpContext) {
     const { email, password } = await request.validateUsing(loginValidator)
+    const loginLimiter = limiter.use({
+      requests: 5,
+      duration: '1 min',
+      blockDuration: '20 mins',
+    })
+
+    const key = `login_${request.ip()}_${email}`
     try {
-      const { user, accessToken } = await userAuth.loginWithPassword(auth, email, password)
+      const [error, user] = await loginLimiter.penalize(key, () => {
+        return User.verifyCredentials(email, password)
+      })
+      if (error) {
+        return response.tooManyRequests({
+          message: `Too many login attempts. Try again in ${error.response.availableIn} seconds`,
+        })
+      }
+      const accessToken = await auth.use('api').createToken(user, ['*'], {
+        name: 'mobile',
+        expiresIn: this.MOBILE_TOKEN_EXPIRES,
+      })
+
       return response.ok(
         await serialize({
           auth: AuthSessionTransformer.transform({ user, accessToken }),
@@ -52,14 +75,14 @@ export default class UsersController {
 
   async forgotPassword({ request, response }: HttpContext) {
     const { email } = await request.validateUsing(forgotPasswordValidator)
-    await userAuth.requestPasswordReset(email)
+    await this.userAuth.requestPasswordReset(email)
     return response.noContent()
   }
 
   async resetPassword({ request, response }: HttpContext) {
     const { token, password } = await request.validateUsing(resetPasswordValidator)
     try {
-      await userAuth.resetPasswordWithToken(token, password)
+      await this.userAuth.resetPasswordWithToken(token, password)
       return response.noContent()
     } catch (error) {
       if (
@@ -94,7 +117,7 @@ export default class UsersController {
       return response.badRequest({ message: 'Google did not return an email for this account' })
     }
 
-    const { user, isNew } = await userAuth.findOrCreateFromGoogle({
+    const { user, isNew } = await this.userAuth.findOrCreateFromGoogle({
       email: gUser.email,
       name: gUser.name,
       providerId: gUser.id,

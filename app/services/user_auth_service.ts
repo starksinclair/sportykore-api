@@ -1,7 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto'
 import type { AccessToken } from '@adonisjs/auth/access_tokens'
 import type { HttpContext } from '@adonisjs/core/http'
-import type hash from '@adonisjs/core/services/hash'
 import app from '@adonisjs/core/services/app'
 import logger from '@adonisjs/core/services/logger'
 import db from '@adonisjs/lucid/services/db'
@@ -10,7 +9,8 @@ import mail from '@adonisjs/mail/services/main'
 
 import User from '#models/user'
 import WelcomeNotification from '#mails/welcome_notification'
-
+import type limiter from '@adonisjs/limiter/services/main'
+import hash from '@adonisjs/core/services/hash'
 const PASSWORD_RESET_TTL_MINUTES = 60
 const MOBILE_TOKEN_EXPIRES = '30d'
 
@@ -33,8 +33,6 @@ export type GoogleProfile = {
  * Access token creation uses the request-scoped `auth` object (api guard).
  */
 export default class UserAuthService {
-  constructor(protected hasher: typeof hash) {}
-
   /**
    * Public user fields for API responses (never includes password).
    */
@@ -66,14 +64,18 @@ export default class UserAuthService {
   async loginWithPassword(
     auth: HttpContext['auth'],
     email: string,
-    password: string
-  ): Promise<{ user: User; accessToken: AccessToken }> {
-    const user = await User.verifyCredentials(email, password)
+    password: string,
+    loginLimiter: typeof limiter,
+    key: string
+  ): Promise<{ user: User; accessToken: AccessToken; error: any }> {
+    const [error, user] = await loginLimiter.penalize(key, () => {
+      return User.verifyCredentials(email, password)
+    })
     const accessToken = await auth.use('api').createToken(user, ['*'], {
       name: 'mobile',
       expiresIn: MOBILE_TOKEN_EXPIRES,
     })
-    return { user, accessToken }
+    return { user, accessToken, error }
   }
 
   /**
@@ -134,7 +136,7 @@ export default class UserAuthService {
       return { user: existing, isNew: false }
     }
 
-    const randomPassword = await this.hasher.make(randomBytes(48).toString('hex'))
+    const randomPassword = await hash.make(randomBytes(48).toString('hex'))
     const user = await User.create({
       email: profile.email,
       fullName: profile.name,

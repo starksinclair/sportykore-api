@@ -6,6 +6,7 @@ tmp/*
 
 # Secrets
 .env
+.env.dev
 .env.local
 .env.prod
 .env.production.local
@@ -29,3 +30,5 @@ yarn-error.log
 
 # Platform specific
 .DS_Store
+
+.adonisjs

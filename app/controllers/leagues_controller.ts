@@ -40,14 +40,11 @@ export default class LeaguesController {
       seasonName: data.seasonName,
       teams: data.teams ?? [],
     })
-    const inviteUrl = await this.inviteService.generate(result.league.id, result.season.id)
 
     const baseUrl = env.get('MOBILE_APP_URL') ?? env.get('APP_URL')
-    await mail.sendLater(
-      new LeagueCreatedNotification(user, result.league, `${baseUrl}${inviteUrl}`)
-    )
+    await mail.send(new LeagueCreatedNotification(user, result.league, `${baseUrl}`))
 
-    return response.created({ inviteUrl })
+    return response.created({ message: 'League created successfully' })
   }
   async index({ serialize, request, auth }: HttpContext) {
     const { countryId, gameStatus, gameDate, timeZone } = request.qs()

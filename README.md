@@ -39,13 +39,13 @@ The core domain covers countries, leagues, seasons, teams, players, games, match
 | Web UI | React 19, Inertia.js, Vite |
 | API typing / routes | [Tuyau](https://tuyau.dev) (generated client in `.adonisjs/client/`) |
 | DB (local default) | SQLite (`tmp/db.sqlite3`) |
-| DB (Docker) | PostgreSQL 16 |
-| Cache / infra (Docker) | Redis 7 (+ RedisInsight on port 5540) |
-| Auth | Session (`web` guard) + Bearer access tokens (`api` guard) |
-| OAuth | Google via `@adonisjs/ally` |
+| DB (Docker dev / prod) | PostgreSQL 16 (Docker dev) / Neon (Cloud Run) |
+| Cache / realtime | Redis (Upstash in prod) — rate limiter + Transmit SSE backplane |
+| Auth | Session (`web` guard) + Bearer OTP tokens (`api` guard) |
+| OAuth | Google via `@adonisjs/ally` (routes currently disabled; OTP is primary) |
 | File storage | `@adonisjs/drive` — local `fs`, S3, or GCS (`DRIVE_DISK`) |
-| Email | Amazon SES via `@adonisjs/mail` |
-| Live updates | `@adonisjs/transmit` (SSE broadcast on game updates) |
+| Email | Resend or Amazon SES via `@adonisjs/mail` (`MAIL_MAILER`) |
+| Live updates | `@adonisjs/transmit` (SSE on `games/{id}`; Redis backplane in prod) |
 | Dates | [Luxon](https://moment.github.io/luxon/) (UTC in DB; clients send IANA timezones) |
 
 ---
@@ -75,7 +75,7 @@ node ace generate:key   # sets APP_KEY in .env
 
 Edit `.env` as needed. For the fastest local path, use defaults with SQLite (no `DB_CONNECTION` needed — it defaults to `sqlite`).
 
-Google OAuth placeholders are fine until you test OAuth; use `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` from Google Cloud Console when ready.
+Google OAuth env vars are optional until you re-enable OAuth routes.
 
 ### 3. Migrate and seed
 
@@ -91,24 +91,31 @@ The data seeder creates African countries, sample users/leagues/teams/games/stat
 ### 4. Start the dev server
 
 ```bash
-npm run dev
+node ace serve --hmr
 ```
 
 - API + Inertia: [http://localhost:3333](http://localhost:3333)
 - Web login: [http://localhost:3333/login](http://localhost:3333/login)
 
-### 5. Call the API (example)
+### 5. Call the API (OTP example)
 
 ```bash
-# Login (mobile)
-curl -s -X POST http://localhost:3333/api/v1/auth/login \
+# Request OTP (returning user — email must exist)
+curl -s -X POST http://localhost:3333/api/v1/auth/request-otp \
   -H 'Content-Type: application/json' \
-  -d '{"email":"owner@example.com","password":"password"}'
+  -d '{"email":"owner@example.com"}'
+
+# Verify OTP → Bearer token
+curl -s -X POST http://localhost:3333/api/v1/auth/verify-otp \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"owner@example.com","code":"123456"}'
 
 # Use data.auth.token.value as Bearer token, then:
 curl -s http://localhost:3333/api/v1/countries/ng \
   -H "Authorization: Bearer <token>"
 ```
+
+New users get `428` from `request-otp` until `name` (and optional `recoveryEmail`) are supplied. See [ROUTES.md — Authentication (OTP)](ROUTES.md#authentication-otp).
 
 Seeded user emails depend on the factory; check the seeder or your DB after seeding.
 
@@ -116,22 +123,22 @@ Seeded user emails depend on the factory; check the seeder or your DB after seed
 
 ## Quick start (Docker)
 
-Docker runs the API against **PostgreSQL** and **Redis**, with migrations applied on container start.
+Docker dev runs the API against **PostgreSQL** (bundled in compose). Redis is **external** (e.g. Upstash) — configure `REDIS_*` in `.env.dev`.
 
 ### 1. Environment
 
-Ensure `.env` exists (copy from `.env.example`) and includes at least:
-
-```env
-APP_KEY=<generated-secret>
+```bash
+cp .env.dev.example .env.dev
+node ace generate:key   # paste into APP_KEY in .env.dev
 ```
 
-Compose overrides DB settings to point at the `postgres` service (`DB_CONNECTION=pg`, etc.).
+Compose reads `${DB_*}` from `.env.dev` via `npm run dev` (`--env-file .env.dev`).
 
 ### 2. Build and start
 
 ```bash
-docker compose up --build
+npm run dev
+# or: npm run dev:build
 ```
 
 Services:
@@ -139,14 +146,14 @@ Services:
 | Service | URL / port |
 | --- | --- |
 | API | [http://localhost:3333](http://localhost:3333) |
-| PostgreSQL | `localhost:5432` (user `sportykore`, db `sportykore_dev`) |
-| Redis | `localhost:6379` |
-| RedisInsight | [http://localhost:5540](http://localhost:5540) |
+| PostgreSQL | `localhost:5432` (credentials from `.env.dev`) |
+
+Stop: `npm run dev:down`
 
 ### 3. Seed (first time or after fresh DB)
 
 ```bash
-docker compose exec api node ace db:seed --files database/seeders/data_seeder.ts
+docker compose --env-file .env.dev -f docker-compose.dev.yml exec api node ace db:seed --files database/seeders/data_seeder.ts
 ```
 
 ### 4. `node_modules` volume
@@ -154,47 +161,42 @@ docker compose exec api node ace db:seed --files database/seeders/data_seeder.ts
 Compose mounts a **named volume** for `/app/node_modules` so host bind-mounts do not break native modules. After adding npm packages:
 
 ```bash
-docker compose run --rm --no-deps api npm ci
-docker compose up api -d
+docker compose --env-file .env.dev -f docker-compose.dev.yml run --rm --no-deps api npm ci
+docker compose --env-file .env.dev -f docker-compose.dev.yml up api -d
 ```
 
-If dependencies are still missing, remove only the deps volume (keeps Postgres/Redis data):
-
-```bash
-docker compose down api
-docker volume rm sportykore-api_node_modules
-docker compose run --rm --no-deps api npm ci
-docker compose up api -d
-```
-
-Production deploys the `production` stage in `Dockerfile` (Cloud Run). `docker-compose.prod.yml` is only for local smoke tests of that image.
+Production deploys the `production` stage in `Dockerfile` (Cloud Run). `docker-compose.prod.yml` is for local smoke tests only (`npm run prod:build`).
 
 ---
 
 ## Cloud Run (production)
 
-Cloud Run builds and runs the **`Dockerfile` `production` target** — not `docker-compose.prod.yml`. Set environment variables in the Cloud Run service (or copy from `.env.prod.example`).
+Cloud Run builds and runs the **`Dockerfile` `production` target** — not `docker-compose.prod.yml`. Set environment variables in the Cloud Run service (copy from [`.env.prod.example`](.env.prod.example)).
 
 | Setting | Value |
 | --- | --- |
 | `NODE_ENV` | `production` |
 | `HOST` | `0.0.0.0` |
 | `PORT` | `8080` (Cloud Run sets this automatically) |
-| `APP_URL` | Your Cloud Run URL, e.g. `https://your-service-xxxxx.run.app` |
+| `APP_URL` | Your Cloud Run URL |
 | `DRIVE_DISK` | `gcs` |
 | `GCS_BUCKET` | Your bucket name |
-| `GCS_KEY` | **Omit** — Cloud Run uses the attached service account (ADC) |
-| `DB_*` | Neon / managed Postgres (`DB_SSL=true` for Neon) |
+| `GCS_KEY` | **Omit** — Cloud Run uses ADC |
+| `DB_*` | Neon / managed Postgres (`DB_SSL=true`) |
+| `MAIL_MAILER` | `resend` or `ses` |
+| `RESEND_API_KEY` | Required when `MAIL_MAILER=resend` |
+| `LIMITER_STORE` | `redis` |
+| `REDIS_*` | Upstash host, port, password, `REDIS_TLS=true` |
 
-Run migrations separately (Cloud Run Job or deploy hook): `node ace migration:run --force`.
+The production container runs **`node ace migration:run --force`** before starting the server (see `Dockerfile`). Remove that from the `CMD` when you move migrations to a Cloud Run Job.
 
-Local smoke test of the prod image: `cp .env.prod.example .env.prod`, fill in values, then `npm run prod:build`.
+Local smoke test: `cp .env.prod.example .env.prod`, fill in values, then `npm run prod:build`.
 
 ---
 
 ## Environment variables
 
-Validated in `start/env.ts`. Copy `.env.example` and fill in values.
+Validated in `start/env.ts`. Copy [`.env.example`](.env.example) for local SQLite, [`.env.dev.example`](.env.dev.example) for Docker dev, or [`.env.prod.example`](.env.prod.example) for production.
 
 | Variable | Purpose |
 | --- | --- |
@@ -206,20 +208,21 @@ Validated in `start/env.ts`. Copy `.env.example` and fill in values.
 | `SESSION_DRIVER` | `cookie` \| `memory` \| `database` |
 | `DB_CONNECTION` | `sqlite` (default) or `pg` |
 | `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_DATABASE`, `DB_SSL` | PostgreSQL when `DB_CONNECTION=pg` |
-| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google OAuth for mobile |
-| `MOBILE_OAUTH_DEEP_LINK` | Optional redirect after Google login (e.g. `sportykore://auth/callback`) |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Optional — Google OAuth (routes disabled) |
+| `MOBILE_OAUTH_DEEP_LINK` | Optional redirect after Google login |
 | `MOBILE_APP_URL` | Base URL for invite deep links in emails |
-| `DRIVE_DISK` | `fs` (local dev/Docker), `s3`, or `gcs` (GCP prod) |
-| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` | S3 disk + SES mail |
-| `S3_BUCKET` | S3 bucket when `DRIVE_DISK=s3` |
-| `GCS_BUCKET` | GCS bucket when `DRIVE_DISK=gcs` |
-| `GCS_KEY` | Optional path to service account JSON (`file://…`); omit on Cloud Run with ADC |
+| `DRIVE_DISK` | `fs` (local dev), `s3`, or `gcs` (Cloud Run prod) |
+| `AWS_*`, `S3_BUCKET` | S3 disk + SES mail |
+| `GCS_BUCKET`, `GCS_KEY` | GCS disk; omit `GCS_KEY` on Cloud Run (ADC) |
+| `MAIL_MAILER` | `resend` (default) or `ses` — selects active mailer |
+| `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` | Outbound email identity |
+| `RESEND_API_KEY` | Required when `MAIL_MAILER=resend` |
+| `LIMITER_STORE` | `memory` (single instance) or `redis` (prod / multi-instance) |
+| `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`, `REDIS_TLS` | Redis for limiter + Transmit; set `REDIS_TLS=true` for Upstash |
 
 Uploads (league/team logos, player avatars) use `DRIVE_DISK` via `FileService`.
-| `MAIL_MAILER` | `ses` |
-| `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME` | Outbound email identity |
 
-**Note:** Local dev uses `DRIVE_DISK=fs`. Cloud Run production uses `DRIVE_DISK=gcs` and `GCS_BUCKET` with ADC (no `GCS_KEY`).
+**Note:** Local dev often uses `DRIVE_DISK=fs` and `LIMITER_STORE=memory`. Cloud Run production uses `DRIVE_DISK=gcs`, `LIMITER_STORE=redis`, and Upstash with TLS.
 
 ### GCS bucket setup (production)
 
@@ -255,7 +258,8 @@ Migrations under `database/migrations/` define:
 | --- | --- |
 | `users` | Accounts (web + API) |
 | `auth_access_tokens` | Bearer tokens for mobile (`kpk_` prefix, 30-day expiry) |
-| `password_resets` | Password reset tokens |
+| `otp_codes` | One-time passwords for mobile OTP auth |
+| `password_resets` | Password reset tokens (legacy web auth) |
 | `countries` | Countries (`code`, `name`, optional `flagUrl`) |
 | `leagues` | Leagues (owner `user_id`, country, logo, gender, description) |
 | `seasons` | Seasons per league (`inactive` \| `active` \| `completed`) |
@@ -283,7 +287,7 @@ Migrations under `database/migrations/` define:
 
 | Area | Auth | Notes |
 | --- | --- | --- |
-| **Mobile auth** | Bearer | Signup, login, logout, forgot/reset password, Google OAuth — see `MOBILE_AUTH_ROUTES.md` |
+| **Mobile auth** | Bearer | OTP `request-otp` / `verify-otp`, recover, logout, delete account — see [ROUTES.md](ROUTES.md#authentication-otp) |
 | **Manage hub** | Bearer | `GET /api/v1/auth/users/me`, owned leagues, teams, user search |
 | **League owner** | Bearer + `leagueOwner` middleware | Update league; CRUD seasons, teams, games, stats, roster; generate invites |
 
@@ -298,13 +302,12 @@ Migrations under `database/migrations/` define:
 ### Background behaviour
 
 - **Standings:** `UpdateStandings` listener recalculates standings when game scores change or stats are deleted.
-- **Transmit:** broadcasts `game_updated` on channel `games/{id}` (config in `config/transmit.ts`; Redis backplane can be wired later).
+- **Transmit:** broadcasts game events on channel `games/{id}` via Redis backplane (`config/transmit.ts`; set `REDIS_TLS=true` for Upstash).
 
 ### Not enabled / commented out
 
+- Legacy mobile **email/password** and **Google OAuth** routes in `start/routes.ts`
 - `docker-compose` **worker** service (game worker) — stub only
-- Production multi-stage **Dockerfile** target — commented
-- `@adonisjs/mail` ace commands — commented in `adonisrc.ts` (provider is registered)
 
 ---
 
@@ -332,8 +335,8 @@ inertia/           React pages, layouts, app entry
 providers/         api_provider (ctx.serialize), …
 start/             routes.ts, kernel.ts, env.ts, events.ts
 tests/             unit, functional, browser (Japa)
-ROUTES.md          Full API route + payload reference
-MOBILE_AUTH_ROUTES.md
+ROUTES.md          Full API route + payload reference (incl. OTP auth)
+MOBILE_AUTH_ROUTES.md  Deprecated — legacy password/OAuth docs
 AGENTS.md          AI/agent conventions (also useful for humans)
 ```
 
@@ -382,8 +385,7 @@ All `played_at` values are stored in **UTC**. The matches feed filters by a **ca
 
 | Document | Contents |
 | --- | --- |
-| [ROUTES.md](ROUTES.md) | Every `/api/v1` route, auth requirements, request/response examples |
-| [MOBILE_AUTH_ROUTES.md](MOBILE_AUTH_ROUTES.md) | Signup, login, OAuth, password reset |
+| [ROUTES.md](ROUTES.md) | Every `/api/v1` route, OTP auth, request/response examples |
 | [docs/MANAGE_LEAGUE.md](docs/MANAGE_LEAGUE.md) | League-owner manage flow (games, roster, settings) |
 | [docs/PLAYER_INVITE.md](docs/PLAYER_INVITE.md) | Invite generation and acceptance |
 | [docs/TIME_AND_TIMEZONE.md](docs/TIME_AND_TIMEZONE.md) | Match-day filtering rules |
@@ -434,14 +436,21 @@ Ensure `storage/` exists and is writable in local/Docker dev.
 
 When game results or stats change, `GameUpdated` fires → `UpdateStandings` listener updates standings and broadcasts on Transmit channel `games/{gameId}`.
 
-Subscribe from clients using [@adonisjs/transmit](https://docs.adonisjs.com/guides/realtime/transmit) conventions. Redis is available in Docker for a future Transmit backplane (`config/transmit.ts` currently uses in-memory transport).
+Subscribe from clients using [@adonisjs/transmit](https://docs.adonisjs.com/guides/realtime/transmit) conventions. Production uses a **Redis backplane** (`config/transmit.ts`) so multiple Cloud Run instances share SSE events. Set `REDIS_TLS=true` when using Upstash.
+
+Import the Redis transport directly to avoid optional MQTT peer deps:
+
+```ts
+import { redis } from '@adonisjs/transmit/transports/redis'
+```
 
 ---
 
 ## Development workflow
 
 ```bash
-npm run dev          # Adonis + Vite HMR
+npm run dev:server   # Local Adonis + Vite HMR (no Docker)
+npm run dev          # Docker dev (Postgres + API)
 npm run build        # Production build
 npm run typecheck    # tsc (backend + inertia)
 npm run lint         # ESLint
@@ -490,6 +499,10 @@ Functional/browser suites expect the app to boot; use `.env.test` for test-speci
 ---
 
 ## Troubleshooting
+
+### Docker: Redis / Transmit connection errors
+
+Upstash and other managed Redis hosts require TLS. Set `REDIS_TLS=true` and use the hostname only (no `https://` prefix) in `REDIS_HOST`. Import `@adonisjs/transmit/transports/redis`, not `@adonisjs/transmit/transports`.
 
 ### Docker: `Cannot find package '@adonisjs/drive'` (or other packages)
 

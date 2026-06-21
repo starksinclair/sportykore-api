@@ -192,6 +192,27 @@ export class LeagueSchema extends BaseModel {
   declare userId: number
 }
 
+export class OtpCodeSchema extends BaseModel {
+  static $columns = ['code', 'createdAt', 'email', 'expiresAt', 'id', 'isUsed', 'updatedAt', 'userId'] as const
+  $columns = OtpCodeSchema.$columns
+  @column()
+  declare code: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare email: string
+  @column.dateTime()
+  declare expiresAt: DateTime
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare isUsed: boolean | null
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare userId: number | null
+}
+
 export class PasswordResetSchema extends BaseModel {
   static $columns = ['createdAt', 'expiresAt', 'id', 'tokenHash', 'updatedAt', 'userId'] as const
   $columns = PasswordResetSchema.$columns
@@ -358,7 +379,7 @@ export class TeamSchema extends BaseModel {
 }
 
 export class UserSchema extends BaseModel {
-  static $columns = ['createdAt', 'email', 'fullName', 'id', 'password', 'updatedAt'] as const
+  static $columns = ['createdAt', 'email', 'fullName', 'id', 'password', 'phone', 'recoveryEmail', 'updatedAt'] as const
   $columns = UserSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -369,7 +390,11 @@ export class UserSchema extends BaseModel {
   @column({ isPrimary: true })
   declare id: number
   @column({ serializeAs: null })
-  declare password: string
+  declare password: string | null
+  @column()
+  declare phone: string | null
+  @column()
+  declare recoveryEmail: string | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
 }

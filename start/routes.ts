@@ -11,6 +11,15 @@ import { middleware } from '#start/kernel'
 import { controllers } from '#generated/controllers'
 import router from '@adonisjs/core/services/router'
 import transmit from '@adonisjs/transmit/services/main'
+import {
+  authThrottle,
+  gameUpdateThrottle,
+  globalThrottle,
+  inviteThrottle,
+  otpRequestThrottle,
+  otpVerifyThrottle,
+  searchThrottle,
+} from '#start/limiter'
 
 transmit.registerRoutes()
 
@@ -33,17 +42,25 @@ router
   .use(middleware.auth())
 
 /**
- * Mobile / JSON API authentication (Bearer access tokens + Google via Ally).
+ * Mobile / JSON API authentication (OTP + Bearer tokens).
  */
 router
   .group(() => {
-    router.post('signup', [controllers.Users, 'signup'])
-    router.post('login', [controllers.Users, 'login'])
-    router.post('forgot-password', [controllers.Users, 'forgotPassword'])
-    router.post('reset-password', [controllers.Users, 'resetPassword'])
-    router.get('google/redirect', [controllers.Users, 'googleRedirect'])
-    router.get('google/callback', [controllers.Users, 'googleCallback'])
-    router.post('logout', [controllers.Users, 'logout']).use(middleware.apiAuth())
+    // Deprecated — email/password + Google OAuth (see ROUTES.md)
+    // router.post('signup', [controllers.Users, 'signup'])
+    // router.post('login', [controllers.Users, 'login'])
+    // router.post('forgot-password', [controllers.Users, 'forgotPassword'])
+    // router.post('reset-password', [controllers.Users, 'resetPassword'])
+    // router.get('google/redirect', [controllers.Users, 'googleRedirect'])
+    // router.get('google/callback', [controllers.Users, 'googleCallback'])
+
+    router.post('request-otp', [controllers.Auth, 'requestOtp']).use(otpRequestThrottle)
+    router.post('verify-otp', [controllers.Auth, 'verifyOtp']).use(otpVerifyThrottle)
+    router.post('recover', [controllers.Auth, 'requestRecovery']).use(otpRequestThrottle)
+    router.post('logout', [controllers.Auth, 'logout']).use(middleware.apiAuth()).use(authThrottle)
+    router
+      .delete('account', [controllers.Auth, 'deleteAccount'])
+      .use(middleware.apiAuth())
 
     router
       .group(() => {
@@ -56,6 +73,7 @@ router
       .use(middleware.apiAuth())
   })
   .prefix('/api/v1/auth')
+  .use(globalThrottle)
 
 /**
  * Leagues & country-scoped discovery (JSON API).
@@ -67,7 +85,7 @@ router
     router.get('leagues', [controllers.Leagues, 'index'])
     router.get('leagues/:leagueId', [controllers.Leagues, 'show'])
     router.post('leagues', [controllers.Leagues, 'store']).use(middleware.apiAuth())
-    router.get('search', [controllers.Searches, 'search'])
+    router.get('search', [controllers.Searches, 'search']).use(searchThrottle)
     router.get('games/:id', [controllers.Games, 'show'])
     router.get('teams/:id', [controllers.Teams, 'show'])
     router.get('players/:id', [controllers.Players, 'show'])
@@ -109,6 +127,7 @@ router
       })
       .use(middleware.apiAuth())
       .use(middleware.teamOwner())
+      .use(gameUpdateThrottle)
 
     router
       .group(() => {
@@ -121,7 +140,7 @@ router
 
         router.post('leagues/assign-team', [controllers.Players, 'assignTeam'])
 
-        router.get('invites/generate', [controllers.Invites, 'generate'])
+        router.get('invites/generate', [controllers.Invites, 'generate']).use(inviteThrottle)
 
         router.get('leagues/:leagueId/seasons/:seasonId/roster', [
           controllers.LeaguePlayers,
@@ -142,3 +161,4 @@ router
       .use(middleware.leagueOwner())
   })
   .prefix('/api/v1')
+  .use(globalThrottle)

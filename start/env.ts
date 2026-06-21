@@ -31,8 +31,8 @@ export default await Env.create(new URL('../', import.meta.url), {
   | Variables for configuring ally package
   |----------------------------------------------------------
   */
-  GOOGLE_CLIENT_ID: Env.schema.string(),
-  GOOGLE_CLIENT_SECRET: Env.schema.string(),
+  GOOGLE_CLIENT_ID: Env.schema.string.optional(),
+  GOOGLE_CLIENT_SECRET: Env.schema.string.optional(),
 
   /**
    * Optional deep link (e.g. Sportykore://auth/callback) used after Google OAuth
@@ -90,5 +90,18 @@ export default await Env.create(new URL('../', import.meta.url), {
   | Variables for configuring the mail package
   |----------------------------------------------------------
   */
-  MAIL_MAILER: Env.schema.enum(['ses'] as const),
+  MAIL_MAILER: Env.schema.enum(['resend', 'ses'] as const),
+  RESEND_API_KEY: Env.schema.string(),
+
+  /*
+  |----------------------------------------------------------
+  | Variables for configuring the limiter package
+  |----------------------------------------------------------
+  */
+  LIMITER_STORE: Env.schema.enum(['redis', 'memory'] as const),
+
+  REDIS_HOST: Env.schema.string({ format: 'host' }),
+  REDIS_PORT: Env.schema.number(),
+  REDIS_PASSWORD: Env.schema.string.optional(),
+  REDIS_TLS: Env.schema.boolean.optional(),
 })

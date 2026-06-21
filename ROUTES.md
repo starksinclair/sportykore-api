@@ -1,6 +1,6 @@
 # API Routes
 
-Scope: JSON API under `/api/v1` from `start/routes.ts`. Mobile auth lives in `MOBILE_AUTH_ROUTES.md`.
+Scope: JSON API under `/api/v1` from `start/routes.ts`. Mobile authentication (OTP) lives under `/api/v1/auth` — see [Authentication](#authentication-otp) below. Legacy email/password routes are [deprecated](#deprecated-emailpassword--google-oauth).
 
 ## Response wrapping
 
@@ -33,6 +33,7 @@ Types below reflect **transformer output** (`app/transformers/*`). Nullable DB f
 | **LeaguePlayer (with player)** | **LeaguePlayer** + `player` → **Player**, `team` → **Team** |
 | **OwnedLeague** | `id`, `name`, `logoUrl`, `countryId`, `activeSeason` → **Season** \| null |
 | **User** | `id`, `email`, `fullName` |
+| **AuthSession** | `auth.user` → **User**; `auth.token` → `{ type: 'bearer', value, expiresAt, abilities }` |
 
 ### Game `status` values
 
@@ -56,6 +57,74 @@ Types below reflect **transformer output** (`app/transformers/*`). Nullable DB f
 ### Stat type `name` values (seeded)
 
 Includes `goals`, `own_goal`, `assists`, `yellow_card`, `red_card`, `saves`, `shots_on_target`, `fouls_conceded`, `substitution_on`, `substitution_off`.
+
+---
+
+## Authentication (OTP)
+
+Mobile sign-in and sign-up use **one-time passwords** emailed to the user. There is no password field. Controller: `app/controllers/auth_controller.ts`; service: `app/services/otp_service.ts`.
+
+### Flow
+
+One endpoint handles both login and signup: **`POST /api/v1/auth/request-otp`**.
+
+1. User submits `email` (and optionally `name`, `recoveryEmail`).
+2. **Returning user** (email exists in `users`) → `200` `{ message: "OTP sent" }`.
+3. **New user, `name` missing** → `428` `{ message: "...", requiresSignup: true }`. App shows name / recovery email form and retries the same endpoint.
+4. **New user, `name` provided** → user row created, then `200` `{ message: "OTP sent" }`.
+5. User enters `code` → **`POST /api/v1/auth/verify-otp`** with `email` and `code` → Bearer token. Welcome email on first signup.
+
+**After auth**
+
+Use **`Authorization: Bearer <token>`** on protected routes (`apiAuth` guard). Token name `mobile`, **`expiresIn: 30d`**.
+
+Account recovery: if the user set a `recovery_email`, **`POST /api/v1/auth/recover`** looks up the account and sends an OTP to the **primary** email.
+
+### Auth routes
+
+| Method | Path | Auth | Input | Success response | Errors / notes |
+| --- | --- | --- | --- | --- | --- |
+| `POST` | `/api/v1/auth/request-otp` | none | **Body:** `requestOtpValidator` — `email`, `name?`, `recoveryEmail?` | `200` → `{ message: "OTP sent" }` (not wrapped in `data`) | `428` new user missing `name` → `{ message, requiresSignup: true }`; `422` validation (e.g. duplicate `recoveryEmail`); rate limit: 5 / 10 min per email, 30 min block; `429` when exceeded |
+| `POST` | `/api/v1/auth/verify-otp` | none | **Body:** `verifyOtpValidator` — `email`, `code` (exactly 6 chars) | **`{ data: { auth: AuthSession } }`** | `422` validation; invalid/expired code → `401`; rate limit: 5 attempts / 10 min per email; welcome email on first signup |
+| `POST` | `/api/v1/auth/recover` | none | **Body:** `requestRecoveryValidator` — `recoveryEmail` (must exist in `users.recovery_email`) | `{ message: "Recovery OTP sent to your primary email" }` | `404` if no user with that recovery email; same rate limit as `request-otp` |
+| `POST` | `/api/v1/auth/logout` | `apiAuth` | Bearer token | `204 No Content` | Invalidates current API token; `401` without token |
+| `DELETE` | `/api/v1/auth/account` | `apiAuth` | Bearer token | `{ message: "Account deleted successfully" }` | Deletes player profile, OTP codes, tokens, and user row; `401` without token |
+
+### `verify-otp` success payload
+
+```json
+{
+  "data": {
+    "auth": {
+      "user": { "id": 1, "email": "player@example.com", "fullName": "Ada Player" },
+      "token": {
+        "type": "bearer",
+        "value": "kpk_…",
+        "expiresAt": "2026-07-14T12:00:00.000Z",
+        "abilities": ["*"]
+      }
+    }
+  }
+}
+```
+
+---
+
+## Deprecated: email/password & Google OAuth
+
+> **Deprecated** — routes are **commented out** in `start/routes.ts` and are **not registered**. Kept for reference and migration from older clients. Use [OTP authentication](#authentication-otp) instead.
+
+Implementation (inactive): `app/controllers/users_controller.ts`. Former detail also in `MOBILE_AUTH_ROUTES.md`.
+
+| Method | Path | Input | Former success response | Notes |
+| --- | --- | --- | --- | --- |
+| `POST` | `/api/v1/auth/signup` | `fullName?`, `email`, `password`, `passwordConfirmation` | `201` → `{ data: { auth: AuthSession } }` | Password hashed on user row |
+| `POST` | `/api/v1/auth/login` | `email`, `password` | `200` → `{ data: { auth: AuthSession } }` | `401` invalid credentials |
+| `POST` | `/api/v1/auth/forgot-password` | `email` | `204 No Content` | Emailed reset token |
+| `POST` | `/api/v1/auth/reset-password` | `token`, `password`, `passwordConfirmation` | `204 No Content` | `400` invalid/expired token |
+| `GET` | `/api/v1/auth/google/redirect` | none | Redirect to Google OAuth | Ally |
+| `GET` | `/api/v1/auth/google/callback` | Google callback query | `302` to `MOBILE_OAUTH_DEEP_LINK` or `200` with `{ data: { auth } }` | Token name `google-mobile`, 30d |
+| `POST` | `/api/v1/auth/logout` | Bearer | `204` | Replaced by OTP `AuthController.logout` (same path, still active) |
 
 ---
 
@@ -426,6 +495,31 @@ Array of **LeaguePlayer (with league)** — response is **not** wrapped in `{ da
 ## Validators (request bodies)
 
 `resourceId("table")` means: required positive integer that exists in that table’s `id` column.
+
+### `requestOtpValidator` — `POST /api/v1/auth/request-otp`
+
+| Field | Rules |
+| --- | --- |
+| `email` | required string, valid email format |
+| `name` | optional string; required in practice for new users (server returns `428` if missing) |
+| `recoveryEmail` | optional string, valid email format; must not already exist in `users.recovery_email` |
+
+Server logic: existing user → send OTP (`200`); new user without `name` → `428` with `requiresSignup: true`; new user with `name` → create account, send OTP (`200`).
+
+### `verifyOtpValidator` — `POST /api/v1/auth/verify-otp`
+
+| Field | Rules |
+| --- | --- |
+| `email` | required string, valid email format |
+| `code` | required string, exactly 6 characters |
+
+User must already exist (created on signup `request-otp` or from a prior login).
+
+### `requestRecoveryValidator` — `POST /api/v1/auth/recover`
+
+| Field | Rules |
+| --- | --- |
+| `recoveryEmail` | required string, valid email format; must **exist** in `users.recovery_email` |
 
 ### `createLeagueWithSeasonValidator` — `POST /api/v1/leagues`
 

@@ -1,6 +1,16 @@
-# Mobile Auth Routes
+# Deprecated
+
+> **This document is outdated.** Mobile auth now uses **OTP** (email one-time passwords), not email/password or Google OAuth.
+>
+> See [ROUTES.md — Authentication (OTP)](ROUTES.md#authentication-otp) for the current API.
+
+---
+
+# Mobile Auth Routes (legacy)
 
 Scope: token-based mobile auth under `/api/v1/auth` from `app/controllers/users_controller.ts`.
+
+**These routes are commented out in `start/routes.ts` and are not registered.**
 
 ## Response shape
 - Successful JSON responses are wrapped by `ctx.serialize(...)`, so they return `{ data: ... }`.
@@ -8,7 +18,7 @@ Scope: token-based mobile auth under `/api/v1/auth` from `app/controllers/users_
   - `auth.user`: `{ id, email, fullName }`
   - `auth.token`: `{ type: 'bearer', value, expiresAt, abilities }`
 
-## Routes
+## Routes (inactive)
 
 | Method | Path | Input | Success response | Notable errors |
 | --- | --- | --- | --- | --- |
@@ -24,4 +34,3 @@ Scope: token-based mobile auth under `/api/v1/auth` from `app/controllers/users_
 - `signup` and `login` mint an API token named `mobile` with `expiresIn: '30d'`.
 - `googleCallback` mints an API token named `google-mobile` with `expiresIn: '30d'`.
 - `logout` invalidates the current API token.
-

@@ -1,56 +1,138 @@
-@layout('emails/layout')
+@component('emails/layout')
 
-@slot('content')
+  @slot('content')
 
-  {{-- Greeting --}}
-  <h1 style="margin:0 0 8px;font-size:26px;font-weight:800;color:#0f172a;line-height:1.2;">
-    Welcome to Sportykore! 🎉
-  </h1>
-  <p style="margin:0 0 28px;font-size:15px;color:#64748b;line-height:1.5;">
-    Hi {{ user.fullName ?? 'there' }}, great to have you on board.
-  </p>
+    {{-- Eyebrow --}}
+    <p
+      style="margin:0 0 12px;font-family:'Open Sans',Arial,Helvetica,sans-serif;font-size:11px;font-weight:700;color:#E6A817;letter-spacing:2px;text-transform:uppercase;"
+    >
+      Welcome
+    </p>
 
-  {{-- Divider --}}
-  <div style="height:1px;background-color:#f1f5f9;margin-bottom:28px;"></div>
+    {{-- Headline --}}
+    <h1
+      style="margin:0 0 12px;font-family:'Playfair Display',Georgia,'Times New Roman',serif;font-size:28px;font-weight:700;color:#4A148C;line-height:1.25;"
+    >
+      Welcome to Sportykore
+    </h1>
 
-  {{-- Body --}}
-  <p style="margin:0 0 16px;font-size:15px;color:#334155;line-height:1.7;">
-    Sportykore is your home for managing amateur sports leagues — track games, standings, player stats, and more, all in one place.
-  </p>
-  <p style="margin:0 0 32px;font-size:15px;color:#334155;line-height:1.7;">
-    You can create your first league, invite players, and start recording results straight from the app.
-  </p>
+    {{-- Greeting --}}
+    <p
+      style="margin:0 0 28px;font-family:'Open Sans',Arial,Helvetica,sans-serif;font-size:15px;color:#64748b;line-height:1.6;"
+    >
+      Hi {{ user.fullName ?? 'there' }}, great to have you — your home for local football is ready.
+    </p>
 
-  {{-- Feature highlights --}}
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:36px;">
-    <tr>
-      <td style="padding:12px 16px;background-color:#f8fafc;border-radius:8px;margin-bottom:8px;">
-        <span style="font-size:18px;">🏆</span>
-        <span style="font-size:14px;color:#334155;font-weight:600;margin-left:10px;">Create & manage leagues</span>
-      </td>
-    </tr>
-    <tr><td style="height:8px;"></td></tr>
-    <tr>
-      <td style="padding:12px 16px;background-color:#f8fafc;border-radius:8px;">
-        <span style="font-size:18px;">📊</span>
-        <span style="font-size:14px;color:#334155;font-weight:600;margin-left:10px;">Live standings & stats</span>
-      </td>
-    </tr>
-    <tr><td style="height:8px;"></td></tr>
-    <tr>
-      <td style="padding:12px 16px;background-color:#f8fafc;border-radius:8px;">
-        <span style="font-size:18px;">📅</span>
-        <span style="font-size:14px;color:#334155;font-weight:600;margin-left:10px;">Schedule & track games</span>
-      </td>
-    </tr>
-  </table>
+    {{-- Intro card --}}
+    <table
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      style="margin-bottom:28px;"
+    >
+      <tr>
+        <td
+          style="background-color:#4A148C;background:linear-gradient(135deg,#4A148C 0%,#3C096C 100%);border:1px solid #3B1070;border-radius:22px;padding:24px 28px;"
+        >
+          <p
+            style="margin:0 0 8px;font-family:'Open Sans',Arial,Helvetica,sans-serif;font-size:11px;font-weight:700;color:#F2A900;letter-spacing:2px;text-transform:uppercase;"
+          >
+            Your gathering place
+          </p>
+          <p
+            style="margin:0;font-family:'Open Sans',Arial,Helvetica,sans-serif;font-size:15px;color:#ffffff;line-height:1.7;"
+          >
+            Connect with local leagues, follow live matches, and track clear stats — built for organizers and fans.
+          </p>
+        </td>
+      </tr>
+    </table>
 
-  {{-- Sign off --}}
-  <p style="margin:0;font-size:15px;color:#334155;line-height:1.7;">
-    Ready to kick things off? Open the Sportykore app to get started.
-  </p>
-  <p style="margin:16px 0 0;font-size:15px;color:#64748b;">
-    — The Sportykore Team
-  </p>
+    {{-- Body --}}
+    <p
+      style="margin:0 0 16px;font-family:'Open Sans',Arial,Helvetica,sans-serif;font-size:15px;color:#334155;line-height:1.7;"
+    >
+      Create your first league, invite players, and start recording results straight from the app.
+    </p>
+
+    {{-- Feature highlights --}}
+    <table
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      style="margin-bottom:28px;"
+    >
+      <tr>
+        <td
+          style="padding:14px 18px;background-color:#F8F8FA;border:1px solid #e2e8f0;border-left:4px solid #4A148C;border-radius:13px;"
+        >
+          <span style="font-family:'Open Sans',Arial,Helvetica,sans-serif;font-size:14px;font-weight:600;color:#334155;">
+            Create &amp; manage leagues
+          </span>
+        </td>
+      </tr>
+      <tr><td style="height:8px;"></td></tr>
+      <tr>
+        <td
+          style="padding:14px 18px;background-color:#F8F8FA;border:1px solid #e2e8f0;border-left:4px solid #E6A817;border-radius:13px;"
+        >
+          <span style="font-family:'Open Sans',Arial,Helvetica,sans-serif;font-size:14px;font-weight:600;color:#334155;">
+            Live standings &amp; stats
+          </span>
+        </td>
+      </tr>
+      <tr><td style="height:8px;"></td></tr>
+      <tr>
+        <td
+          style="padding:14px 18px;background-color:#F8F8FA;border:1px solid #e2e8f0;border-left:4px solid #4A148C;border-radius:13px;"
+        >
+          <span style="font-family:'Open Sans',Arial,Helvetica,sans-serif;font-size:14px;font-weight:600;color:#334155;">
+            Schedule &amp; track games
+          </span>
+        </td>
+      </tr>
+    </table>
+
+    {{-- CTA --}}
+    <table
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      style="margin:0 0 28px;"
+    >
+      <tr>
+        <td
+          align="center"
+          style="background-color:#F2A900;border-radius:13px;"
+        >
+          <a
+            href="{{ appUrl ?? 'https://sportykore.com' }}"
+            target="_blank"
+            style="display:inline-block;padding:16px 28px;font-family:'Open Sans',Arial,Helvetica,sans-serif;font-size:16px;font-weight:600;color:#171717;text-decoration:none;line-height:1;"
+          >
+            Open Sportykore
+          </a>
+        </td>
+      </tr>
+    </table>
+
+    {{-- Divider --}}
+    <div style="height:1px;background-color:#e2e8f0;margin-bottom:24px;"></div>
+
+    {{-- Sign off --}}
+    <p
+      style="margin:0 0 8px;font-family:'Open Sans',Arial,Helvetica,sans-serif;font-size:15px;color:#334155;line-height:1.7;"
+    >
+      Ready to kick things off? Open the app and create your first league.
+    </p>
+    <p
+      style="margin:0;font-family:'Open Sans',Arial,Helvetica,sans-serif;font-size:15px;color:#64748b;line-height:1.6;"
+    >
+      — The Sportykore Team
+    </p>
+
+  @end
 
 @end
