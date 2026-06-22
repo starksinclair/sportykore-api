@@ -20,14 +20,12 @@ export interface ApiDefinition {
     store: typeof routes['session.store']
     destroy: typeof routes['session.destroy']
   }
-  users: {
-    signup: typeof routes['users.signup']
-    login: typeof routes['users.login']
-    forgotPassword: typeof routes['users.forgot_password']
-    resetPassword: typeof routes['users.reset_password']
-    googleRedirect: typeof routes['users.google_redirect']
-    googleCallback: typeof routes['users.google_callback']
-    logout: typeof routes['users.logout']
+  auth: {
+    requestOtp: typeof routes['auth.request_otp']
+    verifyOtp: typeof routes['auth.verify_otp']
+    requestRecovery: typeof routes['auth.request_recovery']
+    logout: typeof routes['auth.logout']
+    deleteAccount: typeof routes['auth.delete_account']
   }
   authUsers: {
     me: typeof routes['auth_users.me']

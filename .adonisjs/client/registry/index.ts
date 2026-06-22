@@ -66,47 +66,35 @@ const routes = {
     tokens: [{"old":"/logout","type":0,"val":"logout","end":""}],
     types: placeholder as Registry['session.destroy']['types'],
   },
-  'users.signup': {
+  'auth.request_otp': {
     methods: ["POST"],
-    pattern: '/api/v1/auth/signup',
-    tokens: [{"old":"/api/v1/auth/signup","type":0,"val":"api","end":""},{"old":"/api/v1/auth/signup","type":0,"val":"v1","end":""},{"old":"/api/v1/auth/signup","type":0,"val":"auth","end":""},{"old":"/api/v1/auth/signup","type":0,"val":"signup","end":""}],
-    types: placeholder as Registry['users.signup']['types'],
+    pattern: '/api/v1/auth/request-otp',
+    tokens: [{"old":"/api/v1/auth/request-otp","type":0,"val":"api","end":""},{"old":"/api/v1/auth/request-otp","type":0,"val":"v1","end":""},{"old":"/api/v1/auth/request-otp","type":0,"val":"auth","end":""},{"old":"/api/v1/auth/request-otp","type":0,"val":"request-otp","end":""}],
+    types: placeholder as Registry['auth.request_otp']['types'],
   },
-  'users.login': {
+  'auth.verify_otp': {
     methods: ["POST"],
-    pattern: '/api/v1/auth/login',
-    tokens: [{"old":"/api/v1/auth/login","type":0,"val":"api","end":""},{"old":"/api/v1/auth/login","type":0,"val":"v1","end":""},{"old":"/api/v1/auth/login","type":0,"val":"auth","end":""},{"old":"/api/v1/auth/login","type":0,"val":"login","end":""}],
-    types: placeholder as Registry['users.login']['types'],
+    pattern: '/api/v1/auth/verify-otp',
+    tokens: [{"old":"/api/v1/auth/verify-otp","type":0,"val":"api","end":""},{"old":"/api/v1/auth/verify-otp","type":0,"val":"v1","end":""},{"old":"/api/v1/auth/verify-otp","type":0,"val":"auth","end":""},{"old":"/api/v1/auth/verify-otp","type":0,"val":"verify-otp","end":""}],
+    types: placeholder as Registry['auth.verify_otp']['types'],
   },
-  'users.forgot_password': {
+  'auth.request_recovery': {
     methods: ["POST"],
-    pattern: '/api/v1/auth/forgot-password',
-    tokens: [{"old":"/api/v1/auth/forgot-password","type":0,"val":"api","end":""},{"old":"/api/v1/auth/forgot-password","type":0,"val":"v1","end":""},{"old":"/api/v1/auth/forgot-password","type":0,"val":"auth","end":""},{"old":"/api/v1/auth/forgot-password","type":0,"val":"forgot-password","end":""}],
-    types: placeholder as Registry['users.forgot_password']['types'],
+    pattern: '/api/v1/auth/recover',
+    tokens: [{"old":"/api/v1/auth/recover","type":0,"val":"api","end":""},{"old":"/api/v1/auth/recover","type":0,"val":"v1","end":""},{"old":"/api/v1/auth/recover","type":0,"val":"auth","end":""},{"old":"/api/v1/auth/recover","type":0,"val":"recover","end":""}],
+    types: placeholder as Registry['auth.request_recovery']['types'],
   },
-  'users.reset_password': {
-    methods: ["POST"],
-    pattern: '/api/v1/auth/reset-password',
-    tokens: [{"old":"/api/v1/auth/reset-password","type":0,"val":"api","end":""},{"old":"/api/v1/auth/reset-password","type":0,"val":"v1","end":""},{"old":"/api/v1/auth/reset-password","type":0,"val":"auth","end":""},{"old":"/api/v1/auth/reset-password","type":0,"val":"reset-password","end":""}],
-    types: placeholder as Registry['users.reset_password']['types'],
-  },
-  'users.google_redirect': {
-    methods: ["GET","HEAD"],
-    pattern: '/api/v1/auth/google/redirect',
-    tokens: [{"old":"/api/v1/auth/google/redirect","type":0,"val":"api","end":""},{"old":"/api/v1/auth/google/redirect","type":0,"val":"v1","end":""},{"old":"/api/v1/auth/google/redirect","type":0,"val":"auth","end":""},{"old":"/api/v1/auth/google/redirect","type":0,"val":"google","end":""},{"old":"/api/v1/auth/google/redirect","type":0,"val":"redirect","end":""}],
-    types: placeholder as Registry['users.google_redirect']['types'],
-  },
-  'users.google_callback': {
-    methods: ["GET","HEAD"],
-    pattern: '/api/v1/auth/google/callback',
-    tokens: [{"old":"/api/v1/auth/google/callback","type":0,"val":"api","end":""},{"old":"/api/v1/auth/google/callback","type":0,"val":"v1","end":""},{"old":"/api/v1/auth/google/callback","type":0,"val":"auth","end":""},{"old":"/api/v1/auth/google/callback","type":0,"val":"google","end":""},{"old":"/api/v1/auth/google/callback","type":0,"val":"callback","end":""}],
-    types: placeholder as Registry['users.google_callback']['types'],
-  },
-  'users.logout': {
+  'auth.logout': {
     methods: ["POST"],
     pattern: '/api/v1/auth/logout',
     tokens: [{"old":"/api/v1/auth/logout","type":0,"val":"api","end":""},{"old":"/api/v1/auth/logout","type":0,"val":"v1","end":""},{"old":"/api/v1/auth/logout","type":0,"val":"auth","end":""},{"old":"/api/v1/auth/logout","type":0,"val":"logout","end":""}],
-    types: placeholder as Registry['users.logout']['types'],
+    types: placeholder as Registry['auth.logout']['types'],
+  },
+  'auth.delete_account': {
+    methods: ["DELETE"],
+    pattern: '/api/v1/auth/account',
+    tokens: [{"old":"/api/v1/auth/account","type":0,"val":"api","end":""},{"old":"/api/v1/auth/account","type":0,"val":"v1","end":""},{"old":"/api/v1/auth/account","type":0,"val":"auth","end":""},{"old":"/api/v1/auth/account","type":0,"val":"account","end":""}],
+    types: placeholder as Registry['auth.delete_account']['types'],
   },
   'auth_users.me': {
     methods: ["GET","HEAD"],

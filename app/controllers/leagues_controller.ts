@@ -31,6 +31,18 @@ export default class LeaguesController {
       const key = `leagues/${string.uuid()}.${data.logo.extname}`
       logoUrl = await this.fileService.upload(data.logo, key)
     }
+
+    const teams = await Promise.all(
+      (data.teams ?? []).map(async (team) => {
+        let teamLogoUrl: string | null = null
+        if (team.logo) {
+          const key = `teams/${string.uuid()}.${team.logo.extname}`
+          teamLogoUrl = await this.fileService.upload(team.logo, key)
+        }
+        return { name: team.name, logoUrl: teamLogoUrl }
+      })
+    )
+
     const result = await this.leagueService.createWithSeason(user.id, {
       name: data.name,
       description: data.description ?? null,
@@ -38,7 +50,7 @@ export default class LeaguesController {
       logoUrl: logoUrl ?? null,
       countryId: data.countryId,
       seasonName: data.seasonName,
-      teams: data.teams ?? [],
+      teams,
     })
 
     const baseUrl = env.get('MOBILE_APP_URL') ?? env.get('APP_URL')
@@ -92,7 +104,14 @@ export default class LeaguesController {
     }
     const data = await request.validateUsing(updateLeagueValidator)
     const league = await League.findOrFail(leagueId)
-    league.merge(data)
+
+    if (data.logo) {
+      const key = `leagues/${string.uuid()}.${data.logo.extname}`
+      league.logoUrl = await this.fileService.upload(data.logo, key)
+    }
+
+    const { logo: _logo, ...fields } = data
+    league.merge(fields)
     await league.save()
     return response.ok({ message: 'League updated successfully' })
   }

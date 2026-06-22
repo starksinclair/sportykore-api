@@ -24,6 +24,8 @@ const redisConfig = defineConfig({
       password: env.get('REDIS_PASSWORD', ''),
       db: 0,
       keyPrefix: '',
+      // Required for Upstash / managed Redis; harmless for local Redis
+      maxRetriesPerRequest: null,
       retryStrategy(times: number) {
         return times > 10 ? null : times * 50
       },

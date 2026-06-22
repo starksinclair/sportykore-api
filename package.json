@@ -18,9 +18,9 @@
     "dev": "docker compose --env-file .env.dev -f docker-compose.dev.yml up",
     "dev:build": "docker compose --env-file .env.dev -f docker-compose.dev.yml up --build",
     "dev:down": "docker compose --env-file .env.dev -f docker-compose.dev.yml down",
-    "prod": "docker compose -f docker-compose.prod.yml up -d",
-    "prod:build": "docker compose -f docker-compose.prod.yml up -d --build",
-    "prod:down": "docker compose -f docker-compose.prod.yml down"
+    "prod": "docker compose --env-file .env.prod -f docker-compose.prod.yml up",
+    "prod:build": "docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build",
+    "prod:down": "docker compose --env-file .env.prod -f docker-compose.prod.yml down"
   },
   "imports": {
     "#controllers/*": "./app/controllers/*.js",

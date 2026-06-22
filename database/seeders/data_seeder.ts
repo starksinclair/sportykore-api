@@ -12,7 +12,6 @@ import StatType from '#models/stat_type'
 import Player from '#models/player'
 import LeaguePlayer from '#models/league_player'
 import Stat from '#models/stat'
-import Standing from '#models/standing'
 import StandingService from '#services/standing_service'
 
 import UserFactory from '#factories/user_factory'
@@ -362,24 +361,11 @@ export default class DataSeeder extends BaseSeeder {
   }
 
   private async seedStandings(league: League, season: Season, teams: Team[]) {
-    for (const team of teams) {
-      await Standing.updateOrCreate(
-        { seasonId: season.id, teamId: team.id },
-        {
-          leagueId: league.id,
-          position: 0,
-          played: 0,
-          wins: 0,
-          draws: 0,
-          losses: 0,
-          goalsFor: 0,
-          goalsAgainst: 0,
-          goalDifference: 0,
-          points: 0,
-          form: null,
-        }
-      )
-    }
+    await this.standingService.ensureForTeams(
+      league.id,
+      season.id,
+      teams.map((team) => team.id)
+    )
   }
 
   private async recalculateStandings(seasonId: number, teams: Team[]) {

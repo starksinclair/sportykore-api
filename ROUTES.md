@@ -319,6 +319,7 @@ Live match score +/- with unaccredited goal placeholders. See [docs/hybrid-scori
 
 - **`seasons`** — all seasons for the league (`id`, `name`, `status`), ordered active → completed → inactive, then newest first within each group. Use for the season picker.
 - **`season`** — full detail for the selected season (from `seasonId` query, or default active/newest): league, games (home/away teams), standings (with team), stats (type, player, team, relatedPlayer).
+- **`season.standings`** — one row per **team in the league** for that season (not only teams that have played). Teams with no finished matches appear with zeroed stats (`played`, `points`, etc.). Ordered by `position` ascending.
 - **`statTypes`** — global catalog of stat types (`id`, `name`, `displayName`, `iconName`, `category`), ordered by `category` then `displayName`. Use to group or label stats in the UI.
 
 ```json
@@ -378,7 +379,7 @@ Live match score +/- with unaccredited goal placeholders. See [docs/hybrid-scori
 Each league entry's season includes:
 
 - **`games`** — matches where this team is home or away (merged; not split into home/away arrays).
-- **`standings`** — full league table for that season (all teams), ordered by points then goal difference.
+- **`standings`** — full league table for that season (all teams in the league), ordered by `position` ascending.
 - **`players`** — roster for that season via `league_players`, with stats scoped to that season.
 
 ```json
@@ -531,11 +532,11 @@ User must already exist (created on signup `request-otp` or from a prior login).
 | `logo` | optional image file: max 2mb; extensions jpg, jpeg, png, webp |
 | `countryId` | required; must exist in `countries` |
 | `seasonName` | string, 1–120 chars, trimmed |
-| `teams` | optional array of `{ name: string (1–255), logo?: image file }` |
+| `teams` | optional array of `{ name: string (1–255), logo?: image file }` — each team `logo` is uploaded to Drive and stored as `logoUrl` on the team row (same as `POST /leagues/:leagueId/teams`) |
 
 ### `updateLeagueValidator` — `PUT /api/v1/leagues/:leagueId`
 
-All fields optional: `name`, `description`, `gender`, `logo` (same rules as above).
+All fields optional: `name`, `description`, `gender`, `logo` (image file; stored as `logoUrl` via Drive upload).
 
 ### `createSeasonValidator` — `POST /api/v1/leagues/:leagueId/seasons`
 
@@ -557,7 +558,7 @@ All fields optional: `name`, `description`, `gender`, `logo` (same rules as abov
 
 ### `updateTeamValidator` — `PUT /api/v1/leagues/:leagueId/teams/:id`
 
-Optional: `name`, `logo`.
+Optional: `name`, `logo` (image file; stored as `logoUrl` via Drive upload).
 
 ### `createLeaguePlayerValidator` — `POST /api/v1/leagues/assign-team`
 

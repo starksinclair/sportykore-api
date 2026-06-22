@@ -14,13 +14,11 @@ export type ScannedRoutes = {
     'session.create': { paramsTuple?: []; params?: {} }
     'session.store': { paramsTuple?: []; params?: {} }
     'session.destroy': { paramsTuple?: []; params?: {} }
-    'users.signup': { paramsTuple?: []; params?: {} }
-    'users.login': { paramsTuple?: []; params?: {} }
-    'users.forgot_password': { paramsTuple?: []; params?: {} }
-    'users.reset_password': { paramsTuple?: []; params?: {} }
-    'users.google_redirect': { paramsTuple?: []; params?: {} }
-    'users.google_callback': { paramsTuple?: []; params?: {} }
-    'users.logout': { paramsTuple?: []; params?: {} }
+    'auth.request_otp': { paramsTuple?: []; params?: {} }
+    'auth.verify_otp': { paramsTuple?: []; params?: {} }
+    'auth.request_recovery': { paramsTuple?: []; params?: {} }
+    'auth.logout': { paramsTuple?: []; params?: {} }
+    'auth.delete_account': { paramsTuple?: []; params?: {} }
     'auth_users.me': { paramsTuple?: []; params?: {} }
     'auth_users.leagues': { paramsTuple?: []; params?: {} }
     'auth_users.teams': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
@@ -71,8 +69,6 @@ export type ScannedRoutes = {
     'home': { paramsTuple?: []; params?: {} }
     'new_account.create': { paramsTuple?: []; params?: {} }
     'session.create': { paramsTuple?: []; params?: {} }
-    'users.google_redirect': { paramsTuple?: []; params?: {} }
-    'users.google_callback': { paramsTuple?: []; params?: {} }
     'auth_users.me': { paramsTuple?: []; params?: {} }
     'auth_users.leagues': { paramsTuple?: []; params?: {} }
     'auth_users.teams': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
@@ -96,8 +92,6 @@ export type ScannedRoutes = {
     'home': { paramsTuple?: []; params?: {} }
     'new_account.create': { paramsTuple?: []; params?: {} }
     'session.create': { paramsTuple?: []; params?: {} }
-    'users.google_redirect': { paramsTuple?: []; params?: {} }
-    'users.google_callback': { paramsTuple?: []; params?: {} }
     'auth_users.me': { paramsTuple?: []; params?: {} }
     'auth_users.leagues': { paramsTuple?: []; params?: {} }
     'auth_users.teams': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
@@ -121,11 +115,10 @@ export type ScannedRoutes = {
     'new_account.store': { paramsTuple?: []; params?: {} }
     'session.store': { paramsTuple?: []; params?: {} }
     'session.destroy': { paramsTuple?: []; params?: {} }
-    'users.signup': { paramsTuple?: []; params?: {} }
-    'users.login': { paramsTuple?: []; params?: {} }
-    'users.forgot_password': { paramsTuple?: []; params?: {} }
-    'users.reset_password': { paramsTuple?: []; params?: {} }
-    'users.logout': { paramsTuple?: []; params?: {} }
+    'auth.request_otp': { paramsTuple?: []; params?: {} }
+    'auth.verify_otp': { paramsTuple?: []; params?: {} }
+    'auth.request_recovery': { paramsTuple?: []; params?: {} }
+    'auth.logout': { paramsTuple?: []; params?: {} }
     'leagues.store': { paramsTuple?: []; params?: {} }
     'invites.complete_profile_and_accept': { paramsTuple: [ParamValue]; params: {'token': ParamValue} }
     'players.accept_league_player_request': { paramsTuple?: []; params?: {} }
@@ -145,6 +138,7 @@ export type ScannedRoutes = {
     'stats.store': { paramsTuple?: []; params?: {} }
   }
   DELETE: {
+    'auth.delete_account': { paramsTuple?: []; params?: {} }
     'favourite_leagues.destroy': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'league_players.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'games.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }

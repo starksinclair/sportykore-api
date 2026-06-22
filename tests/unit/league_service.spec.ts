@@ -13,6 +13,7 @@ import StatType from '#models/stat_type'
 import Team from '#models/team'
 import User from '#models/user'
 import LeagueService from '#services/league_service'
+import StandingService from '#services/standing_service'
 import CountryTransformer from '#transformers/country_transformer'
 import GameTransformer from '#transformers/game_transformer'
 import LeagueTransformer from '#transformers/league_transformer'
@@ -26,11 +27,15 @@ async function createUser() {
   })
 }
 
+function createLeagueService() {
+  return new LeagueService(new StandingService())
+}
+
 test.group('LeagueService', (group) => {
   withFreshDatabaseAndCountries(group)
 
   test('createWithSeason creates league, active season, and optional teams', async ({ assert }) => {
-    const service = new LeagueService()
+    const service = createLeagueService()
     const owner = await createUser()
     const ng = await Country.findByOrFail('code', 'ng')
 
@@ -49,13 +54,21 @@ test.group('LeagueService', (group) => {
     assert.equal(season.status, 'active')
     assert.lengthOf(teams, 2)
 
+    const standings = await Standing.query().where('season_id', season.id)
+    assert.lengthOf(standings, 2)
+    for (const standing of standings) {
+      assert.equal(standing.leagueId, league.id)
+      assert.equal(standing.played, 0)
+      assert.equal(standing.points, 0)
+    }
+
     await league.load('games')
     const ref = new LeagueTransformer(league).toObject()
     assert.equal(ref.name, 'Test League')
   })
 
   test('listCountriesWithLeagues returns countries that have leagues', async ({ assert }) => {
-    const service = new LeagueService()
+    const service = createLeagueService()
     const owner = await createUser()
     const ng = await Country.findByOrFail('code', 'ng')
     const gh = await Country.findByOrFail('code', 'gh')
@@ -72,7 +85,7 @@ test.group('LeagueService', (group) => {
   })
 
   test('listCountriesWithLeagues filters by country id', async ({ assert }) => {
-    const service = new LeagueService()
+    const service = createLeagueService()
     const owner = await createUser()
     const ng = await Country.findByOrFail('code', 'ng')
 
@@ -85,7 +98,7 @@ test.group('LeagueService', (group) => {
   })
 
   test('listLeagueByCountry returns games on the requested calendar day', async ({ assert }) => {
-    const service = new LeagueService()
+    const service = createLeagueService()
     const owner = await createUser()
     const ng = await Country.findByOrFail('code', 'ng')
 
@@ -139,7 +152,7 @@ test.group('LeagueService', (group) => {
   })
 
   test('listLeagueByCountry throws 400 for invalid country id', async ({ assert }) => {
-    const service = new LeagueService()
+    const service = createLeagueService()
     try {
       await service.listLeagueByCountry(-1, undefined, undefined, undefined, undefined)
       assert.fail('expected Exception')
@@ -150,7 +163,7 @@ test.group('LeagueService', (group) => {
   })
 
   test('resolveMatchDayWindow builds UTC bounds for a calendar day', ({ assert }) => {
-    const service = new LeagueService()
+    const service = createLeagueService()
     const window = service.resolveMatchDayWindow('2026-06-20', 'UTC')
 
     assert.equal(window.playedAtStartUtc, '2026-06-20 00:00:00.000')
@@ -158,7 +171,7 @@ test.group('LeagueService', (group) => {
   })
 
   test('resolveMatchDayWindow throws 400 for invalid gameDate', ({ assert }) => {
-    const service = new LeagueService()
+    const service = createLeagueService()
     try {
       service.resolveMatchDayWindow('not-a-date', 'UTC')
       assert.fail('expected Exception')
@@ -169,7 +182,7 @@ test.group('LeagueService', (group) => {
   })
 
   test('resolveMatchDayWindow throws 400 for invalid timeZone', ({ assert }) => {
-    const service = new LeagueService()
+    const service = createLeagueService()
     try {
       service.resolveMatchDayWindow('2026-06-20', 'Not/A/Zone')
       assert.fail('expected Exception')
@@ -180,7 +193,7 @@ test.group('LeagueService', (group) => {
   })
 
   test('getLeague throws 404 when league id missing', async ({ assert }) => {
-    const service = new LeagueService()
+    const service = createLeagueService()
     try {
       await service.getLeague(9_999_999)
       assert.fail('expected Exception')
@@ -191,7 +204,7 @@ test.group('LeagueService', (group) => {
   })
 
   test('getLeague throws 404 when league has no seasons', async ({ assert }) => {
-    const service = new LeagueService()
+    const service = createLeagueService()
     const owner = await createUser()
     const ng = await Country.findByOrFail('code', 'ng')
     const league = await League.create({
@@ -211,7 +224,7 @@ test.group('LeagueService', (group) => {
   })
 
   test('getLeague returns season detail with games, standings, and stats', async ({ assert }) => {
-    const service = new LeagueService()
+    const service = createLeagueService()
     const owner = await createUser()
     const ng = await Country.findByOrFail('code', 'ng')
 
@@ -323,8 +336,82 @@ test.group('LeagueService', (group) => {
     assert.isAbove(statTypes.length, 0)
   })
 
+  test('getLeague includes all league teams in standings even without games', async ({ assert }) => {
+    const service = createLeagueService()
+    const owner = await createUser()
+    const ng = await Country.findByOrFail('code', 'ng')
+
+    const league = await League.create({
+      userId: owner.id,
+      name: 'Full Table League',
+      countryId: ng.id,
+    })
+    const season = await Season.create({
+      leagueId: league.id,
+      name: 'S1',
+      status: 'active',
+    })
+
+    const teamA = await Team.create({ leagueId: league.id, name: 'A United', addedBy: owner.id })
+    const teamB = await Team.create({ leagueId: league.id, name: 'B City', addedBy: owner.id })
+    await Team.create({ leagueId: league.id, name: 'C Rovers', addedBy: owner.id })
+
+    await Game.create({
+      leagueId: league.id,
+      seasonId: season.id,
+      homeTeamId: teamA.id,
+      awayTeamId: teamB.id,
+      playedAt: DateTime.utc().minus({ days: 1 }),
+      status: 'full_time',
+      homeScore: 1,
+      awayScore: 0,
+    })
+
+    await Standing.create({
+      leagueId: league.id,
+      seasonId: season.id,
+      teamId: teamA.id,
+      position: 1,
+      played: 1,
+      wins: 1,
+      draws: 0,
+      losses: 0,
+      goalsFor: 1,
+      goalsAgainst: 0,
+      goalDifference: 1,
+      points: 3,
+      form: null,
+    })
+    await Standing.create({
+      leagueId: league.id,
+      seasonId: season.id,
+      teamId: teamB.id,
+      position: 2,
+      played: 1,
+      wins: 0,
+      draws: 0,
+      losses: 1,
+      goalsFor: 0,
+      goalsAgainst: 1,
+      goalDifference: -1,
+      points: 0,
+      form: null,
+    })
+
+    const { season: detailSeason } = await service.getLeague(league.id)
+
+    assert.lengthOf(detailSeason.standings, 3)
+    const teamNames = detailSeason.standings.map((row) => row.team.name).sort()
+    assert.deepEqual(teamNames, ['A United', 'B City', 'C Rovers'])
+
+    const rovers = detailSeason.standings.find((row) => row.team.name === 'C Rovers')
+    assert.isDefined(rovers)
+    assert.equal(rovers!.played, 0)
+    assert.equal(rovers!.points, 0)
+  })
+
   test('getLeague throws 404 when seasonId does not belong to league', async ({ assert }) => {
-    const service = new LeagueService()
+    const service = createLeagueService()
     const owner = await createUser()
     const ng = await Country.findByOrFail('code', 'ng')
 

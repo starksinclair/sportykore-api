@@ -123,7 +123,7 @@ Seeded user emails depend on the factory; check the seeder or your DB after seed
 
 ## Quick start (Docker)
 
-Docker dev runs the API against **PostgreSQL** (bundled in compose). Redis is **external** (e.g. Upstash) — configure `REDIS_*` in `.env.dev`.
+Docker dev runs the API against **PostgreSQL** and **Redis** (both bundled in `docker-compose.dev.yml`). Configure `REDIS_HOST=redis` in `.env.dev`. Use Upstash (`REDIS_TLS=true`) only if you prefer a remote Redis instead of the local container.
 
 ### 1. Environment
 

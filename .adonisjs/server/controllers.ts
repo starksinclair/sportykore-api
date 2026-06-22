@@ -4,6 +4,7 @@
  */
 
 export const controllers = {
+  Auth: () => import('#controllers/auth_controller'),
   AuthUsers: () => import('#controllers/auth_users_controller'),
   Countries: () => import('#controllers/countries_controller'),
   FavouriteLeagues: () => import('#controllers/favourite_leagues_controller'),

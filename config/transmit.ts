@@ -12,6 +12,7 @@ export default defineConfig({
       port: env.get('REDIS_PORT'),
       password: env.get('REDIS_PASSWORD'),
       keyPrefix: 'transmit',
+      maxRetriesPerRequest: null,
       ...redisTls,
     }),
   },

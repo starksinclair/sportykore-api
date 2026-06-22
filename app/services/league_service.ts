@@ -1,5 +1,6 @@
 import db from '@adonisjs/lucid/services/db'
 import { Exception } from '@adonisjs/core/exceptions'
+import { inject } from '@adonisjs/core'
 import { DateTime, IANAZone } from 'luxon'
 
 import Country from '#models/country'
@@ -7,6 +8,7 @@ import League from '#models/league'
 import Season from '#models/season'
 import StatType from '#models/stat_type'
 import Team from '#models/team'
+import StandingService from '#services/standing_service'
 import { LIVE_GAME_STATUSES } from '#types/game_status'
 
 export type CreateLeagueInput = {
@@ -26,7 +28,10 @@ export type MatchDayWindow = {
   gameStatus?: string
 }
 
+@inject()
 export default class LeagueService {
+  constructor(private standingService: StandingService) {}
+
   async createWithSeason(
     ownerId: number,
     input: CreateLeagueInput
@@ -62,6 +67,15 @@ export default class LeagueService {
         })) ?? [],
         { client: trx }
       )
+
+      if (teams.length > 0) {
+        await this.standingService.ensureForTeams(
+          league.id,
+          season.id,
+          teams.map((team) => team.id),
+          trx
+        )
+      }
 
       return { league, season, teams }
     })
@@ -161,6 +175,8 @@ export default class LeagueService {
 
     const selectedSeasonId = this.resolveSeasonId(seasons, seasonId)
 
+    await this.standingService.ensureLeagueTeamsInSeason(leagueId, selectedSeasonId)
+
     const [season, statTypes] = await Promise.all([
       Season.query()
         .where('id', selectedSeasonId)
@@ -172,8 +188,7 @@ export default class LeagueService {
         .preload('standings', (standingsQuery) => {
           standingsQuery
             .preload('team')
-            .orderBy('points', 'desc')
-            .orderBy('goal_difference', 'desc')
+            .orderBy('position', 'asc')
         })
         .preload('stats', (statsQuery) => {
           statsQuery.preload('type').preload('player').preload('team').preload('relatedPlayer')

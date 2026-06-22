@@ -9,6 +9,7 @@ import Season from '#models/season'
 import Team from '#models/team'
 import User from '#models/user'
 import LeagueService from '#services/league_service'
+import StandingService from '#services/standing_service'
 import { withFreshDatabaseAndCountries } from '../helpers/migration.js'
 
 const LAGOS = 'Africa/Lagos'
@@ -24,6 +25,10 @@ async function createUser() {
 
 function localCalendarDay(playedAtUtc: string, timeZone: string) {
   return DateTime.fromISO(playedAtUtc, { zone: 'utc' }).setZone(timeZone).toFormat('yyyy-MM-dd')
+}
+
+function createLeagueService() {
+  return new LeagueService(new StandingService())
 }
 
 async function seedLeagueWithGames(
@@ -72,7 +77,7 @@ test.group('LeagueService timezone', (group) => {
   withFreshDatabaseAndCountries(group)
 
   test('resolveMatchDayWindow converts Lagos calendar day to UTC bounds', async ({ assert }) => {
-    const service = new LeagueService()
+    const service = createLeagueService()
     const window = service.resolveMatchDayWindow(GAME_DATE, LAGOS)
 
     assert.equal(window.playedAtStartUtc, '2026-05-22 23:00:00.000')
@@ -80,7 +85,7 @@ test.group('LeagueService timezone', (group) => {
   })
 
   test('resolveMatchDayWindow uses UTC day when timeZone omitted', async ({ assert }) => {
-    const service = new LeagueService()
+    const service = createLeagueService()
     const window = service.resolveMatchDayWindow(GAME_DATE, undefined)
 
     assert.equal(window.playedAtStartUtc, '2026-05-23 00:00:00.000')
@@ -88,7 +93,7 @@ test.group('LeagueService timezone', (group) => {
   })
 
   test('resolveMatchDayWindow throws 400 for invalid timeZone', async ({ assert }) => {
-    const service = new LeagueService()
+    const service = createLeagueService()
     try {
       service.resolveMatchDayWindow(GAME_DATE, 'Not/A/Zone')
       assert.fail('expected Exception')
@@ -99,7 +104,7 @@ test.group('LeagueService timezone', (group) => {
   })
 
   test('resolveMatchDayWindow throws 400 for invalid gameDate', async ({ assert }) => {
-    const service = new LeagueService()
+    const service = createLeagueService()
     try {
       service.resolveMatchDayWindow('not-a-date', LAGOS)
       assert.fail('expected Exception')
@@ -110,7 +115,7 @@ test.group('LeagueService timezone', (group) => {
   })
 
   test('listLeagueByCountry includes games on Lagos local day only', async ({ assert }) => {
-    const service = new LeagueService()
+    const service = createLeagueService()
 
     const { created } = await seedLeagueWithGames([
       { label: 'late-lagos-may-23', playedAt: DateTime.fromISO('2026-05-23T22:30:00.000Z') },
@@ -135,7 +140,7 @@ test.group('LeagueService timezone', (group) => {
   test('same instant falls on different calendar days for UTC vs Lagos filters', async ({
     assert,
   }) => {
-    const service = new LeagueService()
+    const service = createLeagueService()
 
     const { created } = await seedLeagueWithGames([
       { label: 'boundary', playedAt: DateTime.fromISO('2026-05-22T23:30:00.000Z') },
