@@ -72,4 +72,15 @@ export default class TeamsController {
     await team.save()
     return response.ok({ message: 'Team updated successfully' })
   }
+
+  async destroy({ params, response }: HttpContext) {
+    const team = await Team.query()
+      .where('id', params.id)
+      .where('league_id', params.leagueId)
+      .firstOrFail()
+
+    await team.delete()
+
+    return response.ok({ message: 'Team deleted successfully' })
+  }
 }

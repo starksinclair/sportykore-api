@@ -27,7 +27,7 @@ Types below reflect **transformer output** (`app/transformers/*`). Nullable DB f
 | **Game** | `id`, `status`, `playedAt`, `homeScore`, `awayScore`, `venueName`, `currentMinute`, `homeTeam` → **Team** \| omitted, `awayTeam` → **Team** \| omitted |
 | **Game (detail)** | **Game** + `league` → **League** \| omitted, `stats` → **Stat[]** |
 | **Season** | `id`, `name`, `status`, optional nested: `league`, `games`, `standings`, `stats` |
-| **SearchHit** | `id` (string), `type` (`country` \| `league` \| `team` \| `player`), `label`, optional `sublabel`, optional `countryCode` |
+| **SearchHit** | `id` (string), `type` (`country` \| `league` \| `team` \| `player`), `label`, optional `sublabel`, optional `countryCode`, optional `logoUrl` (string \| null; set for `league` and `team` hits from `leagues.logo_url` / `teams.logo_url`, `null` for `country` and `player`) |
 | **LeaguePlayer** | `id`, `status`, `position`, `jerseyNumber`, `isCaptain` |
 | **LeaguePlayer (with league)** | **LeaguePlayer** + `league` → **League**, `team` → **Team** |
 | **LeaguePlayer (with player)** | **LeaguePlayer** + `player` → **Player**, `team` → **Team** |
@@ -165,6 +165,7 @@ All routes require `apiAuth` (Bearer token). Responses use `{ data: ... }` unles
 | `POST` | `/api/v1/leagues/:leagueId/seasons` | `apiAuth` + `leagueOwner` | **Params:** `leagueId`. **Body:** `createSeasonValidator` | **`201`** raw season row: `{ id, leagueId, name, status, createdAt, updatedAt }` | Validation `422` |
 | `POST` | `/api/v1/leagues/:leagueId/teams` | `apiAuth` + `leagueOwner` | **Params:** `leagueId`. **Body:** `createTeamValidator` | **`201`** `{ message: "Team created successfully" }` | Logo uploaded to drive when provided |
 | `PUT` | `/api/v1/leagues/:leagueId/teams/:id` | `apiAuth` + `leagueOwner` | **Params:** `leagueId`, `id` (team id). **Body:** `updateTeamValidator` | `{ message: "Team updated successfully" }` | `404` team |
+| `DELETE` | `/api/v1/leagues/:leagueId/teams/:id` | `apiAuth` + `leagueOwner` | **Params:** `leagueId`, `id` (team id) | `{ message: "Team deleted successfully" }` | `404` if team missing or not in league; cascades related games, standings, roster rows, stats, invites |
 | `POST` | `/api/v1/leagues/assign-team` | `apiAuth` + `leagueOwner` | **Body:** `createLeaguePlayerValidator` | `{ message: "Player assigned to team successfully" }` or `"...Invited to join team successfully"` if `status` ≠ `active` | Upserts `league_players` by player + league + season |
 | `GET` | `/api/v1/leagues/:leagueId/seasons/:seasonId/roster` | `apiAuth` + `leagueOwner` | **Params:** `leagueId`, `seasonId` | **`{ data: LeaguePlayerWithPlayer[] }`** | Season roster for manage Players tab |
 | `PUT` | `/api/v1/leagues/league-players/:id` | `apiAuth` + `leagueOwner` | **Params:** `id`. **Body:** `updateLeaguePlayerValidator` | `{ message: "League player updated successfully" }` | |
@@ -465,11 +466,20 @@ Each league entry:
     "query": "river",
     "results": [
       {
-        "id": "league:10",
+        "id": "10",
         "type": "league",
         "label": "Sunday Riverside League",
         "sublabel": "Nigeria",
-        "countryCode": "ng"
+        "countryCode": "ng",
+        "logoUrl": "http://localhost:3333/uploads/leagues/abc.jpg"
+      },
+      {
+        "id": "1",
+        "type": "team",
+        "label": "Riverside United",
+        "sublabel": "Sunday Riverside League",
+        "countryCode": "ng",
+        "logoUrl": null
       }
     ]
   }

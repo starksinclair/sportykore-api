@@ -93,13 +93,13 @@ export default class LeagueService {
     timeZone: string | undefined,
     userId?: number
   ): Promise<Country[]> {
-    console.log('Listing leagues with filters', {
-      countryId,
-      gameStatus,
-      gameDate,
-      timeZone,
-      userId,
-    })
+    // console.log('Listing leagues with filters', {
+    //   countryId,
+    //   gameStatus,
+    //   gameDate,
+    //   timeZone,
+    //   userId,
+    // })
     const window: MatchDayWindow = {
       ...this.resolveMatchDayWindow(gameDate, timeZone),
       gameStatus: gameStatus || undefined,

@@ -137,6 +137,7 @@ router
 
         router.post('leagues/:leagueId/teams', [controllers.Teams, 'store'])
         router.put('leagues/:leagueId/teams/:id', [controllers.Teams, 'update'])
+        router.delete('leagues/:leagueId/teams/:id', [controllers.Teams, 'destroy'])
 
         router.post('leagues/assign-team', [controllers.Players, 'assignTeam'])
 

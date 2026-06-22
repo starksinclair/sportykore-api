@@ -7,10 +7,11 @@ export type SearchHit = {
   label: string
   sublabel?: string
   countryCode?: string
+  logoUrl?: string | null
 }
 
 export default class SearchTransformer extends BaseTransformer<SearchHit> {
   toObject() {
-    return this.pick(this.resource, ['id', 'type', 'label', 'sublabel', 'countryCode'])
+    return this.pick(this.resource, ['id', 'type', 'label', 'sublabel', 'countryCode', 'logoUrl'])
   }
 }

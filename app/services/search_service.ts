@@ -9,7 +9,8 @@ export class SearchService {
                'country'                as type,
                name                     as label,
                code                     as sublabel,
-               code                     as countryCode
+               code                     as countryCode,
+               NULL                     as logoUrl
         FROM countries
         WHERE LOWER(name) LIKE ?
 
@@ -19,7 +20,8 @@ export class SearchService {
                'league'                as type,
                l.name                  as label,
                c.name                  as sublabel,
-               c.code                  as countryCode
+               c.code                  as countryCode,
+               l.logo_url              as logoUrl
         FROM leagues l
                LEFT JOIN countries c ON c.id = l.country_id
         WHERE LOWER(l.name) LIKE ?
@@ -30,7 +32,8 @@ export class SearchService {
                'team'                as type,
                t.name                as label,
                l.name                as sublabel,
-               c.code                as countryCode
+               c.code                as countryCode,
+               t.logo_url            as logoUrl
         FROM teams t
                LEFT JOIN leagues l ON l.id = t.league_id
                LEFT JOIN countries c ON c.id = l.country_id
@@ -42,7 +45,8 @@ export class SearchService {
                'player'                as                    type,
                p.name                  as                    label,
                (SELECT name FROM teams WHERE id = lp.team_id LIMIT 1) as sublabel,
-      NULL as countryCode
+               NULL                    as countryCode,
+               NULL                    as logoUrl
         FROM players p
           LEFT JOIN league_players lp
         ON lp.player_id = p.id
