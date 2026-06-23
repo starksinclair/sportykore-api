@@ -31,7 +31,7 @@ export default class PlayersController {
   async doesUserHavePlayerProfile({ auth, response }: HttpContext) {
     const user = auth.getUserOrFail()
     const player = await Player.query().where('user_id', user.id).first()
-    return response.ok({ hasPlayerProfile: !!player })
+    return response.ok({ hasPlayerProfile: !!player, playerId: player?.id })
   }
 
   async leaguePlayerRequests({ auth, response }: HttpContext) {
