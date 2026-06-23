@@ -12,6 +12,7 @@ import LeaguePlayer from '#models/league_player'
 import { Exception } from '@adonisjs/core/exceptions'
 import { DateTime } from 'luxon'
 import LeaguePlayerTransformer from '#transformers/league_player_transformer'
+import Player from '#models/player'
 
 @inject()
 export default class PlayersController {
@@ -25,6 +26,12 @@ export default class PlayersController {
       leagues: PlayerLeagueDetailTransformer.transform(leagues)?.depth(5),
       statTypes: StatTypeTransformer.transform(statTypes),
     })
+  }
+
+  async doesUserHavePlayerProfile({ auth, response }: HttpContext) {
+    const user = auth.getUserOrFail()
+    const player = await Player.query().where('user_id', user.id).first()
+    return response.ok({ hasPlayerProfile: !!player })
   }
 
   async leaguePlayerRequests({ auth, response }: HttpContext) {

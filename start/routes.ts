@@ -89,6 +89,7 @@ router
     router.get('games/:id', [controllers.Games, 'show'])
     router.get('teams/:id', [controllers.Teams, 'show'])
     router.get('players/:id', [controllers.Players, 'show'])
+    router.get('players/does-user-have-player-profile', [controllers.Players, 'doesUserHavePlayerProfile']).use(middleware.apiAuth())
     router.get('invites/accept/:token', [controllers.Invites, 'accept']).use(middleware.apiAuth())
     router
       .post('invites/complete-profile-and-accept/:token', [
