@@ -1,16 +1,22 @@
 import { inject } from '@adonisjs/core'
+import { events } from '#generated/events'
 import StandingService from '#services/standing_service'
 import transmit from '@adonisjs/transmit/services/main'
-import GameResultUpdated from '#events/game_updated'
 
 @inject()
 export default class UpdateStandings {
   constructor(private standingService: StandingService) {}
 
-  async handle(event: GameResultUpdated) {
-    console.log('Update standings starting')
-    await this.standingService.recalculate(event.game.seasonId, event.game.homeTeamId)
-    await this.standingService.recalculate(event.game.seasonId, event.game.awayTeamId)
+  async handle(event: InstanceType<typeof events.GameUpdated>) {
+    if (event.reason !== 'result') {
+      return
+    }
+
+    await this.standingService.recalculateForGame(
+      event.game.seasonId,
+      event.game.homeTeamId,
+      event.game.awayTeamId
+    )
 
     transmit.broadcast(`games/${event.game.id}`, {
       type: 'game_updated',

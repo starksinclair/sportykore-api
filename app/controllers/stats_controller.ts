@@ -1,11 +1,9 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import { inject } from '@adonisjs/core'
-import Game from '#models/game'
 import Stat from '#models/stat'
 import StatService from '#services/stat_service'
 import { createStatValidator } from '#validators/stat'
 import { updateStatValidator } from '#validators/stat'
-import { events } from '#generated/events'
 
 @inject()
 export default class StatsController {
@@ -29,11 +27,7 @@ export default class StatsController {
 
   async destroy({ params, response }: HttpContext) {
     const stat = await Stat.findOrFail(params.id)
-    const game = await Game.findOrFail(stat.gameId)
-
     await stat.delete()
-    await events.GameUpdated.dispatch(game, 'stat')
-
     return response.ok({ message: 'Stat deleted successfully' })
   }
 }

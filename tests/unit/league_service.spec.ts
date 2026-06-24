@@ -67,6 +67,21 @@ test.group('LeagueService', (group) => {
     assert.equal(ref.name, 'Test League')
   })
 
+  test('createWithSeason persists custom tiebreaker', async ({ assert }) => {
+    const service = createLeagueService()
+    const owner = await createUser()
+    const ng = await Country.findByOrFail('code', 'ng')
+
+    const { league } = await service.createWithSeason(owner.id, {
+      name: 'Tiebreaker League',
+      countryId: ng.id,
+      seasonName: '2025/26',
+      tiebreaker: 'goals_scored_goal_difference',
+    })
+
+    assert.equal(league.tiebreaker, 'goals_scored_goal_difference')
+  })
+
   test('listCountriesWithLeagues returns countries that have leagues', async ({ assert }) => {
     const service = createLeagueService()
     const owner = await createUser()

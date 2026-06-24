@@ -31,7 +31,15 @@ export default class Game extends GameSchema {
     //   (game.$dirty.status !== undefined && game.status === 'full_time')
 
     // if (resultChanged) {
-      await events.GameUpdated.dispatch(game, 'result')
+    const dispatch = () => events.GameUpdated.dispatch(game, 'result')
+
+    const trx = game.$trx
+    if (trx?.isTransaction && !trx.isCompleted) {
+      trx.after('commit', () => dispatch())
+      return
+    }
+
+    await dispatch()
     // }
   }
 }

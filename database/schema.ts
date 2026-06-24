@@ -170,7 +170,7 @@ export class LeaguePlayerSchema extends BaseModel {
 }
 
 export class LeagueSchema extends BaseModel {
-  static $columns = ['countryId', 'createdAt', 'description', 'gender', 'id', 'logoUrl', 'name', 'updatedAt', 'userId'] as const
+  static $columns = ['countryId', 'createdAt', 'description', 'gender', 'id', 'logoUrl', 'name', 'tiebreaker', 'updatedAt', 'userId'] as const
   $columns = LeagueSchema.$columns
   @column()
   declare countryId: number | null
@@ -186,6 +186,8 @@ export class LeagueSchema extends BaseModel {
   declare logoUrl: string | null
   @column()
   declare name: string
+  @column()
+  declare tiebreaker: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
   @column()

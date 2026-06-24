@@ -1,6 +1,7 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import { Exception } from '@adonisjs/core/exceptions'
 
+import { resolveRequestTimeZone } from '#helpers/time_zone'
 import LeagueService from '#services/league_service'
 import { createLeagueWithSeasonValidator, updateLeagueValidator } from '#validators/league'
 import CountryTransformer from '#transformers/country_transformer'
@@ -50,6 +51,7 @@ export default class LeaguesController {
       logoUrl: logoUrl ?? null,
       countryId: data.countryId,
       seasonName: data.seasonName,
+      tiebreaker: data.tiebreaker,
       teams,
     })
 
@@ -59,16 +61,25 @@ export default class LeaguesController {
     return response.created({ message: 'League created successfully' })
   }
   async index({ serialize, request, auth }: HttpContext) {
-    const { countryId, gameStatus, gameDate, timeZone } = request.qs()
+    const { countryId, gameStatus, gameDate, timeZone: timeZoneQuery } = request.qs()
+    const timeZone = resolveRequestTimeZone(timeZoneQuery, request)
+    const matchDay = this.leagueService.resolveMatchDayContext(gameDate, timeZone)
     const isLoggedIn = await auth.use('api').check()
     const userId = isLoggedIn ? auth.use('api').getUserOrFail().id : undefined
 
     const [countriesWithLeagues, leagueWithMatchesByCountry] = await Promise.all([
       this.leagueService.listCountriesWithLeagues(countryId),
-      this.leagueService.listLeagueByCountry(countryId, gameStatus, gameDate, timeZone, userId),
+      this.leagueService.listLeagueByCountry(
+        countryId,
+        gameStatus,
+        matchDay.gameDate,
+        matchDay.timeZone,
+        userId
+      ),
     ])
 
     return serialize({
+      matchDay: { gameDate: matchDay.gameDate, timeZone: matchDay.timeZone },
       leagues: CountryTransformer.transform(countriesWithLeagues),
       matches: CountryTransformer.transform(leagueWithMatchesByCountry, userId)?.useVariant(
         'WithFavourites'
@@ -104,6 +115,8 @@ export default class LeaguesController {
     }
     const data = await request.validateUsing(updateLeagueValidator)
     const league = await League.findOrFail(leagueId)
+    const tiebreakerChanged =
+      data.tiebreaker !== undefined && data.tiebreaker !== league.tiebreaker
 
     if (data.logo) {
       const key = `leagues/${string.uuid()}.${data.logo.extname}`
@@ -113,6 +126,11 @@ export default class LeaguesController {
     const { logo: _logo, ...fields } = data
     league.merge(fields)
     await league.save()
+
+    if (tiebreakerChanged) {
+      await this.leagueService.resortStandingsForLeague(leagueId)
+    }
+
     return response.ok({ message: 'League updated successfully' })
   }
 }

@@ -92,6 +92,16 @@ test.group('LeagueService timezone', (group) => {
     assert.equal(window.playedAtEndUtc, '2026-05-23 23:59:59.999')
   })
 
+  test('resolveMatchDayContext returns resolved gameDate and timeZone', async ({ assert }) => {
+    const service = createLeagueService()
+    const context = service.resolveMatchDayContext(GAME_DATE, LAGOS)
+
+    assert.equal(context.gameDate, GAME_DATE)
+    assert.equal(context.timeZone, LAGOS)
+    assert.equal(context.playedAtStartUtc, '2026-05-22 23:00:00.000')
+    assert.equal(context.playedAtEndUtc, '2026-05-23 22:59:59.999')
+  })
+
   test('resolveMatchDayWindow throws 400 for invalid timeZone', async ({ assert }) => {
     const service = createLeagueService()
     try {

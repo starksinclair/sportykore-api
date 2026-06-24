@@ -135,6 +135,7 @@ router
         router.put('leagues/:leagueId', [controllers.Leagues, 'update'])
 
         router.post('leagues/:leagueId/seasons', [controllers.Seasons, 'store'])
+        router.put('leagues/:leagueId/seasons/:seasonId', [controllers.Seasons, 'update'])
 
         router.post('leagues/:leagueId/teams', [controllers.Teams, 'store'])
         router.put('leagues/:leagueId/teams/:id', [controllers.Teams, 'update'])

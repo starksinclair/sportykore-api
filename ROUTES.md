@@ -147,7 +147,7 @@ All routes require `apiAuth` (Bearer token). Responses use `{ data: ... }` unles
 | --- | --- | --- | --- | --- | --- |
 | `GET` | `/api/v1/countries` | none | none | **`{ data: CountryRef[] }`** — `id`, `name`, `code` only | Always `200` |
 | `GET` | `/api/v1/countries/:idOrCode` | none | **Params:** numeric `id` (e.g. `1`) or ISO country `code` (e.g. `ng`) | **`{ data: CountryDetail }`** — see below | `404` country not found |
-| `GET` | `/api/v1/leagues` | none | **Query:** `countryId?`, `gameStatus?`, `gameDate?` (`YYYY-MM-DD`, default today), `timeZone?` (IANA, e.g. `Africa/Lagos`; default `UTC`). `matches` filters `played_at` to that **local calendar day** converted to UTC. See [docs/TIME_AND_TIMEZONE.md](docs/TIME_AND_TIMEZONE.md). | **`{ data: { leagues, matches } }`** — `leagues` unfiltered list; `matches` game feed | `400` invalid `gameDate` / `timeZone`; empty `matches` if no games that day |
+| `GET` | `/api/v1/leagues` | none | **Query:** `countryId?`, `gameStatus?`, `gameDate?` (`YYYY-MM-DD`, default today in resolved timezone), `timeZone?` (IANA, e.g. `Africa/Lagos`; falls back to `Time-Zone` / `X-Timezone` request header; default `UTC`). Response includes `matchDay: { gameDate, timeZone }` echoing the filter applied to `matches`. `matches` filters `played_at` to that **local calendar day** converted to UTC. See [docs/TIME_AND_TIMEZONE.md](docs/TIME_AND_TIMEZONE.md). | **`{ data: { matchDay, leagues, matches } }`** — `leagues` unfiltered list; `matches` game feed | `400` invalid `gameDate` / `timeZone`; empty `matches` if no games that day |
 | `GET` | `/api/v1/leagues/:leagueId` | none | **Params:** `leagueId`. **Query:** `seasonId?` (positive integer; defaults to the league's `active` season, else the newest) | **`{ data: { seasons, season, statTypes } }`** — see below | `400` invalid `leagueId` or `seasonId`; `404` league/season not found |
 | `POST` | `/api/v1/leagues` | `apiAuth` | **Body:** `createLeagueWithSeasonValidator` — see below | **`201`** `{ inviteUrl: string }` (not wrapped in `data`) | Validation `422`; creates league + active season + optional teams |
 | `POST` | `/api/v1/leagues/:leagueId/favorite` | `apiAuth` | **Params:** `leagueId` (positive integer; must exist in `leagues`). No body. | `{ message: "League added to favorites" }` | `401` unauthorized; `409` already favourited; `422` invalid or missing league |
@@ -163,7 +163,8 @@ All routes require `apiAuth` (Bearer token). Responses use `{ data: ... }` unles
 | `POST` | `/api/v1/invites/complete-profile-and-accept/:token` | `apiAuth` | **Params:** `token`. **Body:** `multipart/form-data` or JSON — `name` (string, required), `countryId` (required FK to `countries`), `bio?` (string, optional), `avatar?` (image file, max 2 MB, jpg/jpeg/png/webp) | `{ leagueId: number \| null }` | `409` if player profile already exists; `422` validation |
 | `GET` | `/api/v1/leagues/league-player-requests` | `apiAuth` | none | **LeaguePlayerWithLeague[]** (not wrapped in `data`) | Lists `league_players` where `player_id = auth user id` and `status = pending` |
 | `POST` | `/api/v1/leagues/accept-league-player-request` | `apiAuth` | **Body:** `acceptLeaguePlayerRequestValidator` | `{ message: "League player request accepted successfully" }` | `404` row missing; `409` already active |
-| `POST` | `/api/v1/leagues/:leagueId/seasons` | `apiAuth` + `leagueOwner` | **Params:** `leagueId`. **Body:** `createSeasonValidator` | **`201`** raw season row: `{ id, leagueId, name, status, createdAt, updatedAt }` | Validation `422` |
+| `POST` | `/api/v1/leagues/:leagueId/seasons` | `apiAuth` + `leagueOwner` | **Params:** `leagueId`. **Body:** `createSeasonValidator` | **`201`** raw season row: `{ id, leagueId, name, status, createdAt, updatedAt }` | Validation `422`; setting `status: active` completes other active seasons in the same league |
+| `PUT` | `/api/v1/leagues/:leagueId/seasons/:seasonId` | `apiAuth` + `leagueOwner` | **Params:** `leagueId`, `seasonId`. **Body:** `updateSeasonValidator` | `{ message: "Season updated successfully" }` | `404` season not in league; setting `status` to `active` completes other active seasons in the same league |
 | `POST` | `/api/v1/leagues/:leagueId/teams` | `apiAuth` + `leagueOwner` | **Params:** `leagueId`. **Body:** `createTeamValidator` | **`201`** `{ message: "Team created successfully" }` | Logo uploaded to drive when provided |
 | `PUT` | `/api/v1/leagues/:leagueId/teams/:id` | `apiAuth` + `leagueOwner` | **Params:** `leagueId`, `id` (team id). **Body:** `updateTeamValidator` | `{ message: "Team updated successfully" }` | `404` team |
 | `DELETE` | `/api/v1/leagues/:leagueId/teams/:id` | `apiAuth` + `leagueOwner` | **Params:** `leagueId`, `id` (team id) | `{ message: "Team deleted successfully" }` | `404` if team missing or not in league; cascades related games, standings, roster rows, stats, invites |
@@ -198,8 +199,8 @@ Live match score +/- with unaccredited goal placeholders. See [docs/hybrid-scori
 
 | Method | Path | Body | Success | Notes |
 | --- | --- | --- | --- | --- |
-| `POST` | `/api/v1/games/:gameId/score` | `{ team: "home" \| "away", action: "increment" \| "decrement" }` | `{ message, homeScore, awayScore, statId }` | `increment` creates unaccredited goal stat (`playerId: null`); `statId` returned for accredit flow; SSE `score_updated`; `GameUpdated` reason `result` |
-| `PATCH` | `/api/v1/games/:gameId/stats/:statId/accredit` | `{ playerId, assistPlayerId?, isOwnGoal, minute }` | `{ message: "Goal accredited", statId }` | Updates placeholder; optional assist stat; SSE `stat_accredited`; `GameUpdated` reason `stat` |
+| `POST` | `/api/v1/games/:gameId/score` | `{ team: "home" \| "away", action: "increment" \| "decrement" }` | `{ message, homeScore, awayScore, statId }` | Updates game score → `GameUpdated` (`result`) → standings recalc + SSE `game_updated`; also SSE `score_updated` |
+| `PATCH` | `/api/v1/games/:gameId/stats/:statId/accredit` | `{ playerId, assistPlayerId?, isOwnGoal, minute }` | `{ message: "Goal accredited", statId }` | Updates placeholder only; SSE `stat_accredited` (no standings recalc) |
 
 **SSE on `games/{gameId}`:**
 
@@ -207,6 +208,9 @@ Live match score +/- with unaccredited goal placeholders. See [docs/hybrid-scori
 | --- | --- |
 | `score_updated` | `{ homeScore, awayScore }` |
 | `stat_accredited` | `{ statId }` |
+| `game_updated` | `{ reason: "result", gameId }` — standings recalculated; clients should refetch league table |
+
+Standings recalc runs on **game row saves** (`GameUpdated` with `reason: "result"`), not on stat create/update/delete or accredit.
 
 ---
 
@@ -269,11 +273,15 @@ Live match score +/- with unaccredited goal placeholders. See [docs/hybrid-scori
 - **`featuredPlayers`** — top 10 by goals in leagues in this country (stats aggregated across those leagues).
 - **`recentMatches`** — last 10 games in the country’s leagues; `status` is a display label (`FT`, `LIVE`, `NS`, …); `round` is `Matchday N` from season schedule order.
 
-### `GET /api/v1/leagues` → `{ leagues, matches }`
+### `GET /api/v1/leagues` → `{ matchDay, leagues, matches }`
 
 ```json
 {
   "data": {
+    "matchDay": {
+      "gameDate": "2026-05-23",
+      "timeZone": "Africa/Lagos"
+    },
     "leagues": [
       {
         "id": 1,
@@ -314,6 +322,7 @@ Live match score +/- with unaccredited goal placeholders. See [docs/hybrid-scori
 }
 ```
 
+- `matchDay` — calendar day and IANA timezone used to build the `matches` feed (resolved from query params and/or `Time-Zone` / `X-Timezone` headers).
 - `leagues` — countries with league list (no game-day filter).
 - `matches` — same country shape, but only countries/leagues with games on `gameDate` in `timeZone`; leagues include `isFavourited` when the request includes a valid **`Authorization: Bearer`** token (same `api` guard as favourite routes; session cookies are not used).
 
@@ -553,11 +562,12 @@ User must already exist (created on signup `request-otp` or from a prior login).
 | `logo` | optional image file: max 2mb; extensions jpg, jpeg, png, webp |
 | `countryId` | required; must exist in `countries` |
 | `seasonName` | string, 1–120 chars, trimmed |
+| `tiebreaker` | optional enum: `goal_difference_goals_scored` (default), `goals_scored_goal_difference`, `wins_goal_difference_goals_scored`, `goal_difference_goals_conceded`, `goal_difference_goals_scored_away_goals`, `goal_difference_goals_scored_head_to_head`, `head_to_head_goal_difference_goals_scored`, `head_to_head_goals_scored_goal_difference`, `away_goals_scored_goal_difference_goals_scored` |
 | `teams` | optional array of `{ name: string (1–255), logo?: image file }` — each team `logo` is uploaded to Drive and stored as `logoUrl` on the team row (same as `POST /leagues/:leagueId/teams`) |
 
 ### `updateLeagueValidator` — `PUT /api/v1/leagues/:leagueId`
 
-All fields optional: `name`, `description`, `gender`, `logo` (image file; stored as `logoUrl` via Drive upload).
+All fields optional: `name`, `description`, `gender`, `logo` (image file; stored as `logoUrl` via Drive upload), `tiebreaker` (enum; re-sorts the **active** season standings immediately when changed).
 
 ### `createSeasonValidator` — `POST /api/v1/leagues/:leagueId/seasons`
 
@@ -566,6 +576,17 @@ All fields optional: `name`, `description`, `gender`, `logo` (image file; stored
 | `leagueId` | required; exists in `leagues` (also taken from URL for ownership) |
 | `name` | string, 1–255 chars |
 | `status` | `inactive` \| `active` \| `completed` |
+
+Setting `status` to `active` marks all other `active` seasons in the same league as `completed`.
+
+### `updateSeasonValidator` — `PUT /api/v1/leagues/:leagueId/seasons/:seasonId`
+
+| Field | Rules |
+| --- | --- |
+| `name` | optional string, 1–255 chars |
+| `status` | optional `inactive` \| `active` \| `completed` |
+
+Setting `status` to `active` marks all other `active` seasons in the same league as `completed` (excluding the season being updated).
 
 ### `createTeamValidator` — `POST /api/v1/leagues/:leagueId/teams`
 

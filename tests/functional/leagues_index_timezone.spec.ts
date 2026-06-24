@@ -127,6 +127,32 @@ test.group('Leagues index timezone API', (group) => {
         `game ${game.id} should be on ${GAME_DATE} in ${LAGOS}`
       )
     }
+
+    assert.equal(body.data?.matchDay?.gameDate, GAME_DATE)
+    assert.equal(body.data?.matchDay?.timeZone, LAGOS)
+  })
+
+  test('GET /api/v1/leagues uses Time-Zone header when timeZone query is omitted', async ({
+    assert,
+  }) => {
+    const games = await seedTimezoneFixture()
+
+    const res = await fetch(apiUrl(`/api/v1/leagues?gameDate=${GAME_DATE}`), {
+      headers: {
+        ...jsonHeaders,
+        'Time-Zone': LAGOS,
+      },
+    })
+
+    assert.equal(res.status, 200)
+    const body = await readJson(res)
+    const returnedIds = collectMatchesGames(body).map((g) => g.id)
+
+    assert.include(returnedIds, games['evening-lagos'].id)
+    assert.include(returnedIds, games['early-lagos'].id)
+    assert.notInclude(returnedIds, games['next-lagos-day'].id)
+    assert.equal(body.data?.matchDay?.gameDate, GAME_DATE)
+    assert.equal(body.data?.matchDay?.timeZone, LAGOS)
   })
 
   test('GET /api/v1/leagues returns different matches for UTC vs Lagos on same gameDate', async ({

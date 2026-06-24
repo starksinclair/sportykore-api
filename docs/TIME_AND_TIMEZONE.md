@@ -30,12 +30,14 @@ Documented in [ROUTES.md](../ROUTES.md). Relevant query parameters:
 
 | Param | Required | Description |
 | --- | --- | --- |
-| `gameDate` | No | Calendar date `YYYY-MM-DD`. Defaults to **today** in `timeZone`. |
-| `timeZone` | Recommended | IANA timezone (e.g. `Africa/Lagos`). Defaults to `UTC` if omitted. |
+| `gameDate` | No | Calendar date `YYYY-MM-DD`. Defaults to **today** in the resolved `timeZone`. |
+| `timeZone` | Recommended | IANA timezone (e.g. `Africa/Lagos`). Query param, or `Time-Zone` / `X-Timezone` request header. Defaults to `UTC` if omitted everywhere. |
 | `gameStatus` | No | Filter games by status (`live`, `completed`, etc.). |
 | `countryId` | No | Limit to one country. |
 
 Invalid `timeZone` or `gameDate` → `400`.
+
+The response includes `matchDay: { gameDate, timeZone }` so clients can confirm which local calendar day was used for `matches`.
 
 Only countries/leagues with at least one game in the UTC window are returned.
 
@@ -90,7 +92,10 @@ export async function fetchLeaguesIndex(params: LeaguesIndexParams = {}) {
   if (params.gameStatus) search.set('gameStatus', params.gameStatus)
 
   const res = await fetch(`/api/v1/leagues?${search}`, {
-    headers: { Accept: 'application/json' },
+    headers: {
+      Accept: 'application/json',
+      'Time-Zone': timeZone,
+    },
   })
 
   if (!res.ok) throw new Error(await res.text())
@@ -119,15 +124,19 @@ useEffect(() => {
 
 ### 5. What not to do
 
-- Do **not** send only `gameDate` and assume the server uses the user’s local day without `timeZone` (server defaults to `UTC`).
+- Do **not** send only `gameDate` without a timezone — set `timeZone` on the query string **or** send a `Time-Zone` / `X-Timezone` header on every request (e.g. from `getUserTimeZone()`). If both are omitted, the server defaults to `UTC`, which is wrong for most users.
+- Do **not** filter match-day results on the client using `new Date(playedAt)` alone — use `gameDate` + timezone (query or header) and read `data.matchDay` from the response to confirm the filter.
 - Do **not** use `date.toISOString().slice(0, 10)` for the picker day near midnight — that can shift the calendar day. Use local `getFullYear()` / `getMonth()` / `getDate()` (your helper already does this).
 - Do **not** store local times in the DB from the client; send UTC ISO for create/update of `playedAt` when you add those forms.
 
 ## Backend reference
 
-- `LeagueService.resolveMatchDayWindow(gameDate?, timeZone?)` — public for tests; returns UTC SQL bounds.
+- `resolveRequestTimeZone(query, request)` — `app/helpers/time_zone.ts`; query param, then `Time-Zone` / `X-Timezone` headers.
+- `LeagueService.resolveMatchDayContext(gameDate?, timeZone?)` — resolved `gameDate`, `timeZone`, and UTC SQL bounds.
+- `LeagueService.resolveMatchDayWindow(gameDate?, timeZone?)` — UTC bounds only (tests).
 - `LeagueService.listLeagueByCountry(..., timeZone, ...)` — matches index.
-- Implementation: `app/services/league_service.ts`
+- `GET /api/v1/leagues` returns `matchDay: { gameDate, timeZone }` alongside `matches`.
+- Implementation: `app/services/league_service.ts`, `app/controllers/leagues_controller.ts`
 
 ## Related
 

@@ -11,6 +11,8 @@ import Team from '#models/team'
 import StandingService from '#services/standing_service'
 import { LIVE_GAME_STATUSES } from '#types/game_status'
 
+import { DEFAULT_LEAGUE_TIEBREAKER, type LeagueTiebreaker } from '#types/tiebreaker'
+
 export type CreateLeagueInput = {
   name: string
   description?: string | null
@@ -18,6 +20,7 @@ export type CreateLeagueInput = {
   logoUrl?: string | null
   countryId: number
   seasonName: string
+  tiebreaker?: LeagueTiebreaker
   teams?: { name: string; logoUrl?: string | null }[]
 }
 
@@ -26,6 +29,12 @@ export type MatchDayWindow = {
   playedAtStartUtc: string
   playedAtEndUtc: string
   gameStatus?: string
+}
+
+/** Resolved calendar day + timezone used for match-day filtering. */
+export type MatchDayContext = MatchDayWindow & {
+  gameDate: string
+  timeZone: string
 }
 
 @inject()
@@ -45,6 +54,7 @@ export default class LeagueService {
           gender: input.gender ?? null,
           logoUrl: input.logoUrl ?? null,
           countryId: input.countryId,
+          tiebreaker: input.tiebreaker ?? DEFAULT_LEAGUE_TIEBREAKER,
         },
         { client: trx }
       )
@@ -81,6 +91,10 @@ export default class LeagueService {
     })
   }
 
+  async resortStandingsForLeague(leagueId: number) {
+    await this.standingService.recalculatePositionsForLeague(leagueId)
+  }
+
   /**
    * Countries/leagues/games for the matches feed.
    * `gameDate` is a calendar day in `timeZone` (not a UTC day). `played_at` is filtered using
@@ -101,7 +115,7 @@ export default class LeagueService {
     //   userId,
     // })
     const window: MatchDayWindow = {
-      ...this.resolveMatchDayWindow(gameDate, timeZone),
+      ...this.resolveMatchDayContext(gameDate, timeZone),
       gameStatus: gameStatus || undefined,
     }
     const parsedCountryId =
@@ -134,7 +148,7 @@ export default class LeagueService {
           .if(!userId, (query) => query.orderByRaw('favourites_count desc'))
           .preload('games', (gameQuery) => {
             this.applyMatchDayFilters(gameQuery, window)
-            gameQuery.preload('homeTeam').preload('awayTeam')
+            gameQuery.preload('homeTeam').preload('awayTeam').orderBy('played_at', 'asc')
           })
           .select('leagues.id', 'leagues.name', 'leagues.logo_url')
       })
@@ -217,6 +231,14 @@ export default class LeagueService {
    * Builds UTC instants for the start/end of a calendar day in the given IANA timezone.
    */
   resolveMatchDayWindow(gameDate?: string, timeZone?: string): MatchDayWindow {
+    const { playedAtStartUtc, playedAtEndUtc } = this.resolveMatchDayContext(gameDate, timeZone)
+    return { playedAtStartUtc, playedAtEndUtc }
+  }
+
+  /**
+   * Resolves the calendar day, timezone, and UTC bounds used for match-day filtering.
+   */
+  resolveMatchDayContext(gameDate?: string, timeZone?: string): MatchDayContext {
     const zone = this.resolveTimeZone(timeZone)
 
     const day = gameDate ? DateTime.fromISO(gameDate, { zone }) : DateTime.now().setZone(zone)
@@ -236,7 +258,12 @@ export default class LeagueService {
       throw new Exception('Could not resolve match day window', { status: 500 })
     }
 
-    return { playedAtStartUtc, playedAtEndUtc }
+    return {
+      gameDate: localDay.toFormat('yyyy-MM-dd'),
+      timeZone: zone,
+      playedAtStartUtc,
+      playedAtEndUtc,
+    }
   }
 
   private resolveTimeZone(timeZone?: string): string {

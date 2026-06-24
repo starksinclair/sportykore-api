@@ -11,7 +11,7 @@ export default class LeagueTransformer extends BaseTransformer<League> {
   }
   toObject() {
     return {
-      ...this.pick(this.resource, ['id', 'name', 'logoUrl', 'description']),
+      ...this.pick(this.resource, ['id', 'name', 'logoUrl', 'description', 'tiebreaker']),
       games: GameTransformer.transform(this.whenLoaded(this.resource.games))?.depth(3),
     }
   }
