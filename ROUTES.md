@@ -18,6 +18,8 @@ Types below reflect **transformer output** (`app/transformers/*`). Nullable DB f
 | **Country** | `id` (number), `name` (string), `code` (string) |
 | **League** | `id`, `name`, `logoUrl` (string \| null), optional `games` → **Game[]** |
 | **Team** | `id`, `name`, `logoUrl` (string \| null) |
+| **Team (with admins)** | **Team** + `admins` → **TeamAdmin[]** (active only; `removed_at` null) |
+| **TeamAdmin** | `id`, `teamId`, `userId`, `leagueId`, `user` → **User** |
 | **Team (with games)** | **Team** + `homeGames`, `awayGames` → **Game[]** |
 | **Player** | `id`, `name`, `avatarUrl` (string \| null) |
 | **Player (with stats)** | **Player** + `stats` → **Stat[]** |
@@ -25,13 +27,17 @@ Types below reflect **transformer output** (`app/transformers/*`). Nullable DB f
 | **Stat** | `id`, `minute` (number \| null), `isStoppageTime` (boolean \| null), `numericValue` (number \| null), `isUnaccredited` (boolean), `type` → **StatType** \| omitted, `team` → **Team** \| omitted, `player` → **Player** \| omitted, `relatedPlayer` → **Player** \| omitted |
 | **Standing** | `id`, `position`, `played`, `wins`, `draws`, `losses`, `goalsFor`, `goalsAgainst`, `goalDifference`, `points`, `form` (string \| null), `team` → **Team** \| omitted |
 | **Game** | `id`, `status`, `playedAt`, `homeScore`, `awayScore`, `venueName`, `currentMinute`, `homeTeam` → **Team** \| omitted, `awayTeam` → **Team** \| omitted |
-| **Game (detail)** | **Game** + `league` → **League** \| omitted, `stats` → **Stat[]** |
+| **Game (detail)** | **Game** + `league` → **League** \| omitted, `stats` → **Stat[]**, `lineups` → **TeamLineupGroup[]** |
+| **Formation** | `id`, `name`, `displayName`, `isActive`, `slots` → array of `{ key, position, line, order, label }` |
+| **GameLineup** | `id`, `gameId`, `teamId`, `playerId`, `formationId`, `slotKey`, `status`, `position`, `jerseyNumber`, `startingOrder`, `subbedInMinute`, `subbedOutMinute`, nested `player` → **Player**, `team` → **Team**, `formation` → **Formation** |
+| **TeamLineupGroup** | `team` → **Team**, `formation` → **Formation** \| null, `starters` → **GameLineup[]**, `substitutes` → **GameLineup[]** |
 | **Season** | `id`, `name`, `status`, optional nested: `league`, `games`, `standings`, `stats` |
 | **SearchHit** | `id` (string), `type` (`country` \| `league` \| `team` \| `player`), `label`, optional `sublabel`, optional `countryCode`, optional `logoUrl` (string \| null; set for `league` and `team` hits from `leagues.logo_url` / `teams.logo_url`, `null` for `country` and `player`) |
 | **LeaguePlayer** | `id`, `status`, `position`, `jerseyNumber`, `isCaptain` |
 | **LeaguePlayer (with league)** | **LeaguePlayer** + `league` → **League**, `team` → **Team** |
 | **LeaguePlayer (with player)** | **LeaguePlayer** + `player` → **Player**, `team` → **Team** |
-| **OwnedLeague** | `id`, `name`, `logoUrl`, `countryId`, `activeSeason` → **Season** \| null |
+| **OwnedLeague** | `id`, `name`, `logoUrl`, `countryId`, `activeSeason` → **Season** \| null, `role` (`owner`) |
+| **AdminTeamManaged** | `id`, `name`, `logoUrl`, `league` → `{ id, name, logoUrl }`, `activeSeason` → **Season** \| null, `role` (`team_admin`) |
 | **User** | `id`, `email`, `fullName` |
 | **AuthSession** | `auth.user` → **User**; `auth.token` → `{ type: 'bearer', value, expiresAt, abilities }` |
 
@@ -57,6 +63,8 @@ Types below reflect **transformer output** (`app/transformers/*`). Nullable DB f
 ### Stat type `name` values (seeded)
 
 Includes `goals`, `own_goal`, `assists`, `yellow_card`, `red_card`, `saves`, `shots_on_target`, `fouls_conceded`, `substitution_on`, `substitution_off`.
+
+`substitution_on` / `substitution_off` are the **historical match-event record** for substitutions (timeline). See [Substitutions (via stats)](#substitutions-via-stats).
 
 ---
 
@@ -132,12 +140,105 @@ Implementation (inactive): `app/controllers/users_controller.ts`. Former detail 
 
 All routes require `apiAuth` (Bearer token). Responses use `{ data: ... }` unless noted.
 
+### Breaking change: `GET /auth/users/leagues` → `GET /auth/users/managed`
+
+**`GET /api/v1/auth/users/leagues` has been removed** (no redirect / alias). Clients that still call it will get `404`.
+
+| Old | New |
+| --- | --- |
+| `GET /api/v1/auth/users/leagues` | `GET /api/v1/auth/users/managed` |
+| `{ data: OwnedLeague[] }` (owned leagues only) | `{ data: { ownedLeagues, adminTeams } }` |
+
+**Client migration:**
+
+1. Switch the manage-home fetch to `GET /api/v1/auth/users/managed`.
+2. Read owned leagues from `data.ownedLeagues` (same fields as before, plus `role: "owner"`).
+3. Optionally render `data.adminTeams` for team-admin entry points (deep-link via `league` + `activeSeason`).
+4. Do **not** treat `data` as a bare array anymore.
+
+`GET /api/v1/auth/users/leagues/:leagueId/teams` is **unchanged** (owner-only teams-with-admins list). Only the list endpoint path/shape changed.
+
+### Capability matrix
+
+| Action | League owner | Team admin |
+| --- | --- | --- |
+| Manage hub list (`GET /managed`) | yes | yes (their teams under `adminTeams`) |
+| League tabs (games / players / settings) | yes | no (`403`) |
+| Edit team name / logo | yes | no |
+| Set lineup for their team | yes | yes |
+| Match Center clock / score / accredit / subs / stats writes | yes | no |
+| Assign / remove team admins | yes | no |
+| Invite / roster edits | yes | no |
+
+**Team-admin read (v1):** no dedicated admin read API. Use public `GET /api/v1/teams/:id` (seasons → games + roster) and `GET /api/v1/games/:gameId/lineups`. Deep-link season from `adminTeams[].activeSeason` on `/managed`.
+
 | Method | Path | Input | Success response | Notes |
 | --- | --- | --- | --- | --- |
 | `GET` | `/api/v1/auth/users/me` | none | **`{ data: User }`** — `id`, `email`, `fullName` | Logged-in check |
-| `GET` | `/api/v1/auth/users/leagues` | none | **`{ data: OwnedLeague[] }`** — `id`, `name`, `logoUrl`, `countryId`, `activeSeason?` | Leagues where `user_id` = auth user |
-| `GET` | `/api/v1/auth/users/leagues/:leagueId/teams` | **Params:** `leagueId` | **`{ data: Team[] }`** | `403` if not league owner |
+| `GET` | `/api/v1/auth/users/managed` | none | **`{ data: { ownedLeagues, adminTeams } }`** | Replaces removed `GET .../leagues` — see migration note above |
+| `GET` | `/api/v1/auth/users/leagues/:leagueId/teams` | **Params:** `leagueId` | **`{ data: Team (with admins)[] }`** | `403` if not league owner; `admins` lists active team admins with nested `user` for assign/remove UI |
 | `GET` | `/api/v1/auth/users/search` | **Query:** `q`, `leagueId` (required), `limit?` (1–50, default 20) | **`{ data: User[] }`** | Flow A user picker; `403` if not owner |
+
+### `GET /api/v1/auth/users/managed` → `{ ownedLeagues, adminTeams }`
+
+- **`ownedLeagues`**: leagues where `user_id` = auth user; each includes `role: "owner"` and `activeSeason`.
+- **`adminTeams`**: teams where the user has an active `team_admins` row (`removed_at` null). Excludes teams in leagues the user already owns (no duplicate). Each includes nested `league`, `activeSeason`, and `role: "team_admin"`.
+
+```json
+{
+  "data": {
+    "ownedLeagues": [
+      {
+        "id": 10,
+        "name": "Sunday Riverside League",
+        "logoUrl": null,
+        "countryId": 1,
+        "activeSeason": { "id": 5, "name": "2026", "status": "active" },
+        "role": "owner"
+      }
+    ],
+    "adminTeams": [
+      {
+        "id": 16,
+        "name": "Burkina Faso City 2",
+        "logoUrl": "...",
+        "league": {
+          "id": 10,
+          "name": "Sunday Riverside League",
+          "logoUrl": null
+        },
+        "activeSeason": { "id": 5, "name": "2026", "status": "active" },
+        "role": "team_admin"
+      }
+    ]
+  }
+}
+```
+
+### `GET /api/v1/auth/users/leagues/:leagueId/teams` → `Team (with admins)[]`
+
+League owner only. Each team includes active admins (`removed_at` null) so the manage UI can call `DELETE /api/v1/leagues/:leagueId/teams/:teamId/admins/:userId` without a separate list endpoint.
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "Riverside United",
+      "logoUrl": "https://api.dicebear.com/9.x/icons/svg?seed=Riverside%20United",
+      "admins": [
+        {
+          "id": 5,
+          "teamId": 1,
+          "userId": 42,
+          "leagueId": 10,
+          "user": { "id": 42, "email": "admin@example.com", "fullName": "Jane Admin" }
+        }
+      ]
+    }
+  ]
+}
+```
 
 ---
 
@@ -155,6 +256,9 @@ All routes require `apiAuth` (Bearer token). Responses use `{ data: ... }` unles
 | `PUT` | `/api/v1/leagues/:leagueId` | `apiAuth` + `leagueOwner` | **Params:** `leagueId`. **Body:** `updateLeagueValidator` | `{ message: "League updated successfully" }` | `400` invalid id; `403` not owner; `404` league |
 | `GET` | `/api/v1/search` | none | **Query:** `q` (string, trimmed; empty → no search), `limit?` (number 1–100, default 24) | **`{ data: { query: string, results: SearchHit[] } }`** | Always `200`; empty `q` → `results: []` |
 | `GET` | `/api/v1/games/:id` | none | **Params:** `id` (game id) | **`{ data: GameDetail }`** | `404` if game missing |
+| `GET` | `/api/v1/formations` | none | none | **`{ data: Formation[] }`** | Active formations only, ordered by `name` |
+| `GET` | `/api/v1/formations/:id` | none | **Params:** `id` (formation id) | **`{ data: Formation }`** | `404` if formation missing |
+| `GET` | `/api/v1/games/:gameId/lineups` | none | **Params:** `gameId` | **`{ data: TeamLineupGroup[] }`** | Grouped by team; empty array if no lineups |
 | `GET` | `/api/v1/teams/:id` | none | **Params:** `id` (team id) | **`{ data: { team, leagues, statTypes } }`** — see below | `404` if team missing |
 | `GET` | `/api/v1/players/:id` | none | **Params:** `id` (player id) | **`{ data: { player, leagues, statTypes } }`** — see below | `404` if player missing |
 | `GET` | `/api/v1/players/does-user-have-player-profile` | `apiAuth` | none | `{ hasPlayerProfile: boolean, playerId: number }` (not wrapped in `data`) | `401` without Bearer token; checks whether the authenticated user has a `players` row |
@@ -168,6 +272,8 @@ All routes require `apiAuth` (Bearer token). Responses use `{ data: ... }` unles
 | `POST` | `/api/v1/leagues/:leagueId/teams` | `apiAuth` + `leagueOwner` | **Params:** `leagueId`. **Body:** `createTeamValidator` | **`201`** `{ message: "Team created successfully" }` | Logo uploaded to drive when provided |
 | `PUT` | `/api/v1/leagues/:leagueId/teams/:id` | `apiAuth` + `leagueOwner` | **Params:** `leagueId`, `id` (team id). **Body:** `updateTeamValidator` | `{ message: "Team updated successfully" }` | `404` team |
 | `DELETE` | `/api/v1/leagues/:leagueId/teams/:id` | `apiAuth` + `leagueOwner` | **Params:** `leagueId`, `id` (team id) | `{ message: "Team deleted successfully" }` | `404` if team missing or not in league; cascades related games, standings, roster rows, stats, invites |
+| `POST` | `/api/v1/leagues/:leagueId/teams/:teamId/admins` | `apiAuth` + `leagueOwner` | **Params:** `leagueId`, `teamId`. **Body:** `assignTeamAdminValidator` | **`201`** `{ message: "Team admin assigned successfully" }` | `404` team not in league; `409` user already an active admin; reactivates if previously removed; emails the assignee on success |
+| `DELETE` | `/api/v1/leagues/:leagueId/teams/:teamId/admins/:userId` | `apiAuth` + `leagueOwner` | **Params:** `leagueId`, `teamId`, `userId` | `{ message: "Team admin removed successfully" }` | `404` if no active admin row; sets `removed_at` (soft remove) |
 | `POST` | `/api/v1/leagues/assign-team` | `apiAuth` + `leagueOwner` | **Body:** `createLeaguePlayerValidator` | `{ message: "Player assigned to team successfully" }` or `"...Invited to join team successfully"` if `status` ≠ `active` | Upserts `league_players` by player + league + season |
 | `GET` | `/api/v1/leagues/:leagueId/seasons/:seasonId/roster` | `apiAuth` + `leagueOwner` | **Params:** `leagueId`, `seasonId` | **`{ data: LeaguePlayerWithPlayer[] }`** | Season roster for manage Players tab |
 | `PUT` | `/api/v1/leagues/league-players/:id` | `apiAuth` + `leagueOwner` | **Params:** `id`. **Body:** `updateLeaguePlayerValidator` | `{ message: "League player updated successfully" }` | |
@@ -175,13 +281,55 @@ All routes require `apiAuth` (Bearer token). Responses use `{ data: ... }` unles
 | `POST` | `/api/v1/leagues/games` | `apiAuth` + `leagueOwner` | **Body:** `createGameValidator` | **`201`** `{ message: "Game created successfully" }` | |
 | `PUT` | `/api/v1/leagues/games/:id` | `apiAuth` + `leagueOwner` | **Params:** `id` (game id). **Body:** `updateGameValidator` | `{ message: "Game updated successfully" }` | `404` game; client updates scores here (not via stats) |
 | `DELETE` | `/api/v1/leagues/games/:id` | `apiAuth` + `leagueOwner` | **Params:** `id` (game id) | `{ message: "Game deleted successfully" }` | Cascades stats |
-| `POST` | `/api/v1/leagues/stats` | `apiAuth` + `leagueOwner` | **Body:** `createStatValidator` | **`201`** `{ message: "Stat created successfully" }` | Validates player on active roster + correct team side; does **not** auto-update game score |
-| `PUT` | `/api/v1/leagues/stats/:id` | `apiAuth` + `leagueOwner` | **Params:** `id` (stat id). **Body:** `updateStatValidator` | `{ message: "Stat updated successfully" }` | `404` stat |
+| `POST` | `/api/v1/leagues/stats` | `apiAuth` + `leagueOwner` | **Body:** `createStatValidator` | **`201`** `{ message: "Stat created successfully" }` | Validates player on active roster + correct team side; does **not** auto-update game score. Use for goals, cards, etc. |
+| `POST` | `/api/v1/leagues/stats/substitutions` | `apiAuth` + `leagueOwner` | **Body:** `recordSubstitutionValidator` | **`201`** `{ message, statIds: number[] }` | Atomically creates paired `substitution_off` + `substitution_on` rows per swap (see below) |
+| `PUT` | `/api/v1/leagues/stats/:id` | `apiAuth` + `leagueOwner` | **Params:** `id` (stat id). **Body:** `updateStatValidator` | `{ message: "Stat updated successfully" }` | `404` stat; cannot change `playerId` / `statTypeId` — delete + recreate to change who was involved |
 | `DELETE` | `/api/v1/leagues/stats/:id` | `apiAuth` + `leagueOwner` | **Params:** `id` (stat id) | `{ message: "Stat deleted successfully" }` | Recalculates standings / broadcasts game update |
 
-### Live game time (`apiAuth` + `teamOwner`)
+### Substitutions (via stats)
 
-League owner **or** home/away team owner (`teams.added_by`) may control match clock. Each action broadcasts SSE `status_changed` on channel `games/{gameId}`. See [docs/CHANGE_GAME.md](docs/CHANGE_GAME.md).
+Match substitutions are **events** stored in `stats`, not lineup mutations. Auth: `apiAuth` + `leagueOwner`. Prefer the atomic endpoint below; generic `POST /leagues/stats` still works for one row at a time.
+
+#### Preferred: `POST /api/v1/leagues/stats/substitutions`
+
+Creates paired `substitution_off` + `substitution_on` rows in **one transaction** (resolves stat type IDs server-side). Supports one or many swaps in a single request.
+
+| Field | Rules |
+| --- | --- |
+| `gameId`, `leagueId`, `seasonId`, `teamId` | required FKs; team must be home/away in the game |
+| `substitutions` | array min 1 max 11 of `{ playerOffId, playerOnId, minute, isStoppageTime? }` |
+| per swap | `playerOffId` ≠ `playerOnId`; both on active roster; **off must be a starter** and **on must be a bench substitute** in `game_lineups` for that game/team; each player at most once in the batch |
+
+Example:
+
+```json
+{
+  "gameId": 1,
+  "leagueId": 10,
+  "seasonId": 5,
+  "teamId": 1,
+  "substitutions": [
+    { "playerOffId": 10, "playerOnId": 20, "minute": 60 },
+    { "playerOffId": 11, "playerOnId": 21, "minute": 60 }
+  ]
+}
+```
+
+Success: `{ "message": "Substitution(s) recorded successfully", "statIds": [101, 102, 103, 104] }` (off/on pairs in order).
+
+Per swap the server writes:
+
+| Stat type | `playerId` | `relatedPlayerId` |
+| --- | --- | --- |
+| `substitution_off` | player leaving | player coming on |
+| `substitution_on` | player coming on | player leaving |
+
+- **Edit players / undo a swap:** `DELETE` both paired rows, then `POST .../substitutions` again (or recreate via two generic stats POSTs). `PUT /leagues/stats/:id` can only patch `minute`, `relatedPlayerId`, etc. — not `playerId`.
+- **UI:** show “Player A substituted by Player B at 60'” from these stats; keep `game_lineups` for pitch display (starters / bench) only.
+
+### Live game time (`apiAuth` + `leagueOwner`)
+
+League owner only may control match clock. Each action broadcasts SSE `status_changed` on channel `games/{gameId}`. See [docs/CHANGE_GAME.md](docs/CHANGE_GAME.md).
 
 | Method | Path | Body | Success | Notes |
 | --- | --- | --- | --- | --- |
@@ -193,14 +341,26 @@ League owner **or** home/away team owner (`teams.added_by`) may control match cl
 | `POST` | `/api/v1/games/:gameId/resume` | none | `{ message: "Game resumed" }` | From `paused`; shifts period start timestamp by pause duration |
 | `POST` | `/api/v1/games/:gameId/full-time` | `{ homeScore, awayScore }` (required) | `{ message: "Full time" }` | From `second_half` or `extra_time`; fires `GameUpdated` → standings |
 
-### Hybrid scoring (`apiAuth` + `teamOwner`)
+### Hybrid scoring (`apiAuth` + `leagueOwner`)
 
-Live match score +/- with unaccredited goal placeholders. See [docs/hybrid-scoring-prompt.md](docs/hybrid-scoring-prompt.md).
+Live match score +/- with unaccredited goal placeholders. See [docs/hybrid-scoring-prompt.md](docs/hybrid-scoring-prompt.md). League owner only.
 
 | Method | Path | Body | Success | Notes |
 | --- | --- | --- | --- | --- |
 | `POST` | `/api/v1/games/:gameId/score` | `{ team: "home" \| "away", action: "increment" \| "decrement" }` | `{ message, homeScore, awayScore, statId }` | Updates game score → `GameUpdated` (`result`) → standings recalc + SSE `game_updated`; also SSE `score_updated` |
 | `PATCH` | `/api/v1/games/:gameId/stats/:statId/accredit` | `{ playerId, assistPlayerId?, isOwnGoal, minute }` | `{ message: "Goal accredited", statId }` | Updates placeholder only; SSE `stat_accredited` (no standings recalc) |
+
+### Game lineups (`apiAuth` + `lineupManager`)
+
+League owner **or** active team admin on home/away may manage lineups. `lineupManager` middleware allows either side; the service layer restricts team admins to their own `teamId` only (league owners may edit both teams).
+
+| Method | Path | Body | Success | Notes |
+| --- | --- | --- | --- | --- |
+| `PUT` | `/api/v1/games/:gameId/lineups` | `setLineupValidator` | `{ message: "Lineup saved successfully" }` | Replaces entire lineup for one team; exactly 11 starters with all formation slots filled |
+| `PATCH` | `/api/v1/games/:gameId/lineups/:id` | `updateLineupValidator` | `{ message: "Lineup entry updated successfully" }` | Patch `jerseyNumber`, `slotKey`, `position`, `status` |
+| `DELETE` | `/api/v1/games/:gameId/lineups/:id` | none | `{ message: "Player removed from lineup successfully" }` | Removes one lineup row |
+
+`setLineup`, `updateLineup`, and `removePlayer` reject games with status `full_time` or `cancelled` (`409`). Lineups are **display-only** (starters / bench). Match substitutions are recorded as **stats** — see [Substitutions](#substitutions-via-stats) below.
 
 **SSE on `games/{gameId}`:**
 
@@ -379,7 +539,15 @@ Standings recalc runs on **game row saves** (`GameUpdated` with `reason: "result
 
 ### `GET /api/v1/games/:id` → `GameDetail`
 
-**Game (detail)** — league + stats (with type, team, player, relatedPlayer).
+**Game (detail)** — league + stats (with type, team, player, relatedPlayer) + `lineups` grouped by team (`TeamLineupGroup[]`).
+
+### `GET /api/v1/formations` → `Formation[]`
+
+Active formations only (`isActive = true`), ordered by `name`.
+
+### `GET /api/v1/games/:gameId/lineups` → `TeamLineupGroup[]`
+
+Each entry: `team`, `formation` (from starters), `starters`, `substitutes` — each lineup row includes nested `player`, `team`, `formation`.
 
 ### `GET /api/v1/teams/:id` → `{ team, leagues, statTypes }`
 
@@ -658,7 +826,39 @@ Server also checks: `game` belongs to `leagueId`/`seasonId`; `teamId` is home or
 
 ### `updateStatValidator` — `PUT /api/v1/leagues/stats/:id`
 
-Optional: `relatedPlayerId`, `minute`, `isStoppageTime`, `value`, `numericValue`.
+Optional: `relatedPlayerId`, `minute`, `isStoppageTime`, `value`, `numericValue`. Does **not** allow changing `playerId` or `statTypeId` — delete and recreate (or use `POST .../substitutions` again) to change who was involved in a substitution.
+
+### `recordSubstitutionValidator` — `POST /api/v1/leagues/stats/substitutions`
+
+| Field | Rules |
+| --- | --- |
+| `gameId`, `leagueId`, `seasonId`, `teamId` | required FKs |
+| `substitutions` | array, 1–11 items |
+| `substitutions[].playerOffId` | required FK → `players`; must be `status: starter` in this team's lineup |
+| `substitutions[].playerOnId` | required FK → `players` (≠ off); must be `status: substitute` in this team's lineup |
+| `substitutions[].minute` | integer 0–130 |
+| `substitutions[].isStoppageTime` | optional boolean |
+
+Server also rejects duplicate players across the batch and players missing from the lineup.
+
+### `setLineupValidator` — `PUT /api/v1/games/:gameId/lineups`
+
+| Field | Rules |
+| --- | --- |
+| `teamId` | required FK → `teams` |
+| `formationId` | required FK → `formations` |
+| `starters` | array, exactly 11 items: `{ playerId, slotKey, jerseyNumber? }` |
+| `substitutes` | array, max 12 items: `{ playerId, jerseyNumber? }` |
+
+### `updateLineupValidator` — `PATCH /api/v1/games/:gameId/lineups/:id`
+
+Optional: `jerseyNumber` (1–99, nullable), `slotKey` (string, nullable), `position` (`LINEUP_POSITIONS`, nullable), `status` (`starter` \| `substitute` \| `did_not_play`).
+
+### `assignTeamAdminValidator` — `POST /api/v1/leagues/:leagueId/teams/:teamId/admins`
+
+| Field | Rules |
+| --- | --- |
+| `userId` | required FK → `users` |
 
 ---
 
@@ -667,7 +867,8 @@ Optional: `relatedPlayerId`, `minute`, `isStoppageTime`, `value`, `numericValue`
 | Middleware | Meaning |
 | --- | --- |
 | `apiAuth` | Bearer access token (`api` guard). |
-| `leagueOwner` | Authenticated user must own the league. Resolves `leagueId` from, in order: `params.leagueId` (URL), `leagueId` in body/query, or the parent game/stat row for `PUT /leagues/games/:id` and `PUT /leagues/stats/:id`. |
+| `leagueOwner` | Authenticated user must own the league. Resolves `leagueId` from, in order: `params.leagueId` (URL), `leagueId` in body/query, `params.gameId` (load game → `leagueId`), or the parent game/stat/league-player row for `params.id` on `/games/`, `/stats/`, `/league-players/` paths. Used for league manage routes and Match Center clock/score. |
+| `lineupManager` | Authenticated user must be league owner for the game's league **or** an active team admin (`team_admins`, `removed_at` null) on home or away. Used for lineup mutations only. Team admins are further scoped to their own team in `LineupService`. |
 
 ## Notes
 

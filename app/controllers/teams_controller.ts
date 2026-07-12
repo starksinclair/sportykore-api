@@ -20,6 +20,7 @@ export default class TeamsController {
   ) {}
   async show({ params, serialize }: HttpContext) {
     const { id } = params
+    console.log('team id', id)
     const { team, leagues, statTypes } = await this.teamService.getTeamDetail(Number(id))
 
     return serialize({

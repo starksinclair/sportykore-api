@@ -29,7 +29,7 @@ export interface ApiDefinition {
   }
   authUsers: {
     me: typeof routes['auth_users.me']
-    leagues: typeof routes['auth_users.leagues']
+    managed: typeof routes['auth_users.managed']
     teams: typeof routes['auth_users.teams']
     search: typeof routes['auth_users.search']
   }
@@ -52,12 +52,24 @@ export interface ApiDefinition {
     update: typeof routes['games.update']
     destroy: typeof routes['games.destroy']
   }
+  formations: {
+    index: typeof routes['formations.index']
+    show: typeof routes['formations.show']
+  }
+  gameLineups: {
+    index: typeof routes['game_lineups.index']
+    set: typeof routes['game_lineups.set']
+    update: typeof routes['game_lineups.update']
+    destroy: typeof routes['game_lineups.destroy']
+  }
   teams: {
     show: typeof routes['teams.show']
     store: typeof routes['teams.store']
     update: typeof routes['teams.update']
+    destroy: typeof routes['teams.destroy']
   }
   players: {
+    doesUserHavePlayerProfile: typeof routes['players.does_user_have_player_profile']
     show: typeof routes['players.show']
     acceptLeaguePlayerRequest: typeof routes['players.accept_league_player_request']
     leaguePlayerRequests: typeof routes['players.league_player_requests']
@@ -87,6 +99,11 @@ export interface ApiDefinition {
   }
   seasons: {
     store: typeof routes['seasons.store']
+    update: typeof routes['seasons.update']
+  }
+  teamAdmins: {
+    store: typeof routes['team_admins.store']
+    destroy: typeof routes['team_admins.destroy']
   }
   leaguePlayers: {
     roster: typeof routes['league_players.roster']
@@ -95,6 +112,7 @@ export interface ApiDefinition {
   }
   stats: {
     store: typeof routes['stats.store']
+    recordSubstitutions: typeof routes['stats.record_substitutions']
     update: typeof routes['stats.update']
     destroy: typeof routes['stats.destroy']
   }

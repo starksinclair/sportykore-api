@@ -5,6 +5,7 @@ import { afterSave, belongsTo, hasMany } from '@adonisjs/lucid/orm'
 import Team from '#models/team'
 import League from '#models/league'
 import Stat from '#models/stat'
+import GameLineup from '#models/game_lineup'
 import { events } from '#generated/events'
 
 export default class Game extends GameSchema {
@@ -22,6 +23,9 @@ export default class Game extends GameSchema {
 
   @hasMany(() => Stat)
   declare stats: HasMany<typeof Stat>
+
+  @hasMany(() => GameLineup)
+  declare lineups: HasMany<typeof GameLineup>
 
   @afterSave()
   static async onSave(game: Game) {

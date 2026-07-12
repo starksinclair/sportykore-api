@@ -1,6 +1,6 @@
 # Live Game Time Implementation Prompt
 
-> **Backend (this repo):** Implemented — migration, `GameTimeService`, `GameTimeController`, `teamOwner` middleware, routes under `/api/v1/games/:gameId/*`, transformer fields, SSE `status_changed` broadcasts. See [ROUTES.md](../ROUTES.md).
+> **Backend (this repo):** Implemented — migration, `GameTimeService`, `GameTimeController`, `leagueOwner` middleware (resolves `params.gameId`), routes under `/api/v1/games/:gameId/*`, transformer fields, SSE `status_changed` broadcasts. See [ROUTES.md](../ROUTES.md).
 >
 > **Mobile (React Native):** Hooks/components below are for the Expo app — not in this repository.
 
@@ -15,7 +15,7 @@ We are building a soccer league management platform using AdonisJS (backend) and
 | `UpdateStandings` listener | Recalculates standings and broadcasts via SSE                    |
 | Transmit SSE               | Already configured for real-time broadcasting                    |
 | `LeagueOwnerMiddleware`    | Guards league-level routes                                       |
-| `TeamOwnerMiddleware`      | Guards team-level routes — both league owner and team owner pass |
+| `LeagueOwnerMiddleware`    | Guards Match Center clock/score — league owner only (`params.gameId` → league) |
 
 ---
 
@@ -124,7 +124,7 @@ The `endGame` action must also fire the existing `GameUpdated` event with reason
 
 ### 3. Routes
 
-Add to `start/routes.ts` under `teamOwner` middleware (both league owner and team owner can control game time):
+Add to `start/routes.ts` under `leagueOwner` middleware (league owner controls game time):
 
 ```ts
 router
@@ -135,7 +135,7 @@ router
     router.post('/games/:gameId/extra-time', [controllers.GameTime, 'startExtraTime'])
     router.post('/games/:gameId/full-time', [controllers.GameTime, 'endGame'])
   })
-  .middleware([middleware.auth(), middleware.teamOwner()])
+  .middleware([middleware.apiAuth(), middleware.leagueOwner()])
 ```
 
 ### 4. Game Transformer

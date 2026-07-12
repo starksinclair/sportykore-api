@@ -8,6 +8,8 @@ export const controllers = {
   AuthUsers: () => import('#controllers/auth_users_controller'),
   Countries: () => import('#controllers/countries_controller'),
   FavouriteLeagues: () => import('#controllers/favourite_leagues_controller'),
+  Formations: () => import('#controllers/formations_controller'),
+  GameLineups: () => import('#controllers/game_lineups_controller'),
   GameScore: () => import('#controllers/game_score_controller'),
   GameTime: () => import('#controllers/game_time_controller'),
   Games: () => import('#controllers/games_controller'),
@@ -20,6 +22,7 @@ export const controllers = {
   Seasons: () => import('#controllers/seasons_controller'),
   Session: () => import('#controllers/session_controller'),
   Stats: () => import('#controllers/stats_controller'),
+  TeamAdmins: () => import('#controllers/team_admins_controller'),
   Teams: () => import('#controllers/teams_controller'),
   Users: () => import('#controllers/users_controller'),
 }

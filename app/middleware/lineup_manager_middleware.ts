@@ -3,8 +3,13 @@ import type { NextFn } from '@adonisjs/core/types/http'
 import { Exception } from '@adonisjs/core/exceptions'
 
 import Game from '#models/game'
+import TeamAdmin from '#models/team_admin'
 
-export default class TeamOwnerMiddleware {
+/**
+ * Guards lineup mutation routes: league owner OR active team admin on home/away.
+ * Team admins are further scoped to their teamId in LineupService.
+ */
+export default class LineupManagerMiddleware {
   async handle(ctx: HttpContext, next: NextFn) {
     const user = ctx.auth.getUserOrFail()
     const gameId = Number(ctx.params.gameId)
@@ -21,11 +26,18 @@ export default class TeamOwnerMiddleware {
       .firstOrFail()
 
     const isLeagueOwner = game.league.userId === user.id
-    const isHomeTeamOwner = game.homeTeam.addedBy === user.id
-    const isAwayTeamOwner = game.awayTeam.addedBy === user.id
 
-    if (!isLeagueOwner && !isHomeTeamOwner && !isAwayTeamOwner) {
-      throw new Exception('You are not authorized to control this game', { status: 403 })
+    const isTeamAdmin = await TeamAdmin.query()
+      .whereIn('team_id', [game.homeTeam.id, game.awayTeam.id])
+      .where('user_id', user.id)
+      .where('league_id', game.league.id)
+      .whereNull('removed_at')
+      .first()
+
+    if (!isLeagueOwner && !isTeamAdmin) {
+      throw new Exception('You are not authorized to manage lineups for this game', {
+        status: 403,
+      })
     }
 
     await next()

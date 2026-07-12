@@ -102,11 +102,11 @@ const routes = {
     tokens: [{"old":"/api/v1/auth/users/me","type":0,"val":"api","end":""},{"old":"/api/v1/auth/users/me","type":0,"val":"v1","end":""},{"old":"/api/v1/auth/users/me","type":0,"val":"auth","end":""},{"old":"/api/v1/auth/users/me","type":0,"val":"users","end":""},{"old":"/api/v1/auth/users/me","type":0,"val":"me","end":""}],
     types: placeholder as Registry['auth_users.me']['types'],
   },
-  'auth_users.leagues': {
+  'auth_users.managed': {
     methods: ["GET","HEAD"],
-    pattern: '/api/v1/auth/users/leagues',
-    tokens: [{"old":"/api/v1/auth/users/leagues","type":0,"val":"api","end":""},{"old":"/api/v1/auth/users/leagues","type":0,"val":"v1","end":""},{"old":"/api/v1/auth/users/leagues","type":0,"val":"auth","end":""},{"old":"/api/v1/auth/users/leagues","type":0,"val":"users","end":""},{"old":"/api/v1/auth/users/leagues","type":0,"val":"leagues","end":""}],
-    types: placeholder as Registry['auth_users.leagues']['types'],
+    pattern: '/api/v1/auth/users/managed',
+    tokens: [{"old":"/api/v1/auth/users/managed","type":0,"val":"api","end":""},{"old":"/api/v1/auth/users/managed","type":0,"val":"v1","end":""},{"old":"/api/v1/auth/users/managed","type":0,"val":"auth","end":""},{"old":"/api/v1/auth/users/managed","type":0,"val":"users","end":""},{"old":"/api/v1/auth/users/managed","type":0,"val":"managed","end":""}],
+    types: placeholder as Registry['auth_users.managed']['types'],
   },
   'auth_users.teams': {
     methods: ["GET","HEAD"],
@@ -162,11 +162,35 @@ const routes = {
     tokens: [{"old":"/api/v1/games/:id","type":0,"val":"api","end":""},{"old":"/api/v1/games/:id","type":0,"val":"v1","end":""},{"old":"/api/v1/games/:id","type":0,"val":"games","end":""},{"old":"/api/v1/games/:id","type":1,"val":"id","end":""}],
     types: placeholder as Registry['games.show']['types'],
   },
+  'formations.index': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/formations',
+    tokens: [{"old":"/api/v1/formations","type":0,"val":"api","end":""},{"old":"/api/v1/formations","type":0,"val":"v1","end":""},{"old":"/api/v1/formations","type":0,"val":"formations","end":""}],
+    types: placeholder as Registry['formations.index']['types'],
+  },
+  'formations.show': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/formations/:id',
+    tokens: [{"old":"/api/v1/formations/:id","type":0,"val":"api","end":""},{"old":"/api/v1/formations/:id","type":0,"val":"v1","end":""},{"old":"/api/v1/formations/:id","type":0,"val":"formations","end":""},{"old":"/api/v1/formations/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['formations.show']['types'],
+  },
+  'game_lineups.index': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/games/:gameId/lineups',
+    tokens: [{"old":"/api/v1/games/:gameId/lineups","type":0,"val":"api","end":""},{"old":"/api/v1/games/:gameId/lineups","type":0,"val":"v1","end":""},{"old":"/api/v1/games/:gameId/lineups","type":0,"val":"games","end":""},{"old":"/api/v1/games/:gameId/lineups","type":1,"val":"gameId","end":""},{"old":"/api/v1/games/:gameId/lineups","type":0,"val":"lineups","end":""}],
+    types: placeholder as Registry['game_lineups.index']['types'],
+  },
   'teams.show': {
     methods: ["GET","HEAD"],
     pattern: '/api/v1/teams/:id',
     tokens: [{"old":"/api/v1/teams/:id","type":0,"val":"api","end":""},{"old":"/api/v1/teams/:id","type":0,"val":"v1","end":""},{"old":"/api/v1/teams/:id","type":0,"val":"teams","end":""},{"old":"/api/v1/teams/:id","type":1,"val":"id","end":""}],
     types: placeholder as Registry['teams.show']['types'],
+  },
+  'players.does_user_have_player_profile': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/players/does-user-have-player-profile',
+    tokens: [{"old":"/api/v1/players/does-user-have-player-profile","type":0,"val":"api","end":""},{"old":"/api/v1/players/does-user-have-player-profile","type":0,"val":"v1","end":""},{"old":"/api/v1/players/does-user-have-player-profile","type":0,"val":"players","end":""},{"old":"/api/v1/players/does-user-have-player-profile","type":0,"val":"does-user-have-player-profile","end":""}],
+    types: placeholder as Registry['players.does_user_have_player_profile']['types'],
   },
   'players.show': {
     methods: ["GET","HEAD"],
@@ -264,6 +288,24 @@ const routes = {
     tokens: [{"old":"/api/v1/games/:gameId/full-time","type":0,"val":"api","end":""},{"old":"/api/v1/games/:gameId/full-time","type":0,"val":"v1","end":""},{"old":"/api/v1/games/:gameId/full-time","type":0,"val":"games","end":""},{"old":"/api/v1/games/:gameId/full-time","type":1,"val":"gameId","end":""},{"old":"/api/v1/games/:gameId/full-time","type":0,"val":"full-time","end":""}],
     types: placeholder as Registry['game_time.end_game']['types'],
   },
+  'game_lineups.set': {
+    methods: ["PUT"],
+    pattern: '/api/v1/games/:gameId/lineups',
+    tokens: [{"old":"/api/v1/games/:gameId/lineups","type":0,"val":"api","end":""},{"old":"/api/v1/games/:gameId/lineups","type":0,"val":"v1","end":""},{"old":"/api/v1/games/:gameId/lineups","type":0,"val":"games","end":""},{"old":"/api/v1/games/:gameId/lineups","type":1,"val":"gameId","end":""},{"old":"/api/v1/games/:gameId/lineups","type":0,"val":"lineups","end":""}],
+    types: placeholder as Registry['game_lineups.set']['types'],
+  },
+  'game_lineups.update': {
+    methods: ["PATCH"],
+    pattern: '/api/v1/games/:gameId/lineups/:id',
+    tokens: [{"old":"/api/v1/games/:gameId/lineups/:id","type":0,"val":"api","end":""},{"old":"/api/v1/games/:gameId/lineups/:id","type":0,"val":"v1","end":""},{"old":"/api/v1/games/:gameId/lineups/:id","type":0,"val":"games","end":""},{"old":"/api/v1/games/:gameId/lineups/:id","type":1,"val":"gameId","end":""},{"old":"/api/v1/games/:gameId/lineups/:id","type":0,"val":"lineups","end":""},{"old":"/api/v1/games/:gameId/lineups/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['game_lineups.update']['types'],
+  },
+  'game_lineups.destroy': {
+    methods: ["DELETE"],
+    pattern: '/api/v1/games/:gameId/lineups/:id',
+    tokens: [{"old":"/api/v1/games/:gameId/lineups/:id","type":0,"val":"api","end":""},{"old":"/api/v1/games/:gameId/lineups/:id","type":0,"val":"v1","end":""},{"old":"/api/v1/games/:gameId/lineups/:id","type":0,"val":"games","end":""},{"old":"/api/v1/games/:gameId/lineups/:id","type":1,"val":"gameId","end":""},{"old":"/api/v1/games/:gameId/lineups/:id","type":0,"val":"lineups","end":""},{"old":"/api/v1/games/:gameId/lineups/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['game_lineups.destroy']['types'],
+  },
   'leagues.update': {
     methods: ["PUT"],
     pattern: '/api/v1/leagues/:leagueId',
@@ -276,6 +318,12 @@ const routes = {
     tokens: [{"old":"/api/v1/leagues/:leagueId/seasons","type":0,"val":"api","end":""},{"old":"/api/v1/leagues/:leagueId/seasons","type":0,"val":"v1","end":""},{"old":"/api/v1/leagues/:leagueId/seasons","type":0,"val":"leagues","end":""},{"old":"/api/v1/leagues/:leagueId/seasons","type":1,"val":"leagueId","end":""},{"old":"/api/v1/leagues/:leagueId/seasons","type":0,"val":"seasons","end":""}],
     types: placeholder as Registry['seasons.store']['types'],
   },
+  'seasons.update': {
+    methods: ["PUT"],
+    pattern: '/api/v1/leagues/:leagueId/seasons/:seasonId',
+    tokens: [{"old":"/api/v1/leagues/:leagueId/seasons/:seasonId","type":0,"val":"api","end":""},{"old":"/api/v1/leagues/:leagueId/seasons/:seasonId","type":0,"val":"v1","end":""},{"old":"/api/v1/leagues/:leagueId/seasons/:seasonId","type":0,"val":"leagues","end":""},{"old":"/api/v1/leagues/:leagueId/seasons/:seasonId","type":1,"val":"leagueId","end":""},{"old":"/api/v1/leagues/:leagueId/seasons/:seasonId","type":0,"val":"seasons","end":""},{"old":"/api/v1/leagues/:leagueId/seasons/:seasonId","type":1,"val":"seasonId","end":""}],
+    types: placeholder as Registry['seasons.update']['types'],
+  },
   'teams.store': {
     methods: ["POST"],
     pattern: '/api/v1/leagues/:leagueId/teams',
@@ -287,6 +335,24 @@ const routes = {
     pattern: '/api/v1/leagues/:leagueId/teams/:id',
     tokens: [{"old":"/api/v1/leagues/:leagueId/teams/:id","type":0,"val":"api","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:id","type":0,"val":"v1","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:id","type":0,"val":"leagues","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:id","type":1,"val":"leagueId","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:id","type":0,"val":"teams","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:id","type":1,"val":"id","end":""}],
     types: placeholder as Registry['teams.update']['types'],
+  },
+  'teams.destroy': {
+    methods: ["DELETE"],
+    pattern: '/api/v1/leagues/:leagueId/teams/:id',
+    tokens: [{"old":"/api/v1/leagues/:leagueId/teams/:id","type":0,"val":"api","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:id","type":0,"val":"v1","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:id","type":0,"val":"leagues","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:id","type":1,"val":"leagueId","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:id","type":0,"val":"teams","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['teams.destroy']['types'],
+  },
+  'team_admins.store': {
+    methods: ["POST"],
+    pattern: '/api/v1/leagues/:leagueId/teams/:teamId/admins',
+    tokens: [{"old":"/api/v1/leagues/:leagueId/teams/:teamId/admins","type":0,"val":"api","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:teamId/admins","type":0,"val":"v1","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:teamId/admins","type":0,"val":"leagues","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:teamId/admins","type":1,"val":"leagueId","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:teamId/admins","type":0,"val":"teams","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:teamId/admins","type":1,"val":"teamId","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:teamId/admins","type":0,"val":"admins","end":""}],
+    types: placeholder as Registry['team_admins.store']['types'],
+  },
+  'team_admins.destroy': {
+    methods: ["DELETE"],
+    pattern: '/api/v1/leagues/:leagueId/teams/:teamId/admins/:userId',
+    tokens: [{"old":"/api/v1/leagues/:leagueId/teams/:teamId/admins/:userId","type":0,"val":"api","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:teamId/admins/:userId","type":0,"val":"v1","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:teamId/admins/:userId","type":0,"val":"leagues","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:teamId/admins/:userId","type":1,"val":"leagueId","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:teamId/admins/:userId","type":0,"val":"teams","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:teamId/admins/:userId","type":1,"val":"teamId","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:teamId/admins/:userId","type":0,"val":"admins","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:teamId/admins/:userId","type":1,"val":"userId","end":""}],
+    types: placeholder as Registry['team_admins.destroy']['types'],
   },
   'players.assign_team': {
     methods: ["POST"],
@@ -341,6 +407,12 @@ const routes = {
     pattern: '/api/v1/leagues/stats',
     tokens: [{"old":"/api/v1/leagues/stats","type":0,"val":"api","end":""},{"old":"/api/v1/leagues/stats","type":0,"val":"v1","end":""},{"old":"/api/v1/leagues/stats","type":0,"val":"leagues","end":""},{"old":"/api/v1/leagues/stats","type":0,"val":"stats","end":""}],
     types: placeholder as Registry['stats.store']['types'],
+  },
+  'stats.record_substitutions': {
+    methods: ["POST"],
+    pattern: '/api/v1/leagues/stats/substitutions',
+    tokens: [{"old":"/api/v1/leagues/stats/substitutions","type":0,"val":"api","end":""},{"old":"/api/v1/leagues/stats/substitutions","type":0,"val":"v1","end":""},{"old":"/api/v1/leagues/stats/substitutions","type":0,"val":"leagues","end":""},{"old":"/api/v1/leagues/stats/substitutions","type":0,"val":"stats","end":""},{"old":"/api/v1/leagues/stats/substitutions","type":0,"val":"substitutions","end":""}],
+    types: placeholder as Registry['stats.record_substitutions']['types'],
   },
   'stats.update': {
     methods: ["PUT"],

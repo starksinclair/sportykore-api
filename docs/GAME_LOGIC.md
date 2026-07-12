@@ -272,7 +272,8 @@ Creates/updates/deletes games and stats; manages league structure.
 
 Resolves `leagueId` from URL param, body, or parent game/stat row.
 
-### 9.3 Match control (`teamOwner` middleware)
+### 9.3 Match control (`leagueOwner` middleware)
+
 
 Clock + live score routes under `/api/v1/games/:gameId/*`.
 

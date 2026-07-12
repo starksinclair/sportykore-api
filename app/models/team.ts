@@ -7,6 +7,8 @@ import Player from '#models/player'
 import Game from '#models/game'
 import Standing from '#models/standing'
 import Invite from '#models/invite'
+import GameLineup from '#models/game_lineup'
+import TeamAdmin from '#models/team_admin'
 
 export default class Team extends TeamSchema {
   @belongsTo(() => League)
@@ -34,4 +36,10 @@ export default class Team extends TeamSchema {
 
   @hasMany(() => Invite)
   declare invites: HasMany<typeof Invite>
+
+  @hasMany(() => GameLineup)
+  declare lineups: HasMany<typeof GameLineup>
+
+  @hasMany(() => TeamAdmin)
+  declare admins: HasMany<typeof TeamAdmin>
 }

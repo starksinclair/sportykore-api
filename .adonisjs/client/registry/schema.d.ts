@@ -199,16 +199,16 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/auth_users_controller').default['me']>>>
     }
   }
-  'auth_users.leagues': {
+  'auth_users.managed': {
     methods: ["GET","HEAD"]
-    pattern: '/api/v1/auth/users/leagues'
+    pattern: '/api/v1/auth/users/managed'
     types: {
       body: {}
       paramsTuple: []
       params: {}
       query: {}
-      response: ExtractResponse<Awaited<ReturnType<import('#controllers/auth_users_controller').default['leagues']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/auth_users_controller').default['leagues']>>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/auth_users_controller').default['managed']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/auth_users_controller').default['managed']>>>
     }
   }
   'auth_users.teams': {
@@ -319,6 +319,42 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/games_controller').default['show']>>>
     }
   }
+  'formations.index': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/formations'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/formations_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/formations_controller').default['index']>>>
+    }
+  }
+  'formations.show': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/formations/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/formations_controller').default['show']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/formations_controller').default['show']>>>
+    }
+  }
+  'game_lineups.index': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/games/:gameId/lineups'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { gameId: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/game_lineups_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/game_lineups_controller').default['index']>>>
+    }
+  }
   'teams.show': {
     methods: ["GET","HEAD"]
     pattern: '/api/v1/teams/:id'
@@ -329,6 +365,18 @@ export interface Registry {
       query: {}
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/teams_controller').default['show']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/teams_controller').default['show']>>>
+    }
+  }
+  'players.does_user_have_player_profile': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/players/does-user-have-player-profile'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/players_controller').default['doesUserHavePlayerProfile']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/players_controller').default['doesUserHavePlayerProfile']>>>
     }
   }
   'players.show': {
@@ -523,6 +571,42 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/game_time_controller').default['endGame']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
+  'game_lineups.set': {
+    methods: ["PUT"]
+    pattern: '/api/v1/games/:gameId/lineups'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/lineup').setLineupValidator)>>
+      paramsTuple: [ParamValue]
+      params: { gameId: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/lineup').setLineupValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/game_lineups_controller').default['set']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/game_lineups_controller').default['set']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'game_lineups.update': {
+    methods: ["PATCH"]
+    pattern: '/api/v1/games/:gameId/lineups/:id'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/lineup').updateLineupValidator)>>
+      paramsTuple: [ParamValue, ParamValue]
+      params: { gameId: ParamValue; id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/lineup').updateLineupValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/game_lineups_controller').default['update']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/game_lineups_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'game_lineups.destroy': {
+    methods: ["DELETE"]
+    pattern: '/api/v1/games/:gameId/lineups/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue, ParamValue]
+      params: { gameId: ParamValue; id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/game_lineups_controller').default['destroy']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/game_lineups_controller').default['destroy']>>>
+    }
+  }
   'leagues.update': {
     methods: ["PUT"]
     pattern: '/api/v1/leagues/:leagueId'
@@ -547,6 +631,18 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/seasons_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
+  'seasons.update': {
+    methods: ["PUT"]
+    pattern: '/api/v1/leagues/:leagueId/seasons/:seasonId'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/season').updateSeasonValidator)>>
+      paramsTuple: [ParamValue, ParamValue]
+      params: { leagueId: ParamValue; seasonId: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/season').updateSeasonValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/seasons_controller').default['update']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/seasons_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
   'teams.store': {
     methods: ["POST"]
     pattern: '/api/v1/leagues/:leagueId/teams'
@@ -569,6 +665,42 @@ export interface Registry {
       query: ExtractQuery<InferInput<(typeof import('#validators/team').updateTeamValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/teams_controller').default['update']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/teams_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'teams.destroy': {
+    methods: ["DELETE"]
+    pattern: '/api/v1/leagues/:leagueId/teams/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue, ParamValue]
+      params: { leagueId: ParamValue; id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/teams_controller').default['destroy']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/teams_controller').default['destroy']>>>
+    }
+  }
+  'team_admins.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/leagues/:leagueId/teams/:teamId/admins'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/team_admin').assignTeamAdminValidator)>>
+      paramsTuple: [ParamValue, ParamValue]
+      params: { leagueId: ParamValue; teamId: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/team_admin').assignTeamAdminValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/team_admins_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/team_admins_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'team_admins.destroy': {
+    methods: ["DELETE"]
+    pattern: '/api/v1/leagues/:leagueId/teams/:teamId/admins/:userId'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue, ParamValue, ParamValue]
+      params: { leagueId: ParamValue; teamId: ParamValue; userId: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/team_admins_controller').default['destroy']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/team_admins_controller').default['destroy']>>>
     }
   }
   'players.assign_team': {
@@ -677,6 +809,18 @@ export interface Registry {
       query: ExtractQuery<InferInput<(typeof import('#validators/stat').createStatValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/stats_controller').default['store']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/stats_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'stats.record_substitutions': {
+    methods: ["POST"]
+    pattern: '/api/v1/leagues/stats/substitutions'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/stat').recordSubstitutionValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/stat').recordSubstitutionValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/stats_controller').default['recordSubstitutions']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/stats_controller').default['recordSubstitutions']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'stats.update': {

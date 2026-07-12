@@ -4,6 +4,7 @@ import SeasonTransformer from '#transformers/season_transformer'
 
 export type OwnedLeagueResource = League & {
   activeSeason?: import('#models/season').default | null
+  role?: 'owner'
 }
 
 export default class OwnedLeagueTransformer extends BaseTransformer<OwnedLeagueResource> {
@@ -13,6 +14,7 @@ export default class OwnedLeagueTransformer extends BaseTransformer<OwnedLeagueR
     return {
       ...this.pick(this.resource, ['id', 'name', 'logoUrl', 'countryId']),
       activeSeason: activeSeason ? SeasonTransformer.transform(activeSeason) : null,
+      role: this.resource.role ?? 'owner',
     }
   }
 }

@@ -3,18 +3,28 @@ import { DateTime } from 'luxon'
 
 import Country from '#models/country'
 import FavouriteLeague from '#models/favourite_league'
+import Formation from '#models/formation'
 import Game from '#models/game'
+import GameLineup from '#models/game_lineup'
 import League from '#models/league'
 import Season from '#models/season'
 import Team from '#models/team'
+import TeamAdmin from '#models/team_admin'
 import type User from '#models/user'
 import StatType from '#models/stat_type'
 import Player from '#models/player'
 import LeaguePlayer from '#models/league_player'
 import Stat from '#models/stat'
 import StandingService from '#services/standing_service'
+import type { FormationSlot } from '#types/formation'
 
 import UserFactory from '#factories/user_factory'
+import {
+  footballerName,
+  leagueLogoUrl,
+  playerAvatarUrl,
+  teamLogoUrl,
+} from '../data/seed_footballers.js'
 
 const USER_COUNT = 15
 const LEAGUES_PER_USER = 2
@@ -92,10 +102,12 @@ const TEAM_SUFFIXES = [
 ] as const
 
 const PLAYERS_PER_TEAM = 14
+const LINEUP_SUBSTITUTES = 3
 const MIN_STATS_PER_GAME = 5
 const MAX_STATS_PER_GAME = 12
 
 const SEASON_STATUSES = ['completed', 'active'] as const
+const DEFAULT_FORMATION_NAME = '4-3-3'
 
 type Fixture = {
   homeTeam: Team
@@ -105,10 +117,13 @@ type Fixture = {
 export default class DataSeeder extends BaseSeeder {
   private standingService = new StandingService()
   private statTypesByName = new Map<string, StatType>()
+  private playerNameIndex = 0
 
   async run() {
     const countries = await this.loadAfricanCountries()
     await this.loadStatTypes()
+    const formation = await Formation.findByOrFail('name', DEFAULT_FORMATION_NAME)
+    const formationSlots = this.parseFormationSlots(formation)
 
     const users = await UserFactory.createMany(USER_COUNT)
     const leagues: League[] = []
@@ -120,18 +135,20 @@ export default class DataSeeder extends BaseSeeder {
           throw new Error('Not enough countries to seed all leagues.')
         }
 
+        const leagueName = `${country.name} League ${userIndex + 1}-${leagueIndex + 1}`
         const league = await League.create({
           userId: user.id,
           countryId: country.id,
-          name: `${country.name} League ${userIndex + 1}-${leagueIndex + 1}`,
+          name: leagueName,
           description: `Seeded league for ${user.fullName ?? user.email}.`,
           gender: 'mixed',
-          logoUrl: null,
+          logoUrl: leagueLogoUrl(leagueName),
         })
 
         leagues.push(league)
 
         const { teams, teamPlayers } = await this.seedTeams(league, country, user)
+        await this.seedTeamAdmins(league, teams, user, users)
         const fixtures = this.buildFixtures(teams)
 
         for (let seasonIndex = 0; seasonIndex < SEASONS_PER_LEAGUE; seasonIndex++) {
@@ -143,7 +160,15 @@ export default class DataSeeder extends BaseSeeder {
 
           const playersByTeam = await this.seedLeaguePlayers(league, season, teams, teamPlayers)
           await this.seedStandings(league, season, teams)
-          await this.seedGames(league, season, fixtures, country.name, playersByTeam)
+          await this.seedGames(
+            league,
+            season,
+            fixtures,
+            country.name,
+            playersByTeam,
+            formation,
+            formationSlots
+          )
           await this.recalculateStandings(season.id, teams)
         }
       }
@@ -188,38 +213,45 @@ export default class DataSeeder extends BaseSeeder {
     }
   }
 
+  private nextFootballerName() {
+    const name = footballerName(this.playerNameIndex)
+    this.playerNameIndex += 1
+    return name
+  }
+
   private async seedTeams(league: League, country: Country, user: User) {
     const teams: Team[] = []
     const teamPlayers: Player[][] = []
 
     for (let index = 0; index < TEAMS_PER_LEAGUE; index++) {
       const suffix = TEAM_SUFFIXES[index % TEAM_SUFFIXES.length]
+      const teamName = `${country.name} ${suffix} ${index + 1}`
       const team = await Team.create({
         leagueId: league.id,
         addedBy: user.id,
-        name: `${country.name} ${suffix} ${index + 1}`,
-        logoUrl: null,
+        name: teamName,
+        logoUrl: teamLogoUrl(teamName),
       })
 
       teams.push(team)
 
       const players: Player[] = []
       for (let p = 0; p < PLAYERS_PER_TEAM; p++) {
+        const playerName = this.nextFootballerName()
         const playerEmail = `player.l${league.id}.t${team.id}.n${p}@sportykore.seed`
-        const playerFullName = `${team.name} Player ${p + 1}`
 
         const playerUser = await UserFactory.merge({
           email: playerEmail,
-          fullName: playerFullName,
+          fullName: playerName,
         }).create()
 
         const player = await Player.create({
           addedBy: user.id,
           userId: playerUser.id,
           countryId: country.id,
-          name: playerFullName,
+          name: playerName,
           bio: null,
-          avatarUrl: null,
+          avatarUrl: playerAvatarUrl(playerName),
         })
 
         players.push(player)
@@ -229,6 +261,32 @@ export default class DataSeeder extends BaseSeeder {
     }
 
     return { teams, teamPlayers }
+  }
+
+  private async seedTeamAdmins(league: League, teams: Team[], owner: User, users: User[]) {
+    const candidate = users.find((user) => user.id !== owner.id)
+    if (!candidate || teams.length === 0) {
+      return
+    }
+
+    await TeamAdmin.create({
+      leagueId: league.id,
+      teamId: teams[0]!.id,
+      userId: candidate.id,
+      assignedBy: owner.id,
+    })
+
+    if (teams.length > 1) {
+      const secondCandidate = users.find((user) => user.id !== owner.id && user.id !== candidate.id)
+      if (secondCandidate) {
+        await TeamAdmin.create({
+          leagueId: league.id,
+          teamId: teams[1]!.id,
+          userId: secondCandidate.id,
+          assignedBy: owner.id,
+        })
+      }
+    }
   }
 
   private buildFixtures(teams: Team[]): Fixture[] {
@@ -255,7 +313,9 @@ export default class DataSeeder extends BaseSeeder {
     season: Season,
     fixtures: Fixture[],
     countryName: string,
-    playersByTeam: Map<number, Player[]>
+    playersByTeam: Map<number, Player[]>,
+    formation: Formation,
+    formationSlots: FormationSlot[]
   ) {
     // Games start 8 days ago: indices 0–7 are full_time (past), index 8 is first_half (today), 9+ are scheduled (future)
     const baseDate = DateTime.now().startOf('day').minus({ days: 8 })
@@ -293,6 +353,18 @@ export default class DataSeeder extends BaseSeeder {
         venueName: `${countryName} Stadium ${index + 1}`,
       })
 
+      const homePlayers = playersByTeam.get(fixture.homeTeam.id) ?? []
+      const awayPlayers = playersByTeam.get(fixture.awayTeam.id) ?? []
+      await this.seedLineupsForGame(
+        game,
+        formation,
+        formationSlots,
+        fixture.homeTeam.id,
+        fixture.awayTeam.id,
+        homePlayers,
+        awayPlayers
+      )
+
       if (status === 'scheduled') {
         continue
       }
@@ -324,6 +396,67 @@ export default class DataSeeder extends BaseSeeder {
         })
       }
     }
+  }
+
+  private async seedLineupsForGame(
+    game: Game,
+    formation: Formation,
+    formationSlots: FormationSlot[],
+    homeTeamId: number,
+    awayTeamId: number,
+    homePlayers: Player[],
+    awayPlayers: Player[]
+  ) {
+    await this.seedTeamLineup(game, formation, formationSlots, homeTeamId, homePlayers)
+    await this.seedTeamLineup(game, formation, formationSlots, awayTeamId, awayPlayers)
+  }
+
+  private async seedTeamLineup(
+    game: Game,
+    formation: Formation,
+    formationSlots: FormationSlot[],
+    teamId: number,
+    players: Player[]
+  ) {
+    if (players.length < formationSlots.length) {
+      return
+    }
+
+    const starterRows = formationSlots.map((slot, index) => ({
+      gameId: game.id,
+      teamId,
+      playerId: players[index]!.id,
+      formationId: formation.id,
+      slotKey: slot.key,
+      position: slot.position,
+      status: 'starter' as const,
+      jerseyNumber: index + 1,
+      startingOrder: index + 1,
+    }))
+
+    const substituteRows = players
+      .slice(formationSlots.length, formationSlots.length + LINEUP_SUBSTITUTES)
+      .map((player, index) => ({
+        gameId: game.id,
+        teamId,
+        playerId: player.id,
+        formationId: formation.id,
+        slotKey: null,
+        position: null,
+        status: 'substitute' as const,
+        jerseyNumber: formationSlots.length + index + 1,
+        startingOrder: null,
+      }))
+
+    await GameLineup.createMany([...starterRows, ...substituteRows])
+  }
+
+  private parseFormationSlots(formation: Formation): FormationSlot[] {
+    if (typeof formation.slots === 'string') {
+      return JSON.parse(formation.slots) as FormationSlot[]
+    }
+
+    return formation.slots as FormationSlot[]
   }
 
   private async seedLeaguePlayers(

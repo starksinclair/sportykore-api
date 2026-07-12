@@ -29,7 +29,7 @@ flowchart TD
   ManageList[Manage screen]
   LoginGate{Logged in?}
   LoginPrompt[Show login message]
-  LeagueList[GET auth/users/leagues]
+  LeagueList[GET auth/users/managed]
   BioGate{Biometric gate}
   ManageDetail["Manage / [leagueId]"]
   GamesTab[Games tab]
@@ -53,7 +53,7 @@ flowchart TD
 | Step | Action |
 | --- | --- |
 | Auth check | If no stored Bearer token → show *“Log in to view your leagues”* and link to login (`POST /api/v1/auth/login`). Optional: `GET /api/v1/auth/users/me` to validate token. |
-| Load leagues | `GET /api/v1/auth/users/leagues` |
+| Load manage hub | `GET /api/v1/auth/users/managed` |
 
 **Response shape:**
 
@@ -197,7 +197,7 @@ Live match clock uses **period timestamps** (not DB minute polling). See [CHANGE
 | Resume | `POST /api/v1/games/:gameId/resume` |
 | Full time (with score) | `POST /api/v1/games/:gameId/full-time` → `{ "homeScore", "awayScore" }` |
 
-All game-time routes require **`apiAuth` + `teamOwner`** (league owner or either team's `addedBy` user). Each action broadcasts SSE `status_changed` on `games/{gameId}`.
+All game-time routes require **`apiAuth` + `leagueOwner`**. Each action broadcasts SSE `status_changed` on `games/{gameId}`.
 
 | Action | API |
 | --- | --- |
@@ -363,7 +363,7 @@ Response `201`: raw season object (not wrapped in `data`). After create, refetch
 | Screen / action | Method | Path |
 | --- | --- | --- |
 | Am I logged in? | `GET` | `/api/v1/auth/users/me` |
-| My leagues | `GET` | `/api/v1/auth/users/leagues` |
+| Manage hub | `GET` | `/api/v1/auth/users/managed` |
 | Teams in league | `GET` | `/api/v1/auth/users/leagues/:leagueId/teams` |
 | League + season detail | `GET` | `/api/v1/leagues/:leagueId?seasonId=` |
 | Game detail (Match Center) | `GET` | `/api/v1/games/:id` |
@@ -398,7 +398,7 @@ All mutation routes except invite accept require **`apiAuth` + league owner** (u
 
 ## Suggested screen checklist
 
-- [ ] Manage list: login gate + `GET auth/users/leagues`
+- [ ] Manage list: login gate + `GET auth/users/managed`
 - [ ] Biometric gate before `manage/[id]`
 - [ ] Season picker bound to `seasons[]`
 - [ ] Games: Live / Upcoming / Results sections

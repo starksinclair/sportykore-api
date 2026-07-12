@@ -2,6 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import { inject } from '@adonisjs/core'
 
 import { UserManageService } from '#services/user_manage_service'
+import AdminTeamManagedTransformer from '#transformers/admin_team_managed_transformer'
 import OwnedLeagueTransformer from '#transformers/owned_league_transformer'
 import TeamTransformer from '#transformers/team_transformer'
 import UserTransformer from '#transformers/user_transformer'
@@ -15,17 +16,21 @@ export default class AuthUsersController {
     return serialize(UserTransformer.transform(user))
   }
 
-  async leagues({ auth, serialize }: HttpContext) {
+  async managed({ auth, serialize }: HttpContext) {
     const user = auth.getUserOrFail()
-    const leagues = await this.userManageService.listOwnedLeagues(user.id)
-    return serialize(OwnedLeagueTransformer.transform(leagues))
+    const { ownedLeagues, adminTeams } = await this.userManageService.listManaged(user.id)
+
+    return serialize({
+      ownedLeagues: OwnedLeagueTransformer.transform(ownedLeagues),
+      adminTeams: AdminTeamManagedTransformer.transform(adminTeams),
+    })
   }
 
   async teams({ auth, params, serialize }: HttpContext) {
     const user = auth.getUserOrFail()
     const leagueId = Number(params.leagueId)
     const teams = await this.userManageService.listOwnedLeagueTeams(user.id, leagueId)
-    return serialize(TeamTransformer.transform(teams))
+    return serialize(TeamTransformer.transform(teams)?.useVariant('withAdmins'))
   }
 
   async search({ auth, request, serialize }: HttpContext) {

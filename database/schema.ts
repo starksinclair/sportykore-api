@@ -64,6 +64,56 @@ export class FavouriteLeagueSchema extends BaseModel {
   declare userId: number
 }
 
+export class FormationSchema extends BaseModel {
+  static $columns = ['createdAt', 'displayName', 'id', 'isActive', 'name', 'slots'] as const
+  $columns = FormationSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare displayName: string
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare isActive: boolean | null
+  @column()
+  declare name: string
+  @column()
+  declare slots: any
+}
+
+export class GameLineupSchema extends BaseModel {
+  static $columns = ['createdAt', 'formationId', 'gameId', 'id', 'jerseyNumber', 'playerId', 'position', 'slotKey', 'startingOrder', 'status', 'subbedInMinute', 'subbedOutMinute', 'teamId', 'updatedAt'] as const
+  $columns = GameLineupSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare formationId: number | null
+  @column()
+  declare gameId: number
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare jerseyNumber: number | null
+  @column()
+  declare playerId: number
+  @column()
+  declare position: string | null
+  @column()
+  declare slotKey: string | null
+  @column()
+  declare startingOrder: number | null
+  @column()
+  declare status: string | null
+  @column()
+  declare subbedInMinute: number | null
+  @column()
+  declare subbedOutMinute: number | null
+  @column()
+  declare teamId: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
 export class GameSchema extends BaseModel {
   static $columns = ['awayScore', 'awayTeamId', 'createdAt', 'currentMinute', 'extraTimeDuration', 'extraTimeStartedAt', 'firstHalfDuration', 'firstHalfStartedAt', 'homeScore', 'homeTeamId', 'id', 'leagueId', 'pausedAt', 'pausedFromStatus', 'playedAt', 'seasonId', 'secondHalfDuration', 'secondHalfStartedAt', 'status', 'updatedAt', 'venueName'] as const
   $columns = GameSchema.$columns
@@ -359,6 +409,27 @@ export class StatSchema extends BaseModel {
   declare updatedAt: DateTime | null
   @column()
   declare value: string | null
+}
+
+export class TeamAdminSchema extends BaseModel {
+  static $columns = ['assignedBy', 'createdAt', 'id', 'leagueId', 'removedAt', 'teamId', 'updatedAt', 'userId'] as const
+  $columns = TeamAdminSchema.$columns
+  @column()
+  declare assignedBy: number | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare leagueId: number
+  @column.dateTime()
+  declare removedAt: DateTime | null
+  @column()
+  declare teamId: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare userId: number
 }
 
 export class TeamSchema extends BaseModel {

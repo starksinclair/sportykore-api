@@ -2,8 +2,11 @@ import type { HttpContext } from '@adonisjs/core/http'
 import { inject } from '@adonisjs/core'
 import Stat from '#models/stat'
 import StatService from '#services/stat_service'
-import { createStatValidator } from '#validators/stat'
-import { updateStatValidator } from '#validators/stat'
+import {
+  createStatValidator,
+  recordSubstitutionValidator,
+  updateStatValidator,
+} from '#validators/stat'
 
 @inject()
 export default class StatsController {
@@ -14,6 +17,16 @@ export default class StatsController {
     await this.statService.validateForCreate(data)
     await Stat.create(data)
     return response.created({ message: 'Stat created successfully' })
+  }
+
+  async recordSubstitutions({ request, response }: HttpContext) {
+    const data = await request.validateUsing(recordSubstitutionValidator)
+    const stats = await this.statService.recordSubstitutions(data)
+
+    return response.created({
+      message: 'Substitution(s) recorded successfully',
+      statIds: stats.map((stat) => stat.id),
+    })
   }
 
   async update({ params, response, request }: HttpContext) {

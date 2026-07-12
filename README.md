@@ -5,7 +5,7 @@ Backend for **Sportykore** — a sports league management platform. This reposit
 1. A **JSON REST API** (`/api/v1`) for the mobile app (Bearer token auth).
 2. A small **React + Inertia** web UI for account login/signup and a home page (session auth).
 
-The core domain covers countries, leagues, seasons, teams, players, games, match stats, standings, favourites, and player invites.
+The core domain covers countries, leagues, seasons, teams, players, games, match stats, standings, formations, game lineups, favourites, and player invites.
 
 ---
 
@@ -267,6 +267,8 @@ Migrations under `database/migrations/` define:
 | `players` | Player profiles (optional link to `user_id`) |
 | `league_players` | Roster rows (team, season, position, status, jersey, captain) |
 | `games` | Fixtures/results (`scheduled` \| `live` \| `break` \| `completed` \| `postponed` \| `cancelled`) |
+| `formations` | Tactical templates (`4-3-3`, `4-4-2`, …) with JSON slot blueprints — **25 modern shapes seeded in migration** |
+| `game_lineups` | Per-game squad rows (starters/subs, slot, position, jersey, substitution minutes) |
 | `stats` / `stat_types` | Match events (goals, assists, cards, subs, etc.) |
 | `standings` | League table rows (updated when games finish) |
 | `favourite_leagues` | User ↔ league favourites |
@@ -327,6 +329,7 @@ app/
 config/            auth, database, drive, mail, transmit, …
 database/
   migrations/      Schema source of truth
+  data/            Static seed payloads (e.g. `formations.ts`)
   seeders/         data_seeder.ts — rich demo data
   factories/       Test/seed factories
   schema.ts        GENERATED — do not edit
@@ -418,6 +421,17 @@ node ace db:seed --files database/seeders/data_seeder.ts
 - Migrations: **snake_case** columns
 - Models / `schema.ts`: **camelCase** properties (`full_name` → `fullName`)
 - Vine date fields → Luxon `DateTime` via `start/validator.ts`
+
+### Recent migrations: formations & lineups
+
+| Migration | Table | Notes |
+| --- | --- | --- |
+| `1782100000000_create_formations_table.ts` | `formations` | `name`, `display_name`, `slots` (JSON array of 11 position slots), `is_active`. Seeds **25 modern formations** via `this.defer()` from [`database/data/formations.ts`](database/data/formations.ts). |
+| `1782100000001_create_game_lineups_table.ts` | `game_lineups` | Links `game`, `player`, `team`, optional `formation` + `slot_key`; `status` (`starter` \| `substitute` \| `did_not_play`); unique `(game_id, player_id)`. |
+
+Slot types and position enums live in [`app/types/formation.ts`](app/types/formation.ts). Models: `Formation`, `GameLineup` (relations on `Game`, `Player`, `Team`). Lineup API routes are not wired yet.
+
+After pulling these migrations, run `node ace migration:run` and commit the updated `database/schema.ts`.
 
 ---
 

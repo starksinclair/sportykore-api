@@ -1,8 +1,16 @@
 import { Exception } from '@adonisjs/core/exceptions'
 
 import League from '#models/league'
+import Season from '#models/season'
 import Team from '#models/team'
+import TeamAdmin from '#models/team_admin'
 import User from '#models/user'
+
+export type AdminTeamManagedResource = Team & {
+  league: League
+  activeSeason: Season | null
+  role: 'team_admin'
+}
 
 export class UserManageService {
   async listOwnedLeagues(userId: number) {
@@ -19,8 +27,49 @@ export class UserManageService {
       const activeSeason =
         league.seasons.find((season) => season.status === 'active') ?? league.seasons[0] ?? null
 
-      return Object.assign(league, { activeSeason })
+      return Object.assign(league, { activeSeason, role: 'owner' as const })
     })
+  }
+
+  async listManaged(userId: number) {
+    const ownedLeagues = await this.listOwnedLeagues(userId)
+    const ownedLeagueIds = new Set(ownedLeagues.map((league) => league.id))
+
+    const adminRows = await TeamAdmin.query()
+      .where('user_id', userId)
+      .whereNull('removed_at')
+      .preload('team')
+      .preload('league', (leagueQuery) => {
+        leagueQuery.preload('seasons', (seasonQuery) => {
+          seasonQuery.orderByRaw(
+            `CASE status WHEN 'active' THEN 0 WHEN 'completed' THEN 1 ELSE 2 END, created_at DESC`
+          )
+        })
+      })
+      .orderBy('id', 'asc')
+
+    const adminTeams: AdminTeamManagedResource[] = []
+
+    for (const row of adminRows) {
+      if (ownedLeagueIds.has(row.leagueId)) {
+        continue
+      }
+
+      const activeSeason =
+        row.league.seasons.find((season) => season.status === 'active') ??
+        row.league.seasons[0] ??
+        null
+
+      adminTeams.push(
+        Object.assign(row.team, {
+          league: row.league,
+          activeSeason,
+          role: 'team_admin' as const,
+        })
+      )
+    }
+
+    return { ownedLeagues, adminTeams }
   }
 
   async listOwnedLeagueTeams(userId: number, leagueId: number) {
@@ -30,7 +79,12 @@ export class UserManageService {
       throw new Exception('You are not authorized to manage this league', { status: 403 })
     }
 
-    return Team.query().where('league_id', leagueId).orderBy('name', 'asc')
+    return Team.query()
+      .where('league_id', leagueId)
+      .preload('admins', (adminsQuery) => {
+        adminsQuery.whereNull('removed_at').preload('user').orderBy('id', 'asc')
+      })
+      .orderBy('name', 'asc')
   }
 
   async searchUsersForInvite(userId: number, leagueId: number, query: string, limit: number) {

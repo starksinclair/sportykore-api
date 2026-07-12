@@ -35,6 +35,20 @@ export default class LeagueOwnerMiddleware {
       }
     }
 
+    if (params.gameId !== undefined && params.gameId !== null && params.gameId !== '') {
+      const gameId = Number(params.gameId)
+      if (!Number.isFinite(gameId) || gameId <= 0) {
+        throw new Exception('Invalid game id', { status: 400 })
+      }
+
+      const game = await Game.find(gameId)
+      if (game) {
+        return game.leagueId
+      }
+
+      throw new Exception('Game not found', { status: 404 })
+    }
+
     const resourceId = params.id
     if (resourceId !== undefined && resourceId !== null && resourceId !== '') {
       const id = Number(resourceId)

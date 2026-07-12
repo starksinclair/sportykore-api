@@ -6,12 +6,16 @@
 /// <reference path="./manifest.d.ts" />
 import type { InferData, InferVariants } from '@adonisjs/core/types/transformers'
 import type { InferSharedProps } from '@adonisjs/inertia/types'
+import type AdminTeamManagedTransformer from '#transformers/admin_team_managed_transformer'
 import type AuthSessionTransformer from '#transformers/auth_session_transformer'
 import type CountryDetailTransformer from '#transformers/country_detail_transformer'
 import type CountryTransformer from '#transformers/country_transformer'
+import type FormationTransformer from '#transformers/formation_transformer'
+import type GameLineupTransformer from '#transformers/game_lineup_transformer'
 import type GameTransformer from '#transformers/game_transformer'
 import type LeaguePlayerTransformer from '#transformers/league_player_transformer'
 import type LeagueTransformer from '#transformers/league_transformer'
+import type LineupGroupTransformer from '#transformers/lineup_group_transformer'
 import type OwnedLeagueTransformer from '#transformers/owned_league_transformer'
 import type PlayerLeagueDetailTransformer from '#transformers/player_league_detail_transformer'
 import type PlayerSeasonDetailTransformer from '#transformers/player_season_detail_transformer'
@@ -21,6 +25,7 @@ import type SeasonTransformer from '#transformers/season_transformer'
 import type StandingTransformer from '#transformers/standing_transformer'
 import type StatTransformer from '#transformers/stat_transformer'
 import type StatsTypeTransformer from '#transformers/stats_type_transformer'
+import type TeamAdminTransformer from '#transformers/team_admin_transformer'
 import type TeamLeagueDetailTransformer from '#transformers/team_league_detail_transformer'
 import type TeamSeasonDetailTransformer from '#transformers/team_season_detail_transformer'
 import type TeamTransformer from '#transformers/team_transformer'
@@ -28,6 +33,10 @@ import type UserTransformer from '#transformers/user_transformer'
 import type InertiaMiddleware from '#middleware/inertia_middleware'
 
 export namespace Data {
+  export type AdminTeamManaged = InferData<AdminTeamManagedTransformer>
+  export namespace AdminTeamManaged {
+    export type Variants = InferVariants<AdminTeamManagedTransformer>
+  }
   export type AuthSession = InferData<AuthSessionTransformer>
   export namespace AuthSession {
     export type Variants = InferVariants<AuthSessionTransformer>
@@ -40,6 +49,14 @@ export namespace Data {
   export namespace Country {
     export type Variants = InferVariants<CountryTransformer>
   }
+  export type Formation = InferData<FormationTransformer>
+  export namespace Formation {
+    export type Variants = InferVariants<FormationTransformer>
+  }
+  export type GameLineup = InferData<GameLineupTransformer>
+  export namespace GameLineup {
+    export type Variants = InferVariants<GameLineupTransformer>
+  }
   export type Game = InferData<GameTransformer>
   export namespace Game {
     export type Variants = InferVariants<GameTransformer>
@@ -51,6 +68,10 @@ export namespace Data {
   export type League = InferData<LeagueTransformer>
   export namespace League {
     export type Variants = InferVariants<LeagueTransformer>
+  }
+  export type LineupGroup = InferData<LineupGroupTransformer>
+  export namespace LineupGroup {
+    export type Variants = InferVariants<LineupGroupTransformer>
   }
   export type OwnedLeague = InferData<OwnedLeagueTransformer>
   export namespace OwnedLeague {
@@ -87,6 +108,10 @@ export namespace Data {
   export type StatsType = InferData<StatsTypeTransformer>
   export namespace StatsType {
     export type Variants = InferVariants<StatsTypeTransformer>
+  }
+  export type TeamAdmin = InferData<TeamAdminTransformer>
+  export namespace TeamAdmin {
+    export type Variants = InferVariants<TeamAdminTransformer>
   }
   export type TeamLeagueDetail = InferData<TeamLeagueDetailTransformer>
   export namespace TeamLeagueDetail {

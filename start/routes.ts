@@ -58,14 +58,12 @@ router
     router.post('verify-otp', [controllers.Auth, 'verifyOtp']).use(otpVerifyThrottle)
     router.post('recover', [controllers.Auth, 'requestRecovery']).use(otpRequestThrottle)
     router.post('logout', [controllers.Auth, 'logout']).use(middleware.apiAuth()).use(authThrottle)
-    router
-      .delete('account', [controllers.Auth, 'deleteAccount'])
-      .use(middleware.apiAuth())
+    router.delete('account', [controllers.Auth, 'deleteAccount']).use(middleware.apiAuth())
 
     router
       .group(() => {
         router.get('me', [controllers.AuthUsers, 'me'])
-        router.get('leagues', [controllers.AuthUsers, 'leagues'])
+        router.get('managed', [controllers.AuthUsers, 'managed'])
         router.get('leagues/:leagueId/teams', [controllers.AuthUsers, 'teams'])
         router.get('search', [controllers.AuthUsers, 'search'])
       })
@@ -87,8 +85,16 @@ router
     router.post('leagues', [controllers.Leagues, 'store']).use(middleware.apiAuth())
     router.get('search', [controllers.Searches, 'search']).use(searchThrottle)
     router.get('games/:id', [controllers.Games, 'show'])
+    router.get('formations', [controllers.Formations, 'index'])
+    router.get('formations/:id', [controllers.Formations, 'show'])
+    router.get('games/:gameId/lineups', [controllers.GameLineups, 'index'])
     router.get('teams/:id', [controllers.Teams, 'show'])
-    router.get('players/does-user-have-player-profile', [controllers.Players, 'doesUserHavePlayerProfile']).use(middleware.apiAuth())
+    router
+      .get('players/does-user-have-player-profile', [
+        controllers.Players,
+        'doesUserHavePlayerProfile',
+      ])
+      .use(middleware.apiAuth())
     router.get('players/:id', [controllers.Players, 'show'])
     router.get('invites/accept/:token', [controllers.Invites, 'accept']).use(middleware.apiAuth())
     router
@@ -127,7 +133,17 @@ router
         router.post('games/:gameId/full-time', [controllers.GameTime, 'endGame'])
       })
       .use(middleware.apiAuth())
-      .use(middleware.teamOwner())
+      .use(middleware.leagueOwner())
+      .use(gameUpdateThrottle)
+
+    router
+      .group(() => {
+        router.put('games/:gameId/lineups', [controllers.GameLineups, 'set'])
+        router.patch('games/:gameId/lineups/:id', [controllers.GameLineups, 'update'])
+        router.delete('games/:gameId/lineups/:id', [controllers.GameLineups, 'destroy'])
+      })
+      .use(middleware.apiAuth())
+      .use(middleware.lineupManager())
       .use(gameUpdateThrottle)
 
     router
@@ -140,6 +156,11 @@ router
         router.post('leagues/:leagueId/teams', [controllers.Teams, 'store'])
         router.put('leagues/:leagueId/teams/:id', [controllers.Teams, 'update'])
         router.delete('leagues/:leagueId/teams/:id', [controllers.Teams, 'destroy'])
+        router.post('leagues/:leagueId/teams/:teamId/admins', [controllers.TeamAdmins, 'store'])
+        router.delete('leagues/:leagueId/teams/:teamId/admins/:userId', [
+          controllers.TeamAdmins,
+          'destroy',
+        ])
 
         router.post('leagues/assign-team', [controllers.Players, 'assignTeam'])
 
@@ -157,6 +178,7 @@ router
         router.delete('leagues/games/:id', [controllers.Games, 'destroy'])
 
         router.post('leagues/stats', [controllers.Stats, 'store'])
+        router.post('leagues/stats/substitutions', [controllers.Stats, 'recordSubstitutions'])
         router.put('leagues/stats/:id', [controllers.Stats, 'update'])
         router.delete('leagues/stats/:id', [controllers.Stats, 'destroy'])
       })

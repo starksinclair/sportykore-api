@@ -4,6 +4,7 @@ import User from '#models/user'
 import type { BelongsTo, HasMany, ManyToMany } from '@adonisjs/lucid/types/relations'
 import Team from '#models/team'
 import Stat from '#models/stat'
+import GameLineup from '#models/game_lineup'
 import Country from '#models/country'
 
 export default class Player extends PlayerSchema {
@@ -23,6 +24,9 @@ export default class Player extends PlayerSchema {
 
   @hasMany(() => Stat)
   declare stats: HasMany<typeof Stat>
+
+  @hasMany(() => GameLineup)
+  declare lineups: HasMany<typeof GameLineup>
 
   @belongsTo(() => Country)
   declare country: BelongsTo<typeof Country>
