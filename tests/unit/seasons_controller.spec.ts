@@ -1,8 +1,10 @@
 import Country from '#models/country'
 import League from '#models/league'
 import Season from '#models/season'
+import Stage from '#models/stage'
 import User from '#models/user'
 import SeasonsController from '#controllers/seasons_controller'
+import StageService from '#services/stage_service'
 import { createSeasonValidator, updateSeasonValidator } from '#validators/season'
 import type { HttpContext } from '@adonisjs/core/http'
 import { test } from '@japa/runner'
@@ -16,7 +18,7 @@ function mockStoreContext(body: Record<string, unknown>): HttpContext {
     },
     response: {
       created(payload: unknown) {
-        return { __status: 201 as const, __response: payload as Season }
+        return { __status: 201 as const, __response: payload as Record<string, unknown> }
       },
     },
   } as unknown as HttpContext
@@ -38,6 +40,10 @@ function mockUpdateContext(
       },
     },
   } as unknown as HttpContext
+}
+
+function makeController() {
+  return new SeasonsController(new StageService())
 }
 
 async function createOwnerLeague() {
@@ -65,7 +71,7 @@ test.group('SeasonsController store', (group) => {
       name: '2025',
       status: 'active',
     })
-    const controller = new SeasonsController()
+    const controller = makeController()
 
     const result = await controller.store(
       mockStoreContext({
@@ -78,6 +84,8 @@ test.group('SeasonsController store', (group) => {
     assert.equal(result.__status, 201)
     assert.equal(result.__response.name, '2026')
     assert.equal(result.__response.status, 'active')
+    assert.equal(result.__response.format, 'league')
+    assert.exists(result.__response.stageId)
 
     await activeSeason.refresh()
     assert.equal(activeSeason.status, 'completed')
@@ -90,7 +98,7 @@ test.group('SeasonsController store', (group) => {
       name: '2025',
       status: 'active',
     })
-    const controller = new SeasonsController()
+    const controller = makeController()
 
     const result = await controller.store(
       mockStoreContext({
@@ -102,9 +110,38 @@ test.group('SeasonsController store', (group) => {
 
     assert.equal(result.__status, 201)
     assert.equal(result.__response.status, 'inactive')
+    assert.equal(result.__response.format, 'league')
 
     await activeSeason.refresh()
     assert.equal(activeSeason.status, 'active')
+  })
+
+  test('creating knockout season makes knockout stage only', async ({ assert }) => {
+    const { league } = await createOwnerLeague()
+    const controller = makeController()
+
+    const result = await controller.store(
+      mockStoreContext({
+        leagueId: league.id,
+        name: 'Cup 2026',
+        status: 'active',
+        format: 'knockout',
+        knockout: {
+          config: {
+            ties: { default: { tie_format: 'single' } },
+          },
+        },
+      })
+    )
+
+    assert.equal(result.__status, 201)
+    assert.equal(result.__response.format, 'knockout')
+    assert.equal(result.__response.seeded, false)
+    assert.exists(result.__response.stageId)
+
+    const stages = await Stage.query().where('season_id', result.__response.id as number)
+    assert.lengthOf(stages, 1)
+    assert.equal(stages[0].stageType, 'knockout')
   })
 })
 
@@ -118,7 +155,7 @@ test.group('SeasonsController update', (group) => {
       name: '2025',
       status: 'inactive',
     })
-    const controller = new SeasonsController()
+    const controller = makeController()
 
     const result = await controller.update(
       mockUpdateContext(league.id, season.id, { name: '2026' })
@@ -146,7 +183,7 @@ test.group('SeasonsController update', (group) => {
       name: '2026',
       status: 'inactive',
     })
-    const controller = new SeasonsController()
+    const controller = makeController()
 
     await controller.update(mockUpdateContext(league.id, nextSeason.id, { status: 'active' }))
 
@@ -158,7 +195,7 @@ test.group('SeasonsController update', (group) => {
 
   test('returns 404 when season id does not exist in league', async ({ assert }) => {
     const { league } = await createOwnerLeague()
-    const controller = new SeasonsController()
+    const controller = makeController()
 
     try {
       await controller.update(mockUpdateContext(league.id, 999_999, { name: 'Ghost Season' }))
@@ -180,7 +217,7 @@ test.group('SeasonsController update', (group) => {
       name: 'Other Season',
       status: 'inactive',
     })
-    const controller = new SeasonsController()
+    const controller = makeController()
 
     try {
       await controller.update(

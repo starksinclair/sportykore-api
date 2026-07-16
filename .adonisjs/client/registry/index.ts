@@ -180,6 +180,18 @@ const routes = {
     tokens: [{"old":"/api/v1/games/:gameId/lineups","type":0,"val":"api","end":""},{"old":"/api/v1/games/:gameId/lineups","type":0,"val":"v1","end":""},{"old":"/api/v1/games/:gameId/lineups","type":0,"val":"games","end":""},{"old":"/api/v1/games/:gameId/lineups","type":1,"val":"gameId","end":""},{"old":"/api/v1/games/:gameId/lineups","type":0,"val":"lineups","end":""}],
     types: placeholder as Registry['game_lineups.index']['types'],
   },
+  'stages.bracket': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/leagues/stages/:id/bracket',
+    tokens: [{"old":"/api/v1/leagues/stages/:id/bracket","type":0,"val":"api","end":""},{"old":"/api/v1/leagues/stages/:id/bracket","type":0,"val":"v1","end":""},{"old":"/api/v1/leagues/stages/:id/bracket","type":0,"val":"leagues","end":""},{"old":"/api/v1/leagues/stages/:id/bracket","type":0,"val":"stages","end":""},{"old":"/api/v1/leagues/stages/:id/bracket","type":1,"val":"id","end":""},{"old":"/api/v1/leagues/stages/:id/bracket","type":0,"val":"bracket","end":""}],
+    types: placeholder as Registry['stages.bracket']['types'],
+  },
+  'stages.index_by_season': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/seasons/:seasonId/stages',
+    tokens: [{"old":"/api/v1/seasons/:seasonId/stages","type":0,"val":"api","end":""},{"old":"/api/v1/seasons/:seasonId/stages","type":0,"val":"v1","end":""},{"old":"/api/v1/seasons/:seasonId/stages","type":0,"val":"seasons","end":""},{"old":"/api/v1/seasons/:seasonId/stages","type":1,"val":"seasonId","end":""},{"old":"/api/v1/seasons/:seasonId/stages","type":0,"val":"stages","end":""}],
+    types: placeholder as Registry['stages.index_by_season']['types'],
+  },
   'teams.show': {
     methods: ["GET","HEAD"],
     pattern: '/api/v1/teams/:id',
@@ -288,6 +300,18 @@ const routes = {
     tokens: [{"old":"/api/v1/games/:gameId/full-time","type":0,"val":"api","end":""},{"old":"/api/v1/games/:gameId/full-time","type":0,"val":"v1","end":""},{"old":"/api/v1/games/:gameId/full-time","type":0,"val":"games","end":""},{"old":"/api/v1/games/:gameId/full-time","type":1,"val":"gameId","end":""},{"old":"/api/v1/games/:gameId/full-time","type":0,"val":"full-time","end":""}],
     types: placeholder as Registry['game_time.end_game']['types'],
   },
+  'game_time.start_penalty_shootout': {
+    methods: ["POST"],
+    pattern: '/api/v1/games/:gameId/penalty-shootout',
+    tokens: [{"old":"/api/v1/games/:gameId/penalty-shootout","type":0,"val":"api","end":""},{"old":"/api/v1/games/:gameId/penalty-shootout","type":0,"val":"v1","end":""},{"old":"/api/v1/games/:gameId/penalty-shootout","type":0,"val":"games","end":""},{"old":"/api/v1/games/:gameId/penalty-shootout","type":1,"val":"gameId","end":""},{"old":"/api/v1/games/:gameId/penalty-shootout","type":0,"val":"penalty-shootout","end":""}],
+    types: placeholder as Registry['game_time.start_penalty_shootout']['types'],
+  },
+  'game_time.complete_penalty_shootout': {
+    methods: ["POST"],
+    pattern: '/api/v1/games/:gameId/penalty-shootout/complete',
+    tokens: [{"old":"/api/v1/games/:gameId/penalty-shootout/complete","type":0,"val":"api","end":""},{"old":"/api/v1/games/:gameId/penalty-shootout/complete","type":0,"val":"v1","end":""},{"old":"/api/v1/games/:gameId/penalty-shootout/complete","type":0,"val":"games","end":""},{"old":"/api/v1/games/:gameId/penalty-shootout/complete","type":1,"val":"gameId","end":""},{"old":"/api/v1/games/:gameId/penalty-shootout/complete","type":0,"val":"penalty-shootout","end":""},{"old":"/api/v1/games/:gameId/penalty-shootout/complete","type":0,"val":"complete","end":""}],
+    types: placeholder as Registry['game_time.complete_penalty_shootout']['types'],
+  },
   'game_lineups.set': {
     methods: ["PUT"],
     pattern: '/api/v1/games/:gameId/lineups',
@@ -353,6 +377,48 @@ const routes = {
     pattern: '/api/v1/leagues/:leagueId/teams/:teamId/admins/:userId',
     tokens: [{"old":"/api/v1/leagues/:leagueId/teams/:teamId/admins/:userId","type":0,"val":"api","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:teamId/admins/:userId","type":0,"val":"v1","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:teamId/admins/:userId","type":0,"val":"leagues","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:teamId/admins/:userId","type":1,"val":"leagueId","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:teamId/admins/:userId","type":0,"val":"teams","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:teamId/admins/:userId","type":1,"val":"teamId","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:teamId/admins/:userId","type":0,"val":"admins","end":""},{"old":"/api/v1/leagues/:leagueId/teams/:teamId/admins/:userId","type":1,"val":"userId","end":""}],
     types: placeholder as Registry['team_admins.destroy']['types'],
+  },
+  'venues.index': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/leagues/:leagueId/venues',
+    tokens: [{"old":"/api/v1/leagues/:leagueId/venues","type":0,"val":"api","end":""},{"old":"/api/v1/leagues/:leagueId/venues","type":0,"val":"v1","end":""},{"old":"/api/v1/leagues/:leagueId/venues","type":0,"val":"leagues","end":""},{"old":"/api/v1/leagues/:leagueId/venues","type":1,"val":"leagueId","end":""},{"old":"/api/v1/leagues/:leagueId/venues","type":0,"val":"venues","end":""}],
+    types: placeholder as Registry['venues.index']['types'],
+  },
+  'venues.store': {
+    methods: ["POST"],
+    pattern: '/api/v1/leagues/:leagueId/venues',
+    tokens: [{"old":"/api/v1/leagues/:leagueId/venues","type":0,"val":"api","end":""},{"old":"/api/v1/leagues/:leagueId/venues","type":0,"val":"v1","end":""},{"old":"/api/v1/leagues/:leagueId/venues","type":0,"val":"leagues","end":""},{"old":"/api/v1/leagues/:leagueId/venues","type":1,"val":"leagueId","end":""},{"old":"/api/v1/leagues/:leagueId/venues","type":0,"val":"venues","end":""}],
+    types: placeholder as Registry['venues.store']['types'],
+  },
+  'venues.update': {
+    methods: ["PUT"],
+    pattern: '/api/v1/leagues/venues/:id',
+    tokens: [{"old":"/api/v1/leagues/venues/:id","type":0,"val":"api","end":""},{"old":"/api/v1/leagues/venues/:id","type":0,"val":"v1","end":""},{"old":"/api/v1/leagues/venues/:id","type":0,"val":"leagues","end":""},{"old":"/api/v1/leagues/venues/:id","type":0,"val":"venues","end":""},{"old":"/api/v1/leagues/venues/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['venues.update']['types'],
+  },
+  'venues.destroy': {
+    methods: ["DELETE"],
+    pattern: '/api/v1/leagues/venues/:id',
+    tokens: [{"old":"/api/v1/leagues/venues/:id","type":0,"val":"api","end":""},{"old":"/api/v1/leagues/venues/:id","type":0,"val":"v1","end":""},{"old":"/api/v1/leagues/venues/:id","type":0,"val":"leagues","end":""},{"old":"/api/v1/leagues/venues/:id","type":0,"val":"venues","end":""},{"old":"/api/v1/leagues/venues/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['venues.destroy']['types'],
+  },
+  'stages.store': {
+    methods: ["POST"],
+    pattern: '/api/v1/leagues/:leagueId/stages',
+    tokens: [{"old":"/api/v1/leagues/:leagueId/stages","type":0,"val":"api","end":""},{"old":"/api/v1/leagues/:leagueId/stages","type":0,"val":"v1","end":""},{"old":"/api/v1/leagues/:leagueId/stages","type":0,"val":"leagues","end":""},{"old":"/api/v1/leagues/:leagueId/stages","type":1,"val":"leagueId","end":""},{"old":"/api/v1/leagues/:leagueId/stages","type":0,"val":"stages","end":""}],
+    types: placeholder as Registry['stages.store']['types'],
+  },
+  'stages.seed': {
+    methods: ["POST"],
+    pattern: '/api/v1/leagues/stages/:id/seed',
+    tokens: [{"old":"/api/v1/leagues/stages/:id/seed","type":0,"val":"api","end":""},{"old":"/api/v1/leagues/stages/:id/seed","type":0,"val":"v1","end":""},{"old":"/api/v1/leagues/stages/:id/seed","type":0,"val":"leagues","end":""},{"old":"/api/v1/leagues/stages/:id/seed","type":0,"val":"stages","end":""},{"old":"/api/v1/leagues/stages/:id/seed","type":1,"val":"id","end":""},{"old":"/api/v1/leagues/stages/:id/seed","type":0,"val":"seed","end":""}],
+    types: placeholder as Registry['stages.seed']['types'],
+  },
+  'stages.next_round': {
+    methods: ["POST"],
+    pattern: '/api/v1/leagues/stages/:id/next-round',
+    tokens: [{"old":"/api/v1/leagues/stages/:id/next-round","type":0,"val":"api","end":""},{"old":"/api/v1/leagues/stages/:id/next-round","type":0,"val":"v1","end":""},{"old":"/api/v1/leagues/stages/:id/next-round","type":0,"val":"leagues","end":""},{"old":"/api/v1/leagues/stages/:id/next-round","type":0,"val":"stages","end":""},{"old":"/api/v1/leagues/stages/:id/next-round","type":1,"val":"id","end":""},{"old":"/api/v1/leagues/stages/:id/next-round","type":0,"val":"next-round","end":""}],
+    types: placeholder as Registry['stages.next_round']['types'],
   },
   'players.assign_team': {
     methods: ["POST"],

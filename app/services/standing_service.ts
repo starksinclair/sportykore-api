@@ -1,5 +1,5 @@
-import db from '@adonisjs/lucid/services/db'
 import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
+import db from '@adonisjs/lucid/services/db'
 import Game from '#models/game'
 import League from '#models/league'
 import Season from '#models/season'
@@ -8,6 +8,8 @@ import Team from '#models/team'
 import { sortStandingsByTiebreaker, type StandingSortRow } from '#services/standing_tiebreaker'
 import { STANDING_GAME_STATUSES } from '#types/game_status'
 import { DEFAULT_LEAGUE_TIEBREAKER, type LeagueTiebreaker } from '#types/tiebreaker'
+import StageService from '#services/stage_service'
+import { inject } from '@adonisjs/core'
 
 const ZERO_STANDING = {
   position: 0,
@@ -81,7 +83,14 @@ function computeTeamStandingStats(teamId: number, games: Game[]): TeamStandingSt
   }
 }
 
+@inject()
 export default class StandingService {
+  private stageService: StageService
+
+  constructor(stageService?: StageService) {
+    this.stageService = stageService ?? new StageService()
+  }
+
   /**
    * Ensure a zeroed standing row exists for a team in a season (idempotent).
    */
@@ -92,17 +101,15 @@ export default class StandingService {
     client?: TransactionClientContract
   ) {
     const options = client ? { client } : undefined
+    const stage = await this.stageService.ensureRoundRobinStage(seasonId, client)
 
     await Standing.firstOrCreate(
       { seasonId, teamId },
-      { leagueId, ...ZERO_STANDING },
+      { leagueId, stageId: stage.id, ...ZERO_STANDING },
       options
     )
   }
 
-  /**
-   * Seed zeroed standing rows for all teams in a season, then assign positions.
-   */
   async ensureForTeams(
     leagueId: number,
     seasonId: number,
@@ -116,9 +123,6 @@ export default class StandingService {
     await this.recalculatePositions(seasonId, client)
   }
 
-  /**
-   * Seed zeroed standing rows for league teams missing from a season table.
-   */
   async ensureLeagueTeamsInSeason(leagueId: number, seasonId: number) {
     const teams = await Team.query().where('league_id', leagueId).select('id')
     if (teams.length === 0) {
@@ -154,15 +158,13 @@ export default class StandingService {
     })
   }
 
-  async recalculateTeam(
-    seasonId: number,
-    teamId: number,
-    client?: TransactionClientContract
-  ) {
+  async recalculateTeam(seasonId: number, teamId: number, client?: TransactionClientContract) {
     const team = await Team.query({ client }).where('id', teamId).firstOrFail()
+    const stage = await this.stageService.ensureRoundRobinStage(seasonId, client)
 
     const games = await Game.query({ client })
       .where('season_id', seasonId)
+      .where('stage_id', stage.id)
       .where((query) => query.where('home_team_id', teamId).orWhere('away_team_id', teamId))
       .whereIn('status', [...STANDING_GAME_STATUSES])
       .orderBy('played_at', 'asc')
@@ -172,6 +174,7 @@ export default class StandingService {
       { seasonId, teamId },
       {
         leagueId: team.leagueId,
+        stageId: stage.id,
         ...stats,
       },
       client ? { client } : undefined
@@ -196,20 +199,19 @@ export default class StandingService {
     const season = await Season.query({ client }).where('id', seasonId).firstOrFail()
     const league = await League.query({ client }).where('id', season.leagueId).firstOrFail()
     const tiebreaker = (league.tiebreaker ?? DEFAULT_LEAGUE_TIEBREAKER) as LeagueTiebreaker
+    const stage = await this.stageService.ensureRoundRobinStage(seasonId, client)
 
     const standings = await Standing.query({ client }).where('season_id', seasonId)
     const games = await Game.query({ client })
       .where('season_id', seasonId)
+      .where('stage_id', stage.id)
       .whereIn('status', [...STANDING_GAME_STATUSES])
 
     const sorted = sortStandingsByTiebreaker(standings, tiebreaker, games)
     await this.applyPositions(sorted, client)
   }
 
-  private async applyPositions(
-    sorted: StandingSortRow[],
-    client?: TransactionClientContract
-  ) {
+  private async applyPositions(sorted: StandingSortRow[], client?: TransactionClientContract) {
     const writePositions = async (writer: TransactionClientContract) => {
       for (const [index, standing] of sorted.entries()) {
         await writer.from('standings').where('id', standing.id).update({ position: index + 1 })

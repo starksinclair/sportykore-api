@@ -1,19 +1,42 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
+import { Exception } from '@adonisjs/core/exceptions'
 import db from '@adonisjs/lucid/services/db'
 import Season from '#models/season'
 import { createSeasonValidator, updateSeasonValidator } from '#validators/season'
+import StageService from '#services/stage_service'
+import type { CompetitionFormat } from '#services/league_service'
+import { inject } from '@adonisjs/core'
 
+@inject()
 export default class SeasonsController {
+  constructor(protected stageService: StageService) {}
+
   async store({ request, response }: HttpContext) {
     const data = await request.validateUsing(createSeasonValidator)
+    const format: CompetitionFormat = data.format ?? 'league'
 
-    const season = await db.transaction(async (trx) => {
+    if (format === 'knockout') {
+      if (!data.knockout?.config?.ties?.default?.tie_format) {
+        throw new Exception('knockout.config is required when format is knockout', {
+          status: 422,
+        })
+      }
+      this.stageService.assertKnockoutTieConfig({
+        format: {
+          starting_round: data.knockout.config.format?.starting_round,
+          has_third_place: data.knockout.config.format?.has_third_place ?? false,
+        },
+        ties: data.knockout.config.ties,
+      })
+    }
+
+    const { season, stage } = await db.transaction(async (trx) => {
       if (data.status === 'active') {
         await this.completeOtherActiveSeasons(data.leagueId, trx)
       }
 
-      return Season.create(
+      const created = await Season.create(
         {
           leagueId: data.leagueId,
           name: data.name,
@@ -21,9 +44,40 @@ export default class SeasonsController {
         },
         { client: trx }
       )
+
+      const createdStage =
+        format === 'knockout'
+          ? await this.stageService.createKnockoutStage(
+              data.leagueId,
+              created.id,
+              {
+                name: data.knockout?.name ?? 'Cup',
+                config: {
+                  format: {
+                    starting_round: data.knockout!.config.format?.starting_round,
+                    has_third_place: data.knockout!.config.format?.has_third_place ?? false,
+                  },
+                  ties: data.knockout!.config.ties,
+                },
+              },
+              trx
+            )
+          : await this.stageService.ensureRoundRobinStage(created.id, trx)
+
+      return { season: created, stage: createdStage }
     })
 
-    return response.created(season)
+    return response.created({
+      id: season.id,
+      leagueId: season.leagueId,
+      name: season.name,
+      status: season.status,
+      createdAt: season.createdAt,
+      updatedAt: season.updatedAt,
+      stageId: stage.id,
+      format,
+      seeded: false,
+    })
   }
 
   async update({ params, request, response }: HttpContext) {

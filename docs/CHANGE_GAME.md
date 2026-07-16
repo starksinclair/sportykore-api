@@ -2,6 +2,8 @@
 
 > **Backend (this repo):** Implemented — migration, `GameTimeService`, `GameTimeController`, `leagueOwner` middleware (resolves `params.gameId`), routes under `/api/v1/games/:gameId/*`, transformer fields, SSE `status_changed` broadcasts. See [ROUTES.md](../ROUTES.md).
 >
+> **Venues / directions:** Game detail may include nested `venue` (`latitude`/`longitude`) for a “Get directions” link. Map picker + API contract: [VENUES.md](VENUES.md).
+>
 > **Mobile (React Native):** Hooks/components below are for the Expo app — not in this repository.
 
 ## Context

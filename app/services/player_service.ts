@@ -42,7 +42,7 @@ export class PlayerService {
         .preload('team')
         .preload('relatedPlayer')
         .preload('game', (gameQuery) => {
-          gameQuery.preload('homeTeam').preload('awayTeam')
+          gameQuery.preload('homeTeam').preload('awayTeam').preload('venue')
         }),
       StatType.query().orderBy('category').orderBy('display_name'),
       this.loadTeamGames(memberships),
@@ -130,6 +130,7 @@ export class PlayerService {
       })
       .preload('homeTeam')
       .preload('awayTeam')
+      .preload('venue')
   }
 
   private ensureSeasonBucket(

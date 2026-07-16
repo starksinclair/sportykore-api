@@ -10,6 +10,8 @@ export default class AdminTeamManagedTransformer extends BaseTransformer<AdminTe
         id: this.resource.league.id,
         name: this.resource.league.name,
         logoUrl: this.resource.league.logoUrl,
+        startDate: this.resource.league.startDate,
+        endDate: this.resource.league.endDate,
       },
       activeSeason: this.resource.activeSeason
         ? SeasonTransformer.transform(this.resource.activeSeason)

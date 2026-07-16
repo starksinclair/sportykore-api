@@ -12,6 +12,16 @@ export default class UpdateStandings {
       return
     }
 
+    // Knockout / tie games do not affect league standings
+    if (event.game.tieId) {
+      transmit.broadcast(`games/${event.game.id}`, {
+        type: 'game_updated',
+        reason: event.reason,
+        gameId: event.game.id,
+      })
+      return
+    }
+
     await this.standingService.recalculateForGame(
       event.game.seasonId,
       event.game.homeTeamId,

@@ -10,12 +10,16 @@ import League from '#models/league'
 import Season from '#models/season'
 import Team from '#models/team'
 import TeamAdmin from '#models/team_admin'
+import Tie from '#models/tie'
 import type User from '#models/user'
 import StatType from '#models/stat_type'
 import Player from '#models/player'
 import LeaguePlayer from '#models/league_player'
 import Stat from '#models/stat'
 import StandingService from '#services/standing_service'
+import StageService from '#services/stage_service'
+import BracketService from '#services/bracket_service'
+import TieResolver from '#services/tie_resolver'
 import type { FormationSlot } from '#types/formation'
 
 import UserFactory from '#factories/user_factory'
@@ -30,6 +34,7 @@ const USER_COUNT = 15
 const LEAGUES_PER_USER = 2
 const SEASONS_PER_LEAGUE = 2
 const TEAMS_PER_LEAGUE = 10
+const KNOCKOUT_SEED_TEAM_COUNT = 8
 const GAMES_PER_SEASON = 21
 
 const AFRICAN_COUNTRY_CODES = [
@@ -116,6 +121,9 @@ type Fixture = {
 
 export default class DataSeeder extends BaseSeeder {
   private standingService = new StandingService()
+  private stageService = new StageService()
+  private bracketService = new BracketService(this.stageService, new TieResolver())
+  private tieResolver = new TieResolver()
   private statTypesByName = new Map<string, StatType>()
   private playerNameIndex = 0
 
@@ -135,21 +143,27 @@ export default class DataSeeder extends BaseSeeder {
           throw new Error('Not enough countries to seed all leagues.')
         }
 
-        const leagueName = `${country.name} League ${userIndex + 1}-${leagueIndex + 1}`
+        // leagueIndex 0 → round-robin league; 1 → knockout cup
+        const isKnockout = leagueIndex === 1
+        const competitionName = isKnockout
+          ? `${country.name} Cup ${userIndex + 1}`
+          : `${country.name} League ${userIndex + 1}-${leagueIndex + 1}`
+
         const league = await League.create({
           userId: user.id,
           countryId: country.id,
-          name: leagueName,
-          description: `Seeded league for ${user.fullName ?? user.email}.`,
+          name: competitionName,
+          description: isKnockout
+            ? `Seeded knockout cup for ${user.fullName ?? user.email}.`
+            : `Seeded league for ${user.fullName ?? user.email}.`,
           gender: 'mixed',
-          logoUrl: leagueLogoUrl(leagueName),
+          logoUrl: leagueLogoUrl(competitionName),
         })
 
         leagues.push(league)
 
         const { teams, teamPlayers } = await this.seedTeams(league, country, user)
         await this.seedTeamAdmins(league, teams, user, users)
-        const fixtures = this.buildFixtures(teams)
 
         for (let seasonIndex = 0; seasonIndex < SEASONS_PER_LEAGUE; seasonIndex++) {
           const season = await Season.create({
@@ -159,17 +173,25 @@ export default class DataSeeder extends BaseSeeder {
           })
 
           const playersByTeam = await this.seedLeaguePlayers(league, season, teams, teamPlayers)
-          await this.seedStandings(league, season, teams)
-          await this.seedGames(
-            league,
-            season,
-            fixtures,
-            country.name,
-            playersByTeam,
-            formation,
-            formationSlots
-          )
-          await this.recalculateStandings(season.id, teams)
+
+          if (isKnockout) {
+            await this.seedKnockoutSeason(league, season, teams, playersByTeam, formation, formationSlots)
+          } else {
+            const fixtures = this.buildFixtures(teams)
+            const stage = await this.stageService.ensureRoundRobinStage(season.id)
+            await this.seedStandings(league, season, teams)
+            await this.seedGames(
+              league,
+              season,
+              stage.id,
+              fixtures,
+              country.name,
+              playersByTeam,
+              formation,
+              formationSlots
+            )
+            await this.recalculateStandings(season.id, teams)
+          }
         }
       }
     }
@@ -308,9 +330,65 @@ export default class DataSeeder extends BaseSeeder {
     return fixtures
   }
 
+  private async seedKnockoutSeason(
+    league: League,
+    season: Season,
+    teams: Team[],
+    playersByTeam: Map<number, Player[]>,
+    formation: Formation,
+    formationSlots: FormationSlot[]
+  ) {
+    const stage = await this.stageService.createKnockoutStage(league.id, season.id, {
+      name: 'Cup',
+      config: {
+        format: { starting_round: 'qf', has_third_place: false },
+        ties: { default: { tie_format: 'single' } },
+      },
+    })
+
+    const seededTeams = teams.slice(0, KNOCKOUT_SEED_TEAM_COUNT)
+    await this.bracketService.generateKnockoutPhase(
+      stage.id,
+      seededTeams.map((team) => team.id)
+    )
+
+    const qfTies = await Tie.query()
+      .where('stage_id', stage.id)
+      .where('round', 'qf')
+      .where('is_bye', false)
+      .orderBy('bracket_position', 'asc')
+
+    for (const [index, tie] of qfTies.entries()) {
+      const game = await Game.query().where('tie_id', tie.id).firstOrFail()
+      game.status = 'full_time'
+      game.homeScore = 2
+      game.awayScore = 1
+      game.winnerTeamId = game.homeTeamId
+      game.playedAt = DateTime.utc().minus({ days: 7 - index })
+      await game.save()
+
+      const homePlayers = playersByTeam.get(game.homeTeamId) ?? []
+      const awayPlayers = playersByTeam.get(game.awayTeamId) ?? []
+      await this.seedLineupsForGame(
+        game,
+        formation,
+        formationSlots,
+        game.homeTeamId,
+        game.awayTeamId,
+        homePlayers,
+        awayPlayers
+      )
+
+      await this.tieResolver.advanceTie(tie.id)
+    }
+
+    await this.bracketService.generateNextRound(stage.id, 'qf')
+  }
+
   private async seedGames(
     league: League,
     season: Season,
+    stageId: number,
     fixtures: Fixture[],
     countryName: string,
     playersByTeam: Map<number, Player[]>,
@@ -335,6 +413,7 @@ export default class DataSeeder extends BaseSeeder {
       const game = await Game.create({
         leagueId: league.id,
         seasonId: season.id,
+        stageId,
         homeTeamId: fixture.homeTeam.id,
         awayTeamId: fixture.awayTeam.id,
         playedAt,

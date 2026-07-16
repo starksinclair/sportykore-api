@@ -6,6 +6,8 @@ This document describes the **Manage** flow for league owners: screens, tabs, AP
 
 - Auth tokens: [MOBILE_AUTH_ROUTES.md](../MOBILE_AUTH_ROUTES.md)
 - Player invites: [PLAYER_INVITE.md](./PLAYER_INVITE.md)
+- Venues & map picker: [VENUES.md](./VENUES.md)
+- Knockout stages / bracket / create competition `format`: [KNOCKOUT.md](./KNOCKOUT.md)
 - Match-day timezone (public feed only): [TIME_AND_TIMEZONE.md](./TIME_AND_TIMEZONE.md)
 
 ---
@@ -146,13 +148,16 @@ Content-Type: application/json
 | `homeTeamId` | yes | From teams list |
 | `awayTeamId` | yes | From teams list |
 | `playedAt` | yes | ISO 8601 or `YYYY-MM-DD` |
-| `venueName` | no | |
+| `venueName` | no | One-off / legacy string |
+| `venueId` | no | FK to a league venue; wins over `venueName` and snapshots the venue name. See [VENUES.md](VENUES.md) |
 | `status` | no | Default `scheduled` |
 | `firstHalfDuration`, `secondHalfDuration` | no | Default `45` each |
 | `extraTimeDuration` | no | Optional |
 | `homeScore`, `awayScore` | no | Usually null for new fixtures |
 
 After success, refetch `GET /leagues/:leagueId?seasonId=…`.
+
+**Venue picker UX** (dropdown of league venues + add venue + one-off name): see [VENUES.md](VENUES.md).
 
 ### Live Now — open Match Center
 
@@ -370,6 +375,17 @@ Response `201`: raw season object (not wrapped in `data`). After create, refetch
 | Schedule game | `POST` | `/api/v1/leagues/games` |
 | Update game / score / status | `PUT` | `/api/v1/leagues/games/:id` |
 | Delete game | `DELETE` | `/api/v1/leagues/games/:id` |
+| List venues | `GET` | `/api/v1/leagues/:leagueId/venues` |
+| Create venue | `POST` | `/api/v1/leagues/:leagueId/venues` |
+| Update venue | `PUT` | `/api/v1/leagues/venues/:id` |
+| Delete venue | `DELETE` | `/api/v1/leagues/venues/:id` |
+| List season stages | `GET` | `/api/v1/seasons/:seasonId/stages` |
+| Create knockout stage | `POST` | `/api/v1/leagues/:leagueId/stages` |
+| Seed knockout | `POST` | `/api/v1/leagues/stages/:id/seed` |
+| Next knockout round | `POST` | `/api/v1/leagues/stages/:id/next-round` |
+| View bracket | `GET` | `/api/v1/leagues/stages/:id/bracket` |
+| Start penalty shootout | `POST` | `/api/v1/games/:gameId/penalty-shootout` |
+| Complete penalty shootout | `POST` | `/api/v1/games/:gameId/penalty-shootout/complete` |
 | Add stat | `POST` | `/api/v1/leagues/stats` |
 | Delete stat | `DELETE` | `/api/v1/leagues/stats/:id` |
 | Roster | `GET` | `/api/v1/leagues/:leagueId/seasons/:seasonId/roster` |

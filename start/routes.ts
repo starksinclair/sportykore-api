@@ -88,6 +88,8 @@ router
     router.get('formations', [controllers.Formations, 'index'])
     router.get('formations/:id', [controllers.Formations, 'show'])
     router.get('games/:gameId/lineups', [controllers.GameLineups, 'index'])
+    router.get('leagues/stages/:id/bracket', [controllers.Stages, 'bracket'])
+    router.get('seasons/:seasonId/stages', [controllers.Stages, 'indexBySeason'])
     router.get('teams/:id', [controllers.Teams, 'show'])
     router
       .get('players/does-user-have-player-profile', [
@@ -131,6 +133,11 @@ router
         router.post('games/:gameId/pause', [controllers.GameTime, 'pause'])
         router.post('games/:gameId/resume', [controllers.GameTime, 'resume'])
         router.post('games/:gameId/full-time', [controllers.GameTime, 'endGame'])
+        router.post('games/:gameId/penalty-shootout', [controllers.GameTime, 'startPenaltyShootout'])
+        router.post('games/:gameId/penalty-shootout/complete', [
+          controllers.GameTime,
+          'completePenaltyShootout',
+        ])
       })
       .use(middleware.apiAuth())
       .use(middleware.leagueOwner())
@@ -161,6 +168,15 @@ router
           controllers.TeamAdmins,
           'destroy',
         ])
+
+        router.get('leagues/:leagueId/venues', [controllers.Venues, 'index'])
+        router.post('leagues/:leagueId/venues', [controllers.Venues, 'store'])
+        router.put('leagues/venues/:id', [controllers.Venues, 'update'])
+        router.delete('leagues/venues/:id', [controllers.Venues, 'destroy'])
+
+        router.post('leagues/:leagueId/stages', [controllers.Stages, 'store'])
+        router.post('leagues/stages/:id/seed', [controllers.Stages, 'seed'])
+        router.post('leagues/stages/:id/next-round', [controllers.Stages, 'nextRound'])
 
         router.post('leagues/assign-team', [controllers.Players, 'assignTeam'])
 

@@ -5,6 +5,8 @@ import Game from '#models/game'
 import League from '#models/league'
 import LeaguePlayer from '#models/league_player'
 import Stat from '#models/stat'
+import Venue from '#models/venue'
+import Stage from '#models/stage'
 
 export default class LeagueOwnerMiddleware {
   async handle(ctx: HttpContext, next: NextFn) {
@@ -61,6 +63,20 @@ export default class LeagueOwnerMiddleware {
         const game = await Game.find(id)
         if (game) {
           return game.leagueId
+        }
+      }
+
+      if (path.includes('/venues/')) {
+        const venue = await Venue.find(id)
+        if (venue) {
+          return venue.leagueId
+        }
+      }
+
+      if (path.includes('/stages/')) {
+        const stage = await Stage.query().where('id', id).preload('season').first()
+        if (stage?.season) {
+          return stage.season.leagueId
         }
       }
 

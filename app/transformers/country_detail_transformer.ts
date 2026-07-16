@@ -33,6 +33,8 @@ export function transformCountryDetail(payload: CountryDetailPayload) {
     leagues: leagues.map((league) => ({
       id: String(league.id),
       name: league.name,
+      startDate: league.startDate?.toISODate() ?? null,
+      endDate: league.endDate?.toISODate() ?? null,
       country: {
         code: league.country?.code ?? country.code,
         name: league.country?.name ?? country.name,

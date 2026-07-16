@@ -6,6 +6,7 @@ import TeamTransformer from '#transformers/team_transformer'
 import LeagueTransformer from '#transformers/league_transformer'
 import StatTransformer from '#transformers/stat_transformer'
 import LineupGroupTransformer from '#transformers/lineup_group_transformer'
+import VenueTransformer from '#transformers/venue_transformer'
 import { groupLineupsByTeam } from '#services/lineup_service'
 
 const gameTimeService = new GameTimeService()
@@ -28,10 +29,22 @@ export default class GameTransformer extends BaseTransformer<Game> {
         'pausedFromStatus',
         'playedAt',
         'venueName',
+        'stageId',
+        'tieId',
+        'leg',
+        'round',
+        'bracketPosition',
+        'homePenaltyScore',
+        'awayPenaltyScore',
       ]),
       currentMinute: gameTimeService.calculateCurrentMinute(this.resource),
       homeTeam: TeamTransformer.transform(this.whenLoaded(this.resource.homeTeam)),
       awayTeam: TeamTransformer.transform(this.whenLoaded(this.resource.awayTeam)),
+      winnerTeam: TeamTransformer.transform(this.whenLoaded(this.resource.winnerTeam)),
+      venueId: this.resource.venueId,
+      venue: VenueTransformer.transform(this.whenLoaded(this.resource.venue))
+        ?.useVariant('forGame')
+        ?.depth(2),
     }
   }
   forDetail() {

@@ -27,6 +27,20 @@ export default class extends BaseSchema {
         .inTable('teams')
         .onDelete('CASCADE')
         .notNullable()
+      table
+        .integer('stage_id')
+        .unsigned()
+        .references('id')
+        .inTable('stages')
+        .nullable()
+        .onDelete('CASCADE')
+      table
+        .integer('stage_group_id')
+        .unsigned()
+        .references('id')
+        .inTable('stage_groups')
+        .nullable()
+        .onDelete('SET NULL')
 
       table.integer('position').unsigned().defaultTo(0)
       table.integer('played').unsigned().defaultTo(0)
@@ -39,8 +53,8 @@ export default class extends BaseSchema {
       table.integer('points').unsigned().defaultTo(0)
       table.string('form').nullable() // e.g "W,W,L,D,W"
 
-      // prevent duplicate standings entry per team per season
       table.unique(['season_id', 'team_id'])
+      table.index(['stage_id', 'stage_group_id'])
 
       table.timestamp('created_at')
       table.timestamp('updated_at')

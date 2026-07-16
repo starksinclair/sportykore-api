@@ -6,12 +6,17 @@ import { DateTime, IANAZone } from 'luxon'
 import Country from '#models/country'
 import League from '#models/league'
 import Season from '#models/season'
+import Stage from '#models/stage'
 import StatType from '#models/stat_type'
 import Team from '#models/team'
 import StandingService from '#services/standing_service'
 import { LIVE_GAME_STATUSES } from '#types/game_status'
 
 import { DEFAULT_LEAGUE_TIEBREAKER, type LeagueTiebreaker } from '#types/tiebreaker'
+import type { KnockoutStageConfig } from '#types/stage'
+import StageService from '#services/stage_service'
+
+export type CompetitionFormat = 'league' | 'knockout'
 
 export type CreateLeagueInput = {
   name: string
@@ -21,7 +26,24 @@ export type CreateLeagueInput = {
   countryId: number
   seasonName: string
   tiebreaker?: LeagueTiebreaker
+  startDate?: DateTime | null
+  endDate?: DateTime | null
   teams?: { name: string; logoUrl?: string | null }[]
+  format?: CompetitionFormat
+  knockout?: {
+    name?: string
+    seed?: boolean
+    config: KnockoutStageConfig
+  }
+}
+
+export type CreateCompetitionResult = {
+  league: League
+  season: Season
+  teams: Team[]
+  stage: Stage
+  format: CompetitionFormat
+  seeded: boolean
 }
 
 /** UTC bounds for games that fall on a calendar day in the user's IANA timezone. */
@@ -39,13 +61,29 @@ export type MatchDayContext = MatchDayWindow & {
 
 @inject()
 export default class LeagueService {
-  constructor(private standingService: StandingService) {}
+  constructor(
+    private standingService: StandingService,
+    private stageService: StageService
+  ) {}
 
   async createWithSeason(
     ownerId: number,
     input: CreateLeagueInput
-  ): Promise<{ league: League; season: Season; teams: Team[] }> {
-    return await db.transaction(async (trx) => {
+  ): Promise<CreateCompetitionResult> {
+    const format: CompetitionFormat = input.format ?? 'league'
+    if (format === 'knockout') {
+      if (!input.knockout?.config?.ties?.default?.tie_format) {
+        throw new Exception('knockout.config is required when format is knockout', {
+          status: 422,
+        })
+      }
+    }
+
+    if (format === 'knockout' && input.knockout?.config) {
+      this.stageService.assertKnockoutTieConfig(input.knockout.config)
+    }
+
+    const created = await db.transaction(async (trx) => {
       const league = await League.create(
         {
           userId: ownerId,
@@ -55,6 +93,8 @@ export default class LeagueService {
           logoUrl: input.logoUrl ?? null,
           countryId: input.countryId,
           tiebreaker: input.tiebreaker ?? DEFAULT_LEAGUE_TIEBREAKER,
+          startDate: input.startDate ?? null,
+          endDate: input.endDate ?? null,
         },
         { client: trx }
       )
@@ -78,17 +118,53 @@ export default class LeagueService {
         { client: trx }
       )
 
-      if (teams.length > 0) {
-        await this.standingService.ensureForTeams(
+      let stage: Stage
+      if (format === 'knockout') {
+        stage = await this.stageService.createKnockoutStage(
           league.id,
           season.id,
-          teams.map((team) => team.id),
+          {
+            name: input.knockout?.name ?? 'Cup',
+            config: input.knockout!.config,
+          },
           trx
         )
+      } else {
+        stage = await this.stageService.ensureRoundRobinStage(season.id, trx)
+        if (teams.length > 0) {
+          await this.standingService.ensureForTeams(
+            league.id,
+            season.id,
+            teams.map((team) => team.id),
+            trx
+          )
+        }
       }
 
-      return { league, season, teams }
+      return { league, season, teams, stage }
     })
+
+    let seeded = false
+    const shouldSeed =
+      format === 'knockout' && (input.knockout?.seed ?? true) && created.teams.length >= 2
+
+    if (shouldSeed) {
+      const { default: BracketService } = await import('#services/bracket_service')
+      const { default: TieResolver } = await import('#services/tie_resolver')
+      const bracket = new BracketService(this.stageService, new TieResolver())
+      await bracket.generateKnockoutPhase(
+        created.stage.id,
+        created.teams.map((team) => team.id)
+      )
+      seeded = true
+      await created.stage.refresh()
+    }
+
+    return {
+      ...created,
+      format,
+      seeded,
+    }
   }
 
   async resortStandingsForLeague(leagueId: number) {
@@ -148,7 +224,11 @@ export default class LeagueService {
           .if(!userId, (query) => query.orderByRaw('favourites_count desc'))
           .preload('games', (gameQuery) => {
             this.applyMatchDayFilters(gameQuery, window)
-            gameQuery.preload('homeTeam').preload('awayTeam').orderBy('played_at', 'asc')
+            gameQuery
+              .preload('homeTeam')
+              .preload('awayTeam')
+              .preload('venue')
+              .orderBy('played_at', 'asc')
           })
           .select('leagues.id', 'leagues.name', 'leagues.logo_url')
       })
@@ -189,20 +269,33 @@ export default class LeagueService {
 
     const selectedSeasonId = this.resolveSeasonId(seasons, seasonId)
 
-    await this.standingService.ensureLeagueTeamsInSeason(leagueId, selectedSeasonId)
+    const roundRobinStage = await Stage.query()
+      .where('season_id', selectedSeasonId)
+      .where('stage_type', 'round_robin')
+      .first()
+
+    // Knockout-only seasons have no round_robin stage — don't create one for standings.
+    if (roundRobinStage) {
+      await this.standingService.ensureLeagueTeamsInSeason(leagueId, selectedSeasonId)
+    }
 
     const [season, statTypes] = await Promise.all([
       Season.query()
         .where('id', selectedSeasonId)
         .where('league_id', leagueId)
         .preload('league')
+        .preload('stages', (stagesQuery) => {
+          stagesQuery.orderBy('sequence', 'asc').orderBy('id', 'asc')
+        })
         .preload('games', (gamesQuery) => {
-          gamesQuery.preload('homeTeam').preload('awayTeam').orderBy('played_at', 'asc')
+          gamesQuery
+            .preload('homeTeam')
+            .preload('awayTeam')
+            .preload('venue')
+            .orderBy('played_at', 'asc')
         })
         .preload('standings', (standingsQuery) => {
-          standingsQuery
-            .preload('team')
-            .orderBy('position', 'asc')
+          standingsQuery.preload('team').orderBy('position', 'asc')
         })
         .preload('stats', (statsQuery) => {
           statsQuery.preload('type').preload('player').preload('team').preload('relatedPlayer')

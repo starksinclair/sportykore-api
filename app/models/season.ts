@@ -6,6 +6,7 @@ import Game from '#models/game'
 import Stat from '#models/stat'
 import Standing from '#models/standing'
 import Invite from '#models/invite'
+import Stage from '#models/stage'
 
 export default class Season extends SeasonSchema {
   @belongsTo(() => League)
@@ -22,4 +23,7 @@ export default class Season extends SeasonSchema {
 
   @hasMany(() => Invite)
   declare invites: HasMany<typeof Invite>
+
+  @hasMany(() => Stage)
+  declare stages: HasMany<typeof Stage>
 }

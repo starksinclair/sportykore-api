@@ -7,6 +7,7 @@ export class GameService {
       .preload('league')
       .preload('homeTeam')
       .preload('awayTeam')
+      .preload('venue')
       .preload('stats', (statsQuery) => {
         statsQuery.preload('type').preload('player').preload('team').preload('relatedPlayer')
       })

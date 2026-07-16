@@ -3,6 +3,7 @@ import { inject } from '@adonisjs/core'
 
 import Game from '#models/game'
 import GameTimeService from '#services/game_time_service'
+import { completePenaltyShootoutValidator } from '#validators/stage'
 import { endGameValidator } from '#validators/game_time'
 
 @inject()
@@ -57,5 +58,22 @@ export default class GameTimeController {
     await this.gameTimeService.endGame(game, homeScore, awayScore)
 
     return response.ok({ message: 'Full time' })
+  }
+
+  async startPenaltyShootout({ params, response }: HttpContext) {
+    const game = await Game.findOrFail(params.gameId)
+    await this.gameTimeService.startPenaltyShootout(game)
+    return response.ok({ message: 'Penalty shootout started' })
+  }
+
+  async completePenaltyShootout({ params, request, response }: HttpContext) {
+    const data = await request.validateUsing(completePenaltyShootoutValidator)
+    const game = await Game.findOrFail(params.gameId)
+    await this.gameTimeService.completePenaltyShootout(
+      game,
+      data.homePenaltyScore,
+      data.awayPenaltyScore
+    )
+    return response.ok({ message: 'Penalty shootout completed' })
   }
 }

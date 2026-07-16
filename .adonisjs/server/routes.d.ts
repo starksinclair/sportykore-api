@@ -33,6 +33,8 @@ export type ScannedRoutes = {
     'formations.index': { paramsTuple?: []; params?: {} }
     'formations.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'game_lineups.index': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
+    'stages.bracket': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'stages.index_by_season': { paramsTuple: [ParamValue]; params: {'seasonId': ParamValue} }
     'teams.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'players.does_user_have_player_profile': { paramsTuple?: []; params?: {} }
     'players.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -51,6 +53,8 @@ export type ScannedRoutes = {
     'game_time.pause': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
     'game_time.resume': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
     'game_time.end_game': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
+    'game_time.start_penalty_shootout': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
+    'game_time.complete_penalty_shootout': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
     'game_lineups.set': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
     'game_lineups.update': { paramsTuple: [ParamValue,ParamValue]; params: {'gameId': ParamValue,'id': ParamValue} }
     'game_lineups.destroy': { paramsTuple: [ParamValue,ParamValue]; params: {'gameId': ParamValue,'id': ParamValue} }
@@ -62,6 +66,13 @@ export type ScannedRoutes = {
     'teams.destroy': { paramsTuple: [ParamValue,ParamValue]; params: {'leagueId': ParamValue,'id': ParamValue} }
     'team_admins.store': { paramsTuple: [ParamValue,ParamValue]; params: {'leagueId': ParamValue,'teamId': ParamValue} }
     'team_admins.destroy': { paramsTuple: [ParamValue,ParamValue,ParamValue]; params: {'leagueId': ParamValue,'teamId': ParamValue,'userId': ParamValue} }
+    'venues.index': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
+    'venues.store': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
+    'venues.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'venues.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'stages.store': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
+    'stages.seed': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'stages.next_round': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'players.assign_team': { paramsTuple?: []; params?: {} }
     'invites.generate': { paramsTuple?: []; params?: {} }
     'league_players.roster': { paramsTuple: [ParamValue,ParamValue]; params: {'leagueId': ParamValue,'seasonId': ParamValue} }
@@ -94,11 +105,14 @@ export type ScannedRoutes = {
     'formations.index': { paramsTuple?: []; params?: {} }
     'formations.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'game_lineups.index': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
+    'stages.bracket': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'stages.index_by_season': { paramsTuple: [ParamValue]; params: {'seasonId': ParamValue} }
     'teams.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'players.does_user_have_player_profile': { paramsTuple?: []; params?: {} }
     'players.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'invites.accept': { paramsTuple: [ParamValue]; params: {'token': ParamValue} }
     'players.league_player_requests': { paramsTuple?: []; params?: {} }
+    'venues.index': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'invites.generate': { paramsTuple?: []; params?: {} }
     'league_players.roster': { paramsTuple: [ParamValue,ParamValue]; params: {'leagueId': ParamValue,'seasonId': ParamValue} }
   }
@@ -121,11 +135,14 @@ export type ScannedRoutes = {
     'formations.index': { paramsTuple?: []; params?: {} }
     'formations.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'game_lineups.index': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
+    'stages.bracket': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'stages.index_by_season': { paramsTuple: [ParamValue]; params: {'seasonId': ParamValue} }
     'teams.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'players.does_user_have_player_profile': { paramsTuple?: []; params?: {} }
     'players.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'invites.accept': { paramsTuple: [ParamValue]; params: {'token': ParamValue} }
     'players.league_player_requests': { paramsTuple?: []; params?: {} }
+    'venues.index': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'invites.generate': { paramsTuple?: []; params?: {} }
     'league_players.roster': { paramsTuple: [ParamValue,ParamValue]; params: {'leagueId': ParamValue,'seasonId': ParamValue} }
   }
@@ -151,9 +168,15 @@ export type ScannedRoutes = {
     'game_time.pause': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
     'game_time.resume': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
     'game_time.end_game': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
+    'game_time.start_penalty_shootout': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
+    'game_time.complete_penalty_shootout': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
     'seasons.store': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'teams.store': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'team_admins.store': { paramsTuple: [ParamValue,ParamValue]; params: {'leagueId': ParamValue,'teamId': ParamValue} }
+    'venues.store': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
+    'stages.store': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
+    'stages.seed': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'stages.next_round': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'players.assign_team': { paramsTuple?: []; params?: {} }
     'games.store': { paramsTuple?: []; params?: {} }
     'stats.store': { paramsTuple?: []; params?: {} }
@@ -165,6 +188,7 @@ export type ScannedRoutes = {
     'game_lineups.destroy': { paramsTuple: [ParamValue,ParamValue]; params: {'gameId': ParamValue,'id': ParamValue} }
     'teams.destroy': { paramsTuple: [ParamValue,ParamValue]; params: {'leagueId': ParamValue,'id': ParamValue} }
     'team_admins.destroy': { paramsTuple: [ParamValue,ParamValue,ParamValue]; params: {'leagueId': ParamValue,'teamId': ParamValue,'userId': ParamValue} }
+    'venues.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'league_players.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'games.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'stats.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -178,6 +202,7 @@ export type ScannedRoutes = {
     'leagues.update': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'seasons.update': { paramsTuple: [ParamValue,ParamValue]; params: {'leagueId': ParamValue,'seasonId': ParamValue} }
     'teams.update': { paramsTuple: [ParamValue,ParamValue]; params: {'leagueId': ParamValue,'id': ParamValue} }
+    'venues.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'league_players.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'games.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'stats.update': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }

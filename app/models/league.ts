@@ -8,6 +8,7 @@ import Game from '#models/game'
 import Stat from '#models/stat'
 import Standing from '#models/standing'
 import Invite from '#models/invite'
+import Venue from '#models/venue'
 
 export default class League extends LeagueSchema {
   @belongsTo(() => Country)
@@ -30,6 +31,9 @@ export default class League extends LeagueSchema {
 
   @hasMany(() => Invite)
   declare invites: HasMany<typeof Invite>
+
+  @hasMany(() => Venue)
+  declare venues: HasMany<typeof Venue>
 
   @manyToMany(() => User, {
     pivotTable: 'favourite_leagues',

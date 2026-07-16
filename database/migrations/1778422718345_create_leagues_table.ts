@@ -1,5 +1,7 @@
 import { BaseSchema } from '@adonisjs/lucid/schema'
 
+import { LEAGUE_TIEBREAKERS } from '#types/tiebreaker'
+
 export default class extends BaseSchema {
   protected tableName = 'leagues'
 
@@ -24,6 +26,12 @@ export default class extends BaseSchema {
       table.string('logo_url').nullable()
       table.string('description').nullable()
       table.string('gender').nullable()
+      table
+        .enum('tiebreaker', [...LEAGUE_TIEBREAKERS])
+        .notNullable()
+        .defaultTo('goal_difference_goals_scored')
+      table.date('start_date').nullable()
+      table.date('end_date').nullable()
       table.timestamp('created_at')
       table.timestamp('updated_at')
     })

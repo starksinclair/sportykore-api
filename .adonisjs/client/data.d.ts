@@ -22,6 +22,7 @@ import type PlayerSeasonDetailTransformer from '#transformers/player_season_deta
 import type PlayerTransformer from '#transformers/player_transformer'
 import type SearchTransformer from '#transformers/search_transformer'
 import type SeasonTransformer from '#transformers/season_transformer'
+import type StageTransformer from '#transformers/stage_transformer'
 import type StandingTransformer from '#transformers/standing_transformer'
 import type StatTransformer from '#transformers/stat_transformer'
 import type StatsTypeTransformer from '#transformers/stats_type_transformer'
@@ -29,7 +30,9 @@ import type TeamAdminTransformer from '#transformers/team_admin_transformer'
 import type TeamLeagueDetailTransformer from '#transformers/team_league_detail_transformer'
 import type TeamSeasonDetailTransformer from '#transformers/team_season_detail_transformer'
 import type TeamTransformer from '#transformers/team_transformer'
+import type TieTransformer from '#transformers/tie_transformer'
 import type UserTransformer from '#transformers/user_transformer'
+import type VenueTransformer from '#transformers/venue_transformer'
 import type InertiaMiddleware from '#middleware/inertia_middleware'
 
 export namespace Data {
@@ -97,6 +100,10 @@ export namespace Data {
   export namespace Season {
     export type Variants = InferVariants<SeasonTransformer>
   }
+  export type Stage = InferData<StageTransformer>
+  export namespace Stage {
+    export type Variants = InferVariants<StageTransformer>
+  }
   export type Standing = InferData<StandingTransformer>
   export namespace Standing {
     export type Variants = InferVariants<StandingTransformer>
@@ -125,9 +132,17 @@ export namespace Data {
   export namespace Team {
     export type Variants = InferVariants<TeamTransformer>
   }
+  export type Tie = InferData<TieTransformer>
+  export namespace Tie {
+    export type Variants = InferVariants<TieTransformer>
+  }
   export type User = InferData<UserTransformer>
   export namespace User {
     export type Variants = InferVariants<UserTransformer>
+  }
+  export type Venue = InferData<VenueTransformer>
+  export namespace Venue {
+    export type Variants = InferVariants<VenueTransformer>
   }
   export type SharedProps = InferSharedProps<InertiaMiddleware>
 }

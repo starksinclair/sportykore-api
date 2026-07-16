@@ -355,6 +355,30 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/game_lineups_controller').default['index']>>>
     }
   }
+  'stages.bracket': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/leagues/stages/:id/bracket'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/stages_controller').default['bracket']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/stages_controller').default['bracket']>>>
+    }
+  }
+  'stages.index_by_season': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/seasons/:seasonId/stages'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { seasonId: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/stages_controller').default['indexBySeason']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/stages_controller').default['indexBySeason']>>>
+    }
+  }
   'teams.show': {
     methods: ["GET","HEAD"]
     pattern: '/api/v1/teams/:id'
@@ -571,6 +595,30 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/game_time_controller').default['endGame']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
+  'game_time.start_penalty_shootout': {
+    methods: ["POST"]
+    pattern: '/api/v1/games/:gameId/penalty-shootout'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { gameId: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/game_time_controller').default['startPenaltyShootout']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/game_time_controller').default['startPenaltyShootout']>>>
+    }
+  }
+  'game_time.complete_penalty_shootout': {
+    methods: ["POST"]
+    pattern: '/api/v1/games/:gameId/penalty-shootout/complete'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/stage').completePenaltyShootoutValidator)>>
+      paramsTuple: [ParamValue]
+      params: { gameId: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/stage').completePenaltyShootoutValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/game_time_controller').default['completePenaltyShootout']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/game_time_controller').default['completePenaltyShootout']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
   'game_lineups.set': {
     methods: ["PUT"]
     pattern: '/api/v1/games/:gameId/lineups'
@@ -701,6 +749,90 @@ export interface Registry {
       query: {}
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/team_admins_controller').default['destroy']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/team_admins_controller').default['destroy']>>>
+    }
+  }
+  'venues.index': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/leagues/:leagueId/venues'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { leagueId: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/venues_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/venues_controller').default['index']>>>
+    }
+  }
+  'venues.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/leagues/:leagueId/venues'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/venue').createVenueValidator)>>
+      paramsTuple: [ParamValue]
+      params: { leagueId: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/venue').createVenueValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/venues_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/venues_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'venues.update': {
+    methods: ["PUT"]
+    pattern: '/api/v1/leagues/venues/:id'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/venue').updateVenueValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/venue').updateVenueValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/venues_controller').default['update']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/venues_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'venues.destroy': {
+    methods: ["DELETE"]
+    pattern: '/api/v1/leagues/venues/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/venues_controller').default['destroy']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/venues_controller').default['destroy']>>>
+    }
+  }
+  'stages.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/leagues/:leagueId/stages'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/stage').createKnockoutStageValidator)>>
+      paramsTuple: [ParamValue]
+      params: { leagueId: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/stage').createKnockoutStageValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/stages_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/stages_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'stages.seed': {
+    methods: ["POST"]
+    pattern: '/api/v1/leagues/stages/:id/seed'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/stage').seedKnockoutStageValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/stage').seedKnockoutStageValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/stages_controller').default['seed']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/stages_controller').default['seed']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'stages.next_round': {
+    methods: ["POST"]
+    pattern: '/api/v1/leagues/stages/:id/next-round'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/stage').nextRoundValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/stage').nextRoundValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/stages_controller').default['nextRound']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/stages_controller').default['nextRound']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'players.assign_team': {

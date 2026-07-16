@@ -198,8 +198,8 @@ export default class GameTimeService {
   async endGame(game: Game, homeScore: number, awayScore: number): Promise<Game> {
     this.assertStatus(
       game,
-      ['second_half', 'extra_time'],
-      'Game can only end from second half or extra time'
+      ['second_half', 'extra_time', 'penalty_shootout'],
+      'Game can only end from second half, extra time, or penalty shootout'
     )
 
     game.status = 'full_time'
@@ -207,10 +207,75 @@ export default class GameTimeService {
     game.awayScore = awayScore
     game.pausedAt = null
     game.pausedFromStatus = null
+    this.resolveGameWinner(game)
     await game.save()
 
     this.broadcastStatusChanged(game)
 
+    if (game.tieId) {
+      const { default: TieResolver } = await import('#services/tie_resolver')
+      await new TieResolver().advanceTie(game.tieId)
+    }
+
     return game
+  }
+
+  async startPenaltyShootout(game: Game): Promise<Game> {
+    this.assertStatus(
+      game,
+      ['second_half', 'extra_time'],
+      'Penalties can only start after second half or extra time'
+    )
+
+    game.status = 'penalty_shootout'
+    await game.save()
+    this.broadcastStatusChanged(game)
+    return game
+  }
+
+  async completePenaltyShootout(
+    game: Game,
+    homePenaltyScore: number,
+    awayPenaltyScore: number
+  ): Promise<Game> {
+    this.assertStatus(game, 'penalty_shootout', 'Game must be in penalty shootout')
+
+    if (homePenaltyScore === awayPenaltyScore) {
+      throw new Exception('Penalty shootout must have a winner', { status: 422 })
+    }
+
+    game.homePenaltyScore = homePenaltyScore
+    game.awayPenaltyScore = awayPenaltyScore
+    game.winnerTeamId =
+      homePenaltyScore > awayPenaltyScore ? game.homeTeamId : game.awayTeamId
+    game.status = 'full_time'
+    game.pausedAt = null
+    game.pausedFromStatus = null
+    await game.save()
+
+    this.broadcastStatusChanged(game)
+
+    if (game.tieId) {
+      const { default: TieResolver } = await import('#services/tie_resolver')
+      await new TieResolver().advanceTie(game.tieId)
+    }
+
+    return game
+  }
+
+  /** Set winner_team_id from decisive score; leave null if level (needs pens). */
+  resolveGameWinner(game: Game) {
+    const home = game.homeScore ?? 0
+    const away = game.awayScore ?? 0
+    if (home === away) {
+      if (game.homePenaltyScore !== null && game.awayPenaltyScore !== null) {
+        if (game.homePenaltyScore !== game.awayPenaltyScore) {
+          game.winnerTeamId =
+            game.homePenaltyScore > game.awayPenaltyScore ? game.homeTeamId : game.awayTeamId
+        }
+      }
+      return
+    }
+    game.winnerTeamId = home > away ? game.homeTeamId : game.awayTeamId
   }
 }

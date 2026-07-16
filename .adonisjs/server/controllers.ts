@@ -21,8 +21,10 @@ export const controllers = {
   Searches: () => import('#controllers/searches_controller'),
   Seasons: () => import('#controllers/seasons_controller'),
   Session: () => import('#controllers/session_controller'),
+  Stages: () => import('#controllers/stages_controller'),
   Stats: () => import('#controllers/stats_controller'),
   TeamAdmins: () => import('#controllers/team_admins_controller'),
   Teams: () => import('#controllers/teams_controller'),
   Users: () => import('#controllers/users_controller'),
+  Venues: () => import('#controllers/venues_controller'),
 }

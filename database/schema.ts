@@ -115,12 +115,16 @@ export class GameLineupSchema extends BaseModel {
 }
 
 export class GameSchema extends BaseModel {
-  static $columns = ['awayScore', 'awayTeamId', 'createdAt', 'currentMinute', 'extraTimeDuration', 'extraTimeStartedAt', 'firstHalfDuration', 'firstHalfStartedAt', 'homeScore', 'homeTeamId', 'id', 'leagueId', 'pausedAt', 'pausedFromStatus', 'playedAt', 'seasonId', 'secondHalfDuration', 'secondHalfStartedAt', 'status', 'updatedAt', 'venueName'] as const
+  static $columns = ['awayPenaltyScore', 'awayScore', 'awayTeamId', 'bracketPosition', 'createdAt', 'currentMinute', 'extraTimeDuration', 'extraTimeStartedAt', 'firstHalfDuration', 'firstHalfStartedAt', 'homePenaltyScore', 'homeScore', 'homeTeamId', 'id', 'leagueId', 'leg', 'pausedAt', 'pausedFromStatus', 'playedAt', 'round', 'seasonId', 'secondHalfDuration', 'secondHalfStartedAt', 'stageGroupId', 'stageId', 'status', 'tieId', 'updatedAt', 'venueId', 'venueName', 'winnerTeamId'] as const
   $columns = GameSchema.$columns
+  @column()
+  declare awayPenaltyScore: number | null
   @column()
   declare awayScore: number | null
   @column()
   declare awayTeamId: number
+  @column()
+  declare bracketPosition: number | null
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime | null
   @column()
@@ -134,6 +138,8 @@ export class GameSchema extends BaseModel {
   @column.dateTime()
   declare firstHalfStartedAt: DateTime | null
   @column()
+  declare homePenaltyScore: number | null
+  @column()
   declare homeScore: number | null
   @column()
   declare homeTeamId: number
@@ -141,6 +147,8 @@ export class GameSchema extends BaseModel {
   declare id: number
   @column()
   declare leagueId: number
+  @column()
+  declare leg: number | null
   @column.dateTime()
   declare pausedAt: DateTime | null
   @column()
@@ -148,17 +156,29 @@ export class GameSchema extends BaseModel {
   @column.dateTime()
   declare playedAt: DateTime
   @column()
+  declare round: string | null
+  @column()
   declare seasonId: number
   @column()
   declare secondHalfDuration: number
   @column.dateTime()
   declare secondHalfStartedAt: DateTime | null
   @column()
+  declare stageGroupId: number | null
+  @column()
+  declare stageId: number | null
+  @column()
   declare status: string | null
+  @column()
+  declare tieId: number | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
   @column()
+  declare venueId: number | null
+  @column()
   declare venueName: string | null
+  @column()
+  declare winnerTeamId: number | null
 }
 
 export class InviteSchema extends BaseModel {
@@ -220,7 +240,7 @@ export class LeaguePlayerSchema extends BaseModel {
 }
 
 export class LeagueSchema extends BaseModel {
-  static $columns = ['countryId', 'createdAt', 'description', 'gender', 'id', 'logoUrl', 'name', 'tiebreaker', 'updatedAt', 'userId'] as const
+  static $columns = ['countryId', 'createdAt', 'description', 'endDate', 'gender', 'id', 'logoUrl', 'name', 'startDate', 'tiebreaker', 'updatedAt', 'userId'] as const
   $columns = LeagueSchema.$columns
   @column()
   declare countryId: number | null
@@ -228,6 +248,8 @@ export class LeagueSchema extends BaseModel {
   declare createdAt: DateTime | null
   @column()
   declare description: string | null
+  @column.date()
+  declare endDate: DateTime | null
   @column()
   declare gender: string | null
   @column({ isPrimary: true })
@@ -236,6 +258,8 @@ export class LeagueSchema extends BaseModel {
   declare logoUrl: string | null
   @column()
   declare name: string
+  @column.date()
+  declare startDate: DateTime | null
   @column()
   declare tiebreaker: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
@@ -322,8 +346,69 @@ export class SeasonSchema extends BaseModel {
   declare updatedAt: DateTime | null
 }
 
+export class StageGroupSchema extends BaseModel {
+  static $columns = ['createdAt', 'id', 'name', 'sequence', 'stageId', 'updatedAt'] as const
+  $columns = StageGroupSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare name: string
+  @column()
+  declare sequence: number
+  @column()
+  declare stageId: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
+export class StageTeamSchema extends BaseModel {
+  static $columns = ['createdAt', 'id', 'seed', 'stageGroupId', 'stageId', 'teamId', 'updatedAt'] as const
+  $columns = StageTeamSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare seed: number | null
+  @column()
+  declare stageGroupId: number | null
+  @column()
+  declare stageId: number
+  @column()
+  declare teamId: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
+export class StageSchema extends BaseModel {
+  static $columns = ['config', 'createdAt', 'id', 'name', 'seasonId', 'sequence', 'sourceStageId', 'stageType', 'status', 'updatedAt'] as const
+  $columns = StageSchema.$columns
+  @column()
+  declare config: any
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare name: string
+  @column()
+  declare seasonId: number
+  @column()
+  declare sequence: number
+  @column()
+  declare sourceStageId: number | null
+  @column()
+  declare stageType: string
+  @column()
+  declare status: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
 export class StandingSchema extends BaseModel {
-  static $columns = ['createdAt', 'draws', 'form', 'goalDifference', 'goalsAgainst', 'goalsFor', 'id', 'leagueId', 'losses', 'played', 'points', 'position', 'seasonId', 'teamId', 'updatedAt', 'wins'] as const
+  static $columns = ['createdAt', 'draws', 'form', 'goalDifference', 'goalsAgainst', 'goalsFor', 'id', 'leagueId', 'losses', 'played', 'points', 'position', 'seasonId', 'stageGroupId', 'stageId', 'teamId', 'updatedAt', 'wins'] as const
   $columns = StandingSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime | null
@@ -351,6 +436,10 @@ export class StandingSchema extends BaseModel {
   declare position: number | null
   @column()
   declare seasonId: number
+  @column()
+  declare stageGroupId: number | null
+  @column()
+  declare stageId: number | null
   @column()
   declare teamId: number
   @column.dateTime({ autoCreate: true, autoUpdate: true })
@@ -451,6 +540,45 @@ export class TeamSchema extends BaseModel {
   declare updatedAt: DateTime | null
 }
 
+export class TieSchema extends BaseModel {
+  static $columns = ['awayGoals', 'awayScoreAgg', 'awayTeamId', 'bestOf', 'bracketPosition', 'createdAt', 'homeScoreAgg', 'homeTeamId', 'id', 'isBye', 'round', 'stageId', 'status', 'targetWins', 'tieFormat', 'updatedAt', 'winnerTeamId'] as const
+  $columns = TieSchema.$columns
+  @column()
+  declare awayGoals: boolean
+  @column()
+  declare awayScoreAgg: number | null
+  @column()
+  declare awayTeamId: number | null
+  @column()
+  declare bestOf: number | null
+  @column()
+  declare bracketPosition: number
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare homeScoreAgg: number | null
+  @column()
+  declare homeTeamId: number | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare isBye: boolean
+  @column()
+  declare round: string
+  @column()
+  declare stageId: number
+  @column()
+  declare status: string
+  @column()
+  declare targetWins: number | null
+  @column()
+  declare tieFormat: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare winnerTeamId: number | null
+}
+
 export class UserSchema extends BaseModel {
   static $columns = ['createdAt', 'email', 'fullName', 'id', 'password', 'phone', 'recoveryEmail', 'updatedAt'] as const
   $columns = UserSchema.$columns
@@ -468,6 +596,37 @@ export class UserSchema extends BaseModel {
   declare phone: string | null
   @column()
   declare recoveryEmail: string | null
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
+export class VenueSchema extends BaseModel {
+  static $columns = ['address', 'capacity', 'city', 'createdAt', 'createdBy', 'googlePlaceId', 'id', 'latitude', 'leagueId', 'longitude', 'name', 'notes', 'updatedAt'] as const
+  $columns = VenueSchema.$columns
+  @column()
+  declare address: string | null
+  @column()
+  declare capacity: number | null
+  @column()
+  declare city: string | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare createdBy: number | null
+  @column()
+  declare googlePlaceId: string | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare latitude: string | null
+  @column()
+  declare leagueId: number
+  @column()
+  declare longitude: string | null
+  @column()
+  declare name: string
+  @column()
+  declare notes: string | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
 }

@@ -62,6 +62,13 @@ export interface ApiDefinition {
     update: typeof routes['game_lineups.update']
     destroy: typeof routes['game_lineups.destroy']
   }
+  stages: {
+    bracket: typeof routes['stages.bracket']
+    indexBySeason: typeof routes['stages.index_by_season']
+    store: typeof routes['stages.store']
+    seed: typeof routes['stages.seed']
+    nextRound: typeof routes['stages.next_round']
+  }
   teams: {
     show: typeof routes['teams.show']
     store: typeof routes['teams.store']
@@ -96,6 +103,8 @@ export interface ApiDefinition {
     pause: typeof routes['game_time.pause']
     resume: typeof routes['game_time.resume']
     endGame: typeof routes['game_time.end_game']
+    startPenaltyShootout: typeof routes['game_time.start_penalty_shootout']
+    completePenaltyShootout: typeof routes['game_time.complete_penalty_shootout']
   }
   seasons: {
     store: typeof routes['seasons.store']
@@ -104,6 +113,12 @@ export interface ApiDefinition {
   teamAdmins: {
     store: typeof routes['team_admins.store']
     destroy: typeof routes['team_admins.destroy']
+  }
+  venues: {
+    index: typeof routes['venues.index']
+    store: typeof routes['venues.store']
+    update: typeof routes['venues.update']
+    destroy: typeof routes['venues.destroy']
   }
   leaguePlayers: {
     roster: typeof routes['league_players.roster']

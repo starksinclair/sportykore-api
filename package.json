@@ -34,6 +34,7 @@
     "#middleware/*": "./app/middleware/*.js",
     "#transformers/*": "./app/transformers/*.js",
     "#helpers/*": "./app/helpers/*.js",
+    "#lib/*": "./app/lib/*.js",
     "#validators/*": "./app/validators/*.js",
     "#types/*": "./app/types/*.js",
     "#providers/*": "./providers/*.js",
