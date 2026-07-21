@@ -25,6 +25,7 @@ export type AccreditStatInput = {
   playerId: number
   assistPlayerId?: number | null
   isOwnGoal: boolean
+  isPenalty?: boolean
   minute: number
 }
 
@@ -199,6 +200,10 @@ export default class StatService {
       seasonId: stat.seasonId,
     })
 
+    if (input.isPenalty && input.isOwnGoal) {
+      throw new Exception('A goal cannot be both a penalty and an own goal', { status: 422 })
+    }
+
     if (input.assistPlayerId) {
       if (input.isOwnGoal) {
         throw new Exception('Assists are not allowed on own goals', { status: 422 })
@@ -221,6 +226,7 @@ export default class StatService {
       stat.playerId = input.playerId
       stat.minute = input.minute
       stat.statTypeId = input.isOwnGoal ? ownGoalType.id : goalType.id
+      stat.isPenalty = Boolean(input.isPenalty)
       await stat.save()
 
       if (input.assistPlayerId) {

@@ -601,7 +601,7 @@ export class StatTypeSchema extends BaseModel {
 }
 
 export class StatSchema extends BaseModel {
-  static $columns = ['createdAt', 'gameId', 'id', 'isStoppageTime', 'leagueId', 'minute', 'numericValue', 'playerId', 'relatedPlayerId', 'seasonId', 'statTypeId', 'teamId', 'updatedAt', 'value'] as const
+  static $columns = ['createdAt', 'gameId', 'id', 'isPenalty', 'isStoppageTime', 'leagueId', 'minute', 'numericValue', 'playerId', 'relatedPlayerId', 'seasonId', 'statTypeId', 'teamId', 'updatedAt', 'value'] as const
   $columns = StatSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime | null
@@ -609,6 +609,8 @@ export class StatSchema extends BaseModel {
   declare gameId: number
   @column({ isPrimary: true })
   declare id: number
+  @column()
+  declare isPenalty: boolean
   @column()
   declare isStoppageTime: boolean | null
   @column()
@@ -751,11 +753,11 @@ export class VenueSchema extends BaseModel {
   @column({ isPrimary: true })
   declare id: number
   @column()
-  declare latitude: number | null
+  declare latitude: string | null
   @column()
   declare leagueId: number
   @column()
-  declare longitude: number | null
+  declare longitude: string | null
   @column()
   declare name: string
   @column()
