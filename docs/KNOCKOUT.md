@@ -231,7 +231,9 @@ Do not invent pairing — `generateNextRound` ownership of who faces whom is aut
 | `POST /leagues/games` (manage schedule) | Auto `round_robin` for that season | null |
 | Tie lifecycle (`seed` / `next-round` / best-of extension) | Knockout stage | set |
 
-Knockout games must **not** be created via `POST /leagues/games`. Standings only use round-robin stage games; tie games skip standings.
+Knockout games must **not** be created via `POST /leagues/games`. Standings only use round-robin / group stage games; tie games skip standings.
+
+Group → knockout transition (qualifiers, `source_stage_id`, unchanged `generateKnockoutPhase`): [GROUPS.md](./GROUPS.md).
 
 Game fields for knockout: `stageId`, `tieId`, `leg`, `round`, `bracketPosition`, `homePenaltyScore`, `awayPenaltyScore`, `winnerTeam`.
 

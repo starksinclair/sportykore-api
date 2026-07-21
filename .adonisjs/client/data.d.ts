@@ -17,11 +17,13 @@ import type LeaguePlayerTransformer from '#transformers/league_player_transforme
 import type LeagueTransformer from '#transformers/league_transformer'
 import type LineupGroupTransformer from '#transformers/lineup_group_transformer'
 import type OwnedLeagueTransformer from '#transformers/owned_league_transformer'
+import type PlayerHighlightTransformer from '#transformers/player_highlight_transformer'
 import type PlayerLeagueDetailTransformer from '#transformers/player_league_detail_transformer'
 import type PlayerSeasonDetailTransformer from '#transformers/player_season_detail_transformer'
 import type PlayerTransformer from '#transformers/player_transformer'
 import type SearchTransformer from '#transformers/search_transformer'
 import type SeasonTransformer from '#transformers/season_transformer'
+import type StageGroupTransformer from '#transformers/stage_group_transformer'
 import type StageTransformer from '#transformers/stage_transformer'
 import type StandingTransformer from '#transformers/standing_transformer'
 import type StatTransformer from '#transformers/stat_transformer'
@@ -80,6 +82,10 @@ export namespace Data {
   export namespace OwnedLeague {
     export type Variants = InferVariants<OwnedLeagueTransformer>
   }
+  export type PlayerHighlight = InferData<PlayerHighlightTransformer>
+  export namespace PlayerHighlight {
+    export type Variants = InferVariants<PlayerHighlightTransformer>
+  }
   export type PlayerLeagueDetail = InferData<PlayerLeagueDetailTransformer>
   export namespace PlayerLeagueDetail {
     export type Variants = InferVariants<PlayerLeagueDetailTransformer>
@@ -99,6 +105,10 @@ export namespace Data {
   export type Season = InferData<SeasonTransformer>
   export namespace Season {
     export type Variants = InferVariants<SeasonTransformer>
+  }
+  export type StageGroup = InferData<StageGroupTransformer>
+  export namespace StageGroup {
+    export type Variants = InferVariants<StageGroupTransformer>
   }
   export type Stage = InferData<StageTransformer>
   export namespace Stage {

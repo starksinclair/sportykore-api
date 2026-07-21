@@ -367,6 +367,18 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/stages_controller').default['bracket']>>>
     }
   }
+  'stages.standings': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/leagues/stages/:id/standings'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/stages_controller').default['standings']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/stages_controller').default['standings']>>>
+    }
+  }
   'stages.index_by_season': {
     methods: ["GET","HEAD"]
     pattern: '/api/v1/seasons/:seasonId/stages'
@@ -413,6 +425,114 @@ export interface Registry {
       query: {}
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/players_controller').default['show']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/players_controller').default['show']>>>
+    }
+  }
+  'me_player.show': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/me/player'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/me_player_controller').default['show']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/me_player_controller').default['show']>>>
+    }
+  }
+  'me_player.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/me/player'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/player').createPlayerProfileValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/player').createPlayerProfileValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/me_player_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/me_player_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'me_player.update': {
+    methods: ["PUT"]
+    pattern: '/api/v1/me/player'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/player').updatePlayerProfileValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/player').updatePlayerProfileValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/me_player_controller').default['update']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/me_player_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'me_player.photo': {
+    methods: ["POST"]
+    pattern: '/api/v1/me/player/photo'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/player').playerPhotoValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/player').playerPhotoValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/me_player_controller').default['photo']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/me_player_controller').default['photo']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'player_highlights.index': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/me/player/highlights'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/player_highlights_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/player_highlights_controller').default['index']>>>
+    }
+  }
+  'player_highlights.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/me/player/highlights'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/player').createHighlightValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/player').createHighlightValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/player_highlights_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/player_highlights_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'player_highlights.reorder': {
+    methods: ["PUT"]
+    pattern: '/api/v1/me/player/highlights/reorder'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/player').reorderHighlightsValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/player').reorderHighlightsValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/player_highlights_controller').default['reorder']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/player_highlights_controller').default['reorder']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'player_highlights.update': {
+    methods: ["PUT"]
+    pattern: '/api/v1/me/player/highlights/:hid'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/player').updateHighlightValidator)>>
+      paramsTuple: [ParamValue]
+      params: { hid: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/player').updateHighlightValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/player_highlights_controller').default['update']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/player_highlights_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'player_highlights.destroy': {
+    methods: ["DELETE"]
+    pattern: '/api/v1/me/player/highlights/:hid'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { hid: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/player_highlights_controller').default['destroy']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/player_highlights_controller').default['destroy']>>>
     }
   }
   'invites.accept': {
@@ -803,10 +923,10 @@ export interface Registry {
     methods: ["POST"]
     pattern: '/api/v1/leagues/:leagueId/stages'
     types: {
-      body: ExtractBody<InferInput<(typeof import('#validators/stage').createKnockoutStageValidator)>>
+      body: ExtractBody<InferInput<(typeof import('#validators/stage').createGroupStageValidator)>|InferInput<(typeof import('#validators/stage').createKnockoutStageValidator)>>
       paramsTuple: [ParamValue]
       params: { leagueId: ParamValue }
-      query: ExtractQuery<InferInput<(typeof import('#validators/stage').createKnockoutStageValidator)>>
+      query: ExtractQuery<InferInput<(typeof import('#validators/stage').createGroupStageValidator)>|InferInput<(typeof import('#validators/stage').createKnockoutStageValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/stages_controller').default['store']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/stages_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
@@ -833,6 +953,186 @@ export interface Registry {
       query: ExtractQuery<InferInput<(typeof import('#validators/stage').nextRoundValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/stages_controller').default['nextRound']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/stages_controller').default['nextRound']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'stages.assign_groups': {
+    methods: ["POST"]
+    pattern: '/api/v1/leagues/stages/:id/groups/assign'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/stage').assignGroupTeamsValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/stage').assignGroupTeamsValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/stages_controller').default['assignGroups']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/stages_controller').default['assignGroups']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'stages.generate_fixtures': {
+    methods: ["POST"]
+    pattern: '/api/v1/leagues/stages/:id/fixtures'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/stages_controller').default['generateFixtures']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/stages_controller').default['generateFixtures']>>>
+    }
+  }
+  'stages.qualifiers': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/leagues/stages/:id/qualifiers'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/stages_controller').default['qualifiers']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/stages_controller').default['qualifiers']>>>
+    }
+  }
+  'stages.generate_knockout': {
+    methods: ["POST"]
+    pattern: '/api/v1/leagues/stages/:id/generate-knockout'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/stage').generateKnockoutFromGroupValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/stage').generateKnockoutFromGroupValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/stages_controller').default['generateKnockout']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/stages_controller').default['generateKnockout']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'standing_adjustments.index': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/leagues/stages/:id/standings/adjustments'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/standing_adjustments_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/standing_adjustments_controller').default['index']>>>
+    }
+  }
+  'standing_adjustments.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/leagues/stages/:id/standings/adjustments'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/stage').createStandingAdjustmentValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/stage').createStandingAdjustmentValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/standing_adjustments_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/standing_adjustments_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'standing_adjustments.update': {
+    methods: ["PUT"]
+    pattern: '/api/v1/leagues/stages/adjustments/:aid'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/stage').updateStandingAdjustmentValidator)>>
+      paramsTuple: [ParamValue]
+      params: { aid: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/stage').updateStandingAdjustmentValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/standing_adjustments_controller').default['update']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/standing_adjustments_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'standing_adjustments.destroy': {
+    methods: ["DELETE"]
+    pattern: '/api/v1/leagues/stages/adjustments/:aid'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { aid: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/standing_adjustments_controller').default['destroy']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/standing_adjustments_controller').default['destroy']>>>
+    }
+  }
+  'standing_overrides.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/leagues/stages/:id/standings/overrides'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/stage').createStandingOverrideValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/stage').createStandingOverrideValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/standing_overrides_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/standing_overrides_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'standing_overrides.destroy': {
+    methods: ["DELETE"]
+    pattern: '/api/v1/leagues/stages/:id/standings/overrides/:oid'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue, ParamValue]
+      params: { id: ParamValue; oid: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/standing_overrides_controller').default['destroy']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/standing_overrides_controller').default['destroy']>>>
+    }
+  }
+  'standing_zones.index': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/leagues/stages/:id/zones'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/standing_zones_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/standing_zones_controller').default['index']>>>
+    }
+  }
+  'standing_zones.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/leagues/stages/:id/zones'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/stage').createStandingZoneValidator)>>
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/stage').createStandingZoneValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/standing_zones_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/standing_zones_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'standing_zones.update': {
+    methods: ["PUT"]
+    pattern: '/api/v1/leagues/stages/zones/:zid'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/stage').updateStandingZoneValidator)>>
+      paramsTuple: [ParamValue]
+      params: { zid: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/stage').updateStandingZoneValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/standing_zones_controller').default['update']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/standing_zones_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'standing_zones.destroy': {
+    methods: ["DELETE"]
+    pattern: '/api/v1/leagues/stages/zones/:zid'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { zid: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/standing_zones_controller').default['destroy']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/standing_zones_controller').default['destroy']>>>
+    }
+  }
+  'audit_logs.index': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/leagues/:leagueId/audit-logs'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { leagueId: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/audit_logs_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/audit_logs_controller').default['index']>>>
     }
   }
   'players.assign_team': {

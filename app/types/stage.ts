@@ -52,3 +52,8 @@ export type KnockoutStageConfig = {
     rounds?: Partial<Record<BracketRound, TieFormatConfig>>
   }
 }
+
+export type GroupStageConfig = {
+  format: { group_count: number; double_round_robin?: boolean }
+  advancement: { per_group: number }
+}

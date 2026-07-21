@@ -8,6 +8,7 @@ This document describes the **Manage** flow for league owners: screens, tabs, AP
 - Player invites: [PLAYER_INVITE.md](./PLAYER_INVITE.md)
 - Venues & map picker: [VENUES.md](./VENUES.md)
 - Knockout stages / bracket / create competition `format`: [KNOCKOUT.md](./KNOCKOUT.md)
+- Group stages / qualifiers / standings zones: [GROUPS.md](./GROUPS.md)
 - Match-day timezone (public feed only): [TIME_AND_TIMEZONE.md](./TIME_AND_TIMEZONE.md)
 
 ---

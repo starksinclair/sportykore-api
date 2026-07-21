@@ -1,7 +1,7 @@
 import vine from '@vinejs/vine'
 import { resourceId } from '#validators/common'
 import { COMPETITION_FORMATS } from '#validators/league'
-import { knockoutStageConfigSchema } from '#validators/stage'
+import { groupStageConfigSchema, knockoutStageConfigSchema } from '#validators/stage'
 
 const seasonStatuses = ['inactive', 'active', 'completed'] as const
 
@@ -15,6 +15,12 @@ export const createSeasonValidator = vine.create({
     .object({
       name: vine.string().trim().minLength(1).maxLength(255).optional(),
       config: knockoutStageConfigSchema,
+    })
+    .optional(),
+  group: vine
+    .object({
+      name: vine.string().trim().minLength(1).maxLength(255).optional(),
+      config: groupStageConfigSchema.optional(),
     })
     .optional(),
 })

@@ -67,6 +67,12 @@ export default class LeaguesController {
             },
           }
         : undefined,
+      group: data.group
+        ? {
+            name: data.group.name,
+            config: data.group.config,
+          }
+        : undefined,
     })
 
     const baseUrl = env.get('MOBILE_APP_URL') ?? env.get('APP_URL')

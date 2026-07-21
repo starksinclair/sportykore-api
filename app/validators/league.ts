@@ -1,11 +1,11 @@
 import vine from '@vinejs/vine'
 import { optionalImage, resourceId } from '#validators/common'
 import { LEAGUE_TIEBREAKERS } from '#types/tiebreaker'
-import { knockoutStageConfigSchema } from '#validators/stage'
+import { groupStageConfigSchema, knockoutStageConfigSchema } from '#validators/stage'
 
 const dateFormats = ['iso8601', 'YYYY-MM-DD']
 
-export const COMPETITION_FORMATS = ['league', 'knockout'] as const
+export const COMPETITION_FORMATS = ['league', 'knockout', 'group'] as const
 
 export const createLeagueWithSeasonValidator = vine.create({
   name: vine.string().trim().minLength(1).maxLength(255),
@@ -19,7 +19,7 @@ export const createLeagueWithSeasonValidator = vine.create({
   endDate: vine.date({ formats: dateFormats }).nullable().optional(),
   /**
    * Competition format for the first season.
-   * `league` (default) → round_robin stage; `knockout` → knockout stage only.
+   * `league` (default) → round_robin; `knockout` → knockout only; `group` → group stage.
    */
   format: vine.enum(COMPETITION_FORMATS).optional(),
   knockout: vine
@@ -32,6 +32,12 @@ export const createLeagueWithSeasonValidator = vine.create({
        */
       seed: vine.boolean().optional(),
       config: knockoutStageConfigSchema,
+    })
+    .optional(),
+  group: vine
+    .object({
+      name: vine.string().trim().minLength(1).maxLength(255).optional(),
+      config: groupStageConfigSchema.optional(),
     })
     .optional(),
   teams: vine

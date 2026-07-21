@@ -4,6 +4,7 @@
  */
 
 export const controllers = {
+  AuditLogs: () => import('#controllers/audit_logs_controller'),
   Auth: () => import('#controllers/auth_controller'),
   AuthUsers: () => import('#controllers/auth_users_controller'),
   Countries: () => import('#controllers/countries_controller'),
@@ -16,12 +17,17 @@ export const controllers = {
   Invites: () => import('#controllers/invites_controller'),
   LeaguePlayers: () => import('#controllers/league_players_controller'),
   Leagues: () => import('#controllers/leagues_controller'),
+  MePlayer: () => import('#controllers/me_player_controller'),
   NewAccount: () => import('#controllers/new_account_controller'),
+  PlayerHighlights: () => import('#controllers/player_highlights_controller'),
   Players: () => import('#controllers/players_controller'),
   Searches: () => import('#controllers/searches_controller'),
   Seasons: () => import('#controllers/seasons_controller'),
   Session: () => import('#controllers/session_controller'),
   Stages: () => import('#controllers/stages_controller'),
+  StandingAdjustments: () => import('#controllers/standing_adjustments_controller'),
+  StandingOverrides: () => import('#controllers/standing_overrides_controller'),
+  StandingZones: () => import('#controllers/standing_zones_controller'),
   Stats: () => import('#controllers/stats_controller'),
   TeamAdmins: () => import('#controllers/team_admins_controller'),
   Teams: () => import('#controllers/teams_controller'),

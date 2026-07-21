@@ -13,6 +13,7 @@ import StatType from '#models/stat_type'
 import Team from '#models/team'
 import User from '#models/user'
 import LeagueService from '#services/league_service'
+import StageService from '#services/stage_service'
 import StandingService from '#services/standing_service'
 import CountryTransformer from '#transformers/country_transformer'
 import GameTransformer from '#transformers/game_transformer'
@@ -256,48 +257,20 @@ test.group('LeagueService', (group) => {
 
     const teamA = await Team.create({ leagueId: league.id, name: 'A United', addedBy: owner.id })
     const teamB = await Team.create({ leagueId: league.id, name: 'B City', addedBy: owner.id })
+    const stage = await new StageService().ensureRoundRobinStage(season.id)
 
     const playedAt = DateTime.utc().minus({ days: 1 })
+    // Game.afterSave → UpdateStandings recalculates standings for both teams
     const game = await Game.create({
       leagueId: league.id,
       seasonId: season.id,
+      stageId: stage.id,
       homeTeamId: teamA.id,
       awayTeamId: teamB.id,
       playedAt,
       status: 'full_time',
       homeScore: 2,
       awayScore: 0,
-    })
-
-    await Standing.create({
-      leagueId: league.id,
-      seasonId: season.id,
-      teamId: teamA.id,
-      position: 1,
-      played: 1,
-      wins: 1,
-      draws: 0,
-      losses: 0,
-      goalsFor: 2,
-      goalsAgainst: 0,
-      goalDifference: 2,
-      points: 3,
-      form: 'W',
-    })
-    await Standing.create({
-      leagueId: league.id,
-      seasonId: season.id,
-      teamId: teamB.id,
-      position: 2,
-      played: 1,
-      wins: 0,
-      draws: 0,
-      losses: 1,
-      goalsFor: 0,
-      goalsAgainst: 2,
-      goalDifference: -2,
-      points: 0,
-      form: 'L',
     })
 
     const statType = await StatType.create({
@@ -370,47 +343,19 @@ test.group('LeagueService', (group) => {
     const teamA = await Team.create({ leagueId: league.id, name: 'A United', addedBy: owner.id })
     const teamB = await Team.create({ leagueId: league.id, name: 'B City', addedBy: owner.id })
     await Team.create({ leagueId: league.id, name: 'C Rovers', addedBy: owner.id })
+    const stage = await new StageService().ensureRoundRobinStage(season.id)
 
+    // Game.afterSave recalculates A/B; getLeague ensures C Rovers into the table
     await Game.create({
       leagueId: league.id,
       seasonId: season.id,
+      stageId: stage.id,
       homeTeamId: teamA.id,
       awayTeamId: teamB.id,
       playedAt: DateTime.utc().minus({ days: 1 }),
       status: 'full_time',
       homeScore: 1,
       awayScore: 0,
-    })
-
-    await Standing.create({
-      leagueId: league.id,
-      seasonId: season.id,
-      teamId: teamA.id,
-      position: 1,
-      played: 1,
-      wins: 1,
-      draws: 0,
-      losses: 0,
-      goalsFor: 1,
-      goalsAgainst: 0,
-      goalDifference: 1,
-      points: 3,
-      form: null,
-    })
-    await Standing.create({
-      leagueId: league.id,
-      seasonId: season.id,
-      teamId: teamB.id,
-      position: 2,
-      played: 1,
-      wins: 0,
-      draws: 0,
-      losses: 1,
-      goalsFor: 0,
-      goalsAgainst: 1,
-      goalDifference: -1,
-      points: 0,
-      form: null,
     })
 
     const { season: detailSeason } = await service.getLeague(league.id)

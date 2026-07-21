@@ -13,10 +13,11 @@ import StandingService from '#services/standing_service'
 import { LIVE_GAME_STATUSES } from '#types/game_status'
 
 import { DEFAULT_LEAGUE_TIEBREAKER, type LeagueTiebreaker } from '#types/tiebreaker'
-import type { KnockoutStageConfig } from '#types/stage'
+import type { GroupStageConfig, KnockoutStageConfig } from '#types/stage'
 import StageService from '#services/stage_service'
+import GroupStageService from '#services/group_stage_service'
 
-export type CompetitionFormat = 'league' | 'knockout'
+export type CompetitionFormat = 'league' | 'knockout' | 'group'
 
 export type CreateLeagueInput = {
   name: string
@@ -34,6 +35,10 @@ export type CreateLeagueInput = {
     name?: string
     seed?: boolean
     config: KnockoutStageConfig
+  }
+  group?: {
+    name?: string
+    config?: Partial<GroupStageConfig> | GroupStageConfig
   }
 }
 
@@ -63,7 +68,8 @@ export type MatchDayContext = MatchDayWindow & {
 export default class LeagueService {
   constructor(
     private standingService: StandingService,
-    private stageService: StageService
+    private stageService: StageService = new StageService(),
+    private groupStageService: GroupStageService = new GroupStageService()
   ) {}
 
   async createWithSeason(
@@ -129,6 +135,17 @@ export default class LeagueService {
           },
           trx
         )
+      } else if (format === 'group') {
+        const { stage: groupStage } = await this.groupStageService.createGroupStage(
+          league.id,
+          season.id,
+          {
+            name: input.group?.name ?? 'Group Stage',
+            config: input.group?.config,
+          },
+          trx
+        )
+        stage = groupStage
       } else {
         stage = await this.stageService.ensureRoundRobinStage(season.id, trx)
         if (teams.length > 0) {
@@ -160,10 +177,11 @@ export default class LeagueService {
       await created.stage.refresh()
     }
 
+    // Group format never auto-assigns or generates fixtures on create
     return {
       ...created,
       format,
-      seeded,
+      seeded: format === 'group' ? false : seeded,
     }
   }
 

@@ -5,12 +5,16 @@ import db from '@adonisjs/lucid/services/db'
 import Season from '#models/season'
 import { createSeasonValidator, updateSeasonValidator } from '#validators/season'
 import StageService from '#services/stage_service'
+import GroupStageService from '#services/group_stage_service'
 import type { CompetitionFormat } from '#services/league_service'
 import { inject } from '@adonisjs/core'
 
 @inject()
 export default class SeasonsController {
-  constructor(protected stageService: StageService) {}
+  constructor(
+    protected stageService: StageService = new StageService(),
+    protected groupStageService: GroupStageService = new GroupStageService()
+  ) {}
 
   async store({ request, response }: HttpContext) {
     const data = await request.validateUsing(createSeasonValidator)
@@ -45,24 +49,37 @@ export default class SeasonsController {
         { client: trx }
       )
 
-      const createdStage =
-        format === 'knockout'
-          ? await this.stageService.createKnockoutStage(
-              data.leagueId,
-              created.id,
-              {
-                name: data.knockout?.name ?? 'Cup',
-                config: {
-                  format: {
-                    starting_round: data.knockout!.config.format?.starting_round,
-                    has_third_place: data.knockout!.config.format?.has_third_place ?? false,
-                  },
-                  ties: data.knockout!.config.ties,
-                },
+      let createdStage
+      if (format === 'knockout') {
+        createdStage = await this.stageService.createKnockoutStage(
+          data.leagueId,
+          created.id,
+          {
+            name: data.knockout?.name ?? 'Cup',
+            config: {
+              format: {
+                starting_round: data.knockout!.config.format?.starting_round,
+                has_third_place: data.knockout!.config.format?.has_third_place ?? false,
               },
-              trx
-            )
-          : await this.stageService.ensureRoundRobinStage(created.id, trx)
+              ties: data.knockout!.config.ties,
+            },
+          },
+          trx
+        )
+      } else if (format === 'group') {
+        const { stage: groupStage } = await this.groupStageService.createGroupStage(
+          data.leagueId,
+          created.id,
+          {
+            name: data.group?.name ?? 'Group Stage',
+            config: data.group?.config,
+          },
+          trx
+        )
+        createdStage = groupStage
+      } else {
+        createdStage = await this.stageService.ensureRoundRobinStage(created.id, trx)
+      }
 
       return { season: created, stage: createdStage }
     })

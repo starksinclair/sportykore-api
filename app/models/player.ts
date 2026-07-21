@@ -6,8 +6,15 @@ import Team from '#models/team'
 import Stat from '#models/stat'
 import GameLineup from '#models/game_lineup'
 import Country from '#models/country'
+import PlayerHighlight from '#models/player_highlight'
+import type { PlayerPosition, PlayerVisibility, PreferredFoot } from '#types/player'
 
 export default class Player extends PlayerSchema {
+  declare primaryPosition: PlayerPosition | null
+  declare secondaryPosition: PlayerPosition | null
+  declare preferredFoot: PreferredFoot | null
+  declare visibility: PlayerVisibility
+
   @belongsTo(() => User)
   declare added_by: BelongsTo<typeof User>
 
@@ -27,6 +34,9 @@ export default class Player extends PlayerSchema {
 
   @hasMany(() => GameLineup)
   declare lineups: HasMany<typeof GameLineup>
+
+  @hasMany(() => PlayerHighlight)
+  declare highlights: HasMany<typeof PlayerHighlight>
 
   @belongsTo(() => Country)
   declare country: BelongsTo<typeof Country>

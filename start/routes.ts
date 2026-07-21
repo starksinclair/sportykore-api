@@ -89,6 +89,7 @@ router
     router.get('formations/:id', [controllers.Formations, 'show'])
     router.get('games/:gameId/lineups', [controllers.GameLineups, 'index'])
     router.get('leagues/stages/:id/bracket', [controllers.Stages, 'bracket'])
+    router.get('leagues/stages/:id/standings', [controllers.Stages, 'standings'])
     router.get('seasons/:seasonId/stages', [controllers.Stages, 'indexBySeason'])
     router.get('teams/:id', [controllers.Teams, 'show'])
     router
@@ -98,6 +99,23 @@ router
       ])
       .use(middleware.apiAuth())
     router.get('players/:id', [controllers.Players, 'show'])
+
+    // Own player profile (two-state CTA resolver) + personal YouTube highlights.
+    // Ownership here is the authenticated user's own player record — not leagueOwner.
+    router
+      .group(() => {
+        router.get('me/player', [controllers.MePlayer, 'show'])
+        router.post('me/player', [controllers.MePlayer, 'store'])
+        router.put('me/player', [controllers.MePlayer, 'update'])
+        router.post('me/player/photo', [controllers.MePlayer, 'photo'])
+
+        router.get('me/player/highlights', [controllers.PlayerHighlights, 'index'])
+        router.post('me/player/highlights', [controllers.PlayerHighlights, 'store'])
+        router.put('me/player/highlights/reorder', [controllers.PlayerHighlights, 'reorder'])
+        router.put('me/player/highlights/:hid', [controllers.PlayerHighlights, 'update'])
+        router.delete('me/player/highlights/:hid', [controllers.PlayerHighlights, 'destroy'])
+      })
+      .use(middleware.apiAuth())
     router.get('invites/accept/:token', [controllers.Invites, 'accept']).use(middleware.apiAuth())
     router
       .post('invites/complete-profile-and-accept/:token', [
@@ -133,7 +151,10 @@ router
         router.post('games/:gameId/pause', [controllers.GameTime, 'pause'])
         router.post('games/:gameId/resume', [controllers.GameTime, 'resume'])
         router.post('games/:gameId/full-time', [controllers.GameTime, 'endGame'])
-        router.post('games/:gameId/penalty-shootout', [controllers.GameTime, 'startPenaltyShootout'])
+        router.post('games/:gameId/penalty-shootout', [
+          controllers.GameTime,
+          'startPenaltyShootout',
+        ])
         router.post('games/:gameId/penalty-shootout/complete', [
           controllers.GameTime,
           'completePenaltyShootout',
@@ -177,6 +198,43 @@ router
         router.post('leagues/:leagueId/stages', [controllers.Stages, 'store'])
         router.post('leagues/stages/:id/seed', [controllers.Stages, 'seed'])
         router.post('leagues/stages/:id/next-round', [controllers.Stages, 'nextRound'])
+        router.post('leagues/stages/:id/groups/assign', [controllers.Stages, 'assignGroups'])
+        router.post('leagues/stages/:id/fixtures', [controllers.Stages, 'generateFixtures'])
+        router.get('leagues/stages/:id/qualifiers', [controllers.Stages, 'qualifiers'])
+        router.post('leagues/stages/:id/generate-knockout', [
+          controllers.Stages,
+          'generateKnockout',
+        ])
+
+        router.get('leagues/stages/:id/standings/adjustments', [
+          controllers.StandingAdjustments,
+          'index',
+        ])
+        router.post('leagues/stages/:id/standings/adjustments', [
+          controllers.StandingAdjustments,
+          'store',
+        ])
+        router.put('leagues/stages/adjustments/:aid', [controllers.StandingAdjustments, 'update'])
+        router.delete('leagues/stages/adjustments/:aid', [
+          controllers.StandingAdjustments,
+          'destroy',
+        ])
+
+        router.post('leagues/stages/:id/standings/overrides', [
+          controllers.StandingOverrides,
+          'store',
+        ])
+        router.delete('leagues/stages/:id/standings/overrides/:oid', [
+          controllers.StandingOverrides,
+          'destroy',
+        ])
+
+        router.get('leagues/stages/:id/zones', [controllers.StandingZones, 'index'])
+        router.post('leagues/stages/:id/zones', [controllers.StandingZones, 'store'])
+        router.put('leagues/stages/zones/:zid', [controllers.StandingZones, 'update'])
+        router.delete('leagues/stages/zones/:zid', [controllers.StandingZones, 'destroy'])
+
+        router.get('leagues/:leagueId/audit-logs', [controllers.AuditLogs, 'index'])
 
         router.post('leagues/assign-team', [controllers.Players, 'assignTeam'])
 

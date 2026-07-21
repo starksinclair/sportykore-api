@@ -391,6 +391,7 @@ All `played_at` values are stored in **UTC**. The matches feed filters by a **ca
 | [ROUTES.md](ROUTES.md) | Every `/api/v1` route, OTP auth, request/response examples |
 | [docs/MANAGE_LEAGUE.md](docs/MANAGE_LEAGUE.md) | League-owner manage flow (games, roster, settings) |
 | [docs/PLAYER_INVITE.md](docs/PLAYER_INVITE.md) | Invite generation and acceptance |
+| [docs/PLAYER_PROFILE.md](docs/PLAYER_PROFILE.md) | Player profile fields, highlights, visibility/stub rule, two-state CTA |
 | [docs/TIME_AND_TIMEZONE.md](docs/TIME_AND_TIMEZONE.md) | Match-day filtering rules |
 
 Base URL in development: `http://localhost:3333/api/v1`.

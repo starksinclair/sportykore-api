@@ -21,8 +21,17 @@ export default class PlayersController {
     const { id } = params
     const { player, leagues, statTypes } = await this.playerService.getPlayerDetail(id)
 
+    // Private players serialize to a stub — memberships and stats must not leak either
+    if (player.visibility === 'private') {
+      return serialize({
+        player: PlayerTransformer.transform(player)?.useVariant('profile'),
+        leagues: [],
+        statTypes: [],
+      })
+    }
+
     return serialize({
-      player: PlayerTransformer.transform(player)?.useVariant('withCountry'),
+      player: PlayerTransformer.transform(player)?.useVariant('profile'),
       leagues: PlayerLeagueDetailTransformer.transform(leagues)?.depth(5),
       statTypes: StatTypeTransformer.transform(statTypes),
     })

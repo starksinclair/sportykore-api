@@ -64,10 +64,15 @@ export interface ApiDefinition {
   }
   stages: {
     bracket: typeof routes['stages.bracket']
+    standings: typeof routes['stages.standings']
     indexBySeason: typeof routes['stages.index_by_season']
     store: typeof routes['stages.store']
     seed: typeof routes['stages.seed']
     nextRound: typeof routes['stages.next_round']
+    assignGroups: typeof routes['stages.assign_groups']
+    generateFixtures: typeof routes['stages.generate_fixtures']
+    qualifiers: typeof routes['stages.qualifiers']
+    generateKnockout: typeof routes['stages.generate_knockout']
   }
   teams: {
     show: typeof routes['teams.show']
@@ -81,6 +86,19 @@ export interface ApiDefinition {
     acceptLeaguePlayerRequest: typeof routes['players.accept_league_player_request']
     leaguePlayerRequests: typeof routes['players.league_player_requests']
     assignTeam: typeof routes['players.assign_team']
+  }
+  mePlayer: {
+    show: typeof routes['me_player.show']
+    store: typeof routes['me_player.store']
+    update: typeof routes['me_player.update']
+    photo: typeof routes['me_player.photo']
+  }
+  playerHighlights: {
+    index: typeof routes['player_highlights.index']
+    store: typeof routes['player_highlights.store']
+    reorder: typeof routes['player_highlights.reorder']
+    update: typeof routes['player_highlights.update']
+    destroy: typeof routes['player_highlights.destroy']
   }
   invites: {
     accept: typeof routes['invites.accept']
@@ -119,6 +137,25 @@ export interface ApiDefinition {
     store: typeof routes['venues.store']
     update: typeof routes['venues.update']
     destroy: typeof routes['venues.destroy']
+  }
+  standingAdjustments: {
+    index: typeof routes['standing_adjustments.index']
+    store: typeof routes['standing_adjustments.store']
+    update: typeof routes['standing_adjustments.update']
+    destroy: typeof routes['standing_adjustments.destroy']
+  }
+  standingOverrides: {
+    store: typeof routes['standing_overrides.store']
+    destroy: typeof routes['standing_overrides.destroy']
+  }
+  standingZones: {
+    index: typeof routes['standing_zones.index']
+    store: typeof routes['standing_zones.store']
+    update: typeof routes['standing_zones.update']
+    destroy: typeof routes['standing_zones.destroy']
+  }
+  auditLogs: {
+    index: typeof routes['audit_logs.index']
   }
   leaguePlayers: {
     roster: typeof routes['league_players.roster']

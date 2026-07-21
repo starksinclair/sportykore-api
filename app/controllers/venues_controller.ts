@@ -3,21 +3,13 @@ import Venue from '#models/venue'
 import VenueTransformer from '#transformers/venue_transformer'
 import { createVenueValidator, updateVenueValidator } from '#validators/venue'
 
-function coordToDb(value: number | null | undefined): string | null | undefined {
-  if (value === undefined) {
-    return undefined
-  }
-  if (value === null) {
-    return null
-  }
-  return String(value)
+function coordToDb(value: number | null | undefined): number | null | undefined {
+  return value
 }
 
 export default class VenuesController {
   async index({ params, serialize }: HttpContext) {
-    const venues = await Venue.query()
-      .where('league_id', params.leagueId)
-      .orderBy('name', 'asc')
+    const venues = await Venue.query().where('league_id', params.leagueId).orderBy('name', 'asc')
 
     return serialize(VenueTransformer.transform(venues))
   }

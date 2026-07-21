@@ -7,6 +7,29 @@
 import { BaseModel, column } from '@adonisjs/lucid/orm'
 import { DateTime } from 'luxon'
 
+export class AdminAuditLogSchema extends BaseModel {
+  static $columns = ['action', 'actorId', 'createdAt', 'entityId', 'entityType', 'id', 'ipAddress', 'leagueId', 'metadata'] as const
+  $columns = AdminAuditLogSchema.$columns
+  @column()
+  declare action: string
+  @column()
+  declare actorId: number | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare entityId: bigint | number | null
+  @column()
+  declare entityType: string
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare ipAddress: string | null
+  @column()
+  declare leagueId: number
+  @column()
+  declare metadata: any
+}
+
 export class AuthAccessTokenSchema extends BaseModel {
   static $columns = ['abilities', 'createdAt', 'expiresAt', 'hash', 'id', 'lastUsedAt', 'name', 'tokenableId', 'type', 'updatedAt'] as const
   $columns = AuthAccessTokenSchema.$columns
@@ -306,8 +329,27 @@ export class PasswordResetSchema extends BaseModel {
   declare userId: number
 }
 
+export class PlayerHighlightSchema extends BaseModel {
+  static $columns = ['createdAt', 'id', 'playerId', 'sortOrder', 'title', 'updatedAt', 'videoId'] as const
+  $columns = PlayerHighlightSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare playerId: number
+  @column()
+  declare sortOrder: number
+  @column()
+  declare title: string | null
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare videoId: string
+}
+
 export class PlayerSchema extends BaseModel {
-  static $columns = ['addedBy', 'avatarUrl', 'bio', 'countryId', 'createdAt', 'id', 'name', 'updatedAt', 'userId'] as const
+  static $columns = ['addedBy', 'avatarUrl', 'bio', 'city', 'countryId', 'createdAt', 'dateOfBirth', 'heightCm', 'id', 'name', 'nationality', 'preferredFoot', 'primaryPosition', 'secondaryPosition', 'socialHandle', 'state', 'updatedAt', 'userId', 'visibility'] as const
   $columns = PlayerSchema.$columns
   @column()
   declare addedBy: number | null
@@ -316,17 +358,37 @@ export class PlayerSchema extends BaseModel {
   @column()
   declare bio: string | null
   @column()
+  declare city: string | null
+  @column()
   declare countryId: number
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime | null
+  @column.date()
+  declare dateOfBirth: DateTime | null
+  @column()
+  declare heightCm: number | null
   @column({ isPrimary: true })
   declare id: number
   @column()
   declare name: string | null
+  @column()
+  declare nationality: string | null
+  @column()
+  declare preferredFoot: string | null
+  @column()
+  declare primaryPosition: string | null
+  @column()
+  declare secondaryPosition: string | null
+  @column()
+  declare socialHandle: string | null
+  @column()
+  declare state: string | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
   @column()
   declare userId: number
+  @column()
+  declare visibility: string
 }
 
 export class SeasonSchema extends BaseModel {
@@ -405,6 +467,77 @@ export class StageSchema extends BaseModel {
   declare status: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
+}
+
+export class StandingAdjustmentSchema extends BaseModel {
+  static $columns = ['createdAt', 'createdBy', 'id', 'pointsDelta', 'reason', 'stageGroupId', 'stageId', 'teamId', 'updatedAt'] as const
+  $columns = StandingAdjustmentSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare createdBy: number | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare pointsDelta: number
+  @column()
+  declare reason: string
+  @column()
+  declare stageGroupId: number | null
+  @column()
+  declare stageId: number
+  @column()
+  declare teamId: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
+export class StandingOverrideSchema extends BaseModel {
+  static $columns = ['cohortSignature', 'createdAt', 'createdBy', 'id', 'manualRank', 'reason', 'stageGroupId', 'stageId', 'teamId', 'updatedAt'] as const
+  $columns = StandingOverrideSchema.$columns
+  @column()
+  declare cohortSignature: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare createdBy: number | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare manualRank: number
+  @column()
+  declare reason: string | null
+  @column()
+  declare stageGroupId: number | null
+  @column()
+  declare stageId: number
+  @column()
+  declare teamId: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
+export class StandingZoneSchema extends BaseModel {
+  static $columns = ['createdAt', 'id', 'label', 'positionEnd', 'positionStart', 'stageGroupId', 'stageId', 'updatedAt', 'zoneType'] as const
+  $columns = StandingZoneSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare label: string | null
+  @column()
+  declare positionEnd: number
+  @column()
+  declare positionStart: number
+  @column()
+  declare stageGroupId: number | null
+  @column()
+  declare stageId: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare zoneType: string
 }
 
 export class StandingSchema extends BaseModel {
@@ -618,11 +751,11 @@ export class VenueSchema extends BaseModel {
   @column({ isPrimary: true })
   declare id: number
   @column()
-  declare latitude: string | null
+  declare latitude: number | null
   @column()
   declare leagueId: number
   @column()
-  declare longitude: string | null
+  declare longitude: number | null
   @column()
   declare name: string
   @column()
