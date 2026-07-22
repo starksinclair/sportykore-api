@@ -12,7 +12,7 @@ export default class OwnedLeagueTransformer extends BaseTransformer<OwnedLeagueR
     const activeSeason = this.resource.activeSeason
 
     return {
-      ...this.pick(this.resource, ['id', 'name', 'logoUrl', 'countryId']),
+      ...this.pick(this.resource, ['id', 'name', 'logoUrl', 'countryId', 'startDate', 'endDate']),
       activeSeason: activeSeason ? SeasonTransformer.transform(activeSeason) : null,
       role: this.resource.role ?? 'owner',
     }

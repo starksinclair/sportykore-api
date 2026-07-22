@@ -9,5 +9,6 @@ export const accreditStatValidator = vine.create({
   playerId: vine.number().withoutDecimals().positive(),
   assistPlayerId: vine.number().withoutDecimals().positive().nullable().optional(),
   isOwnGoal: vine.boolean(),
+  isPenalty: vine.boolean().optional(),
   minute: vine.number().withoutDecimals().min(0).max(130),
 })

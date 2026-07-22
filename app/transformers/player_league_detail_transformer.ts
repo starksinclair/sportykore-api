@@ -17,6 +17,8 @@ export default class PlayerLeagueDetailTransformer extends BaseTransformer<Playe
       id: league.id,
       name: league.name,
       logoUrl: league.logoUrl,
+      startDate: league.startDate,
+      endDate: league.endDate,
       seasons: PlayerSeasonDetailTransformer.transform(seasons)?.depth(4),
     }
   }

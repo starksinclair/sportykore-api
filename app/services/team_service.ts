@@ -26,7 +26,8 @@ export class TeamService {
         })
         .preload('season')
         .preload('homeTeam')
-        .preload('awayTeam'),
+        .preload('awayTeam')
+        .preload('venue'),
       LeaguePlayer.query()
         .where('team_id', team.id)
         .preload('season')

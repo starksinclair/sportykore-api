@@ -44,7 +44,11 @@ export class SearchService {
         SELECT CONCAT('', p.id) as                    id,
                'player'                as                    type,
                p.name                  as                    label,
-               (SELECT name FROM teams WHERE id = lp.team_id LIMIT 1) as sublabel,
+               -- Private players surface as name only (no team membership)
+               (CASE
+                  WHEN p.visibility = 'private' THEN NULL
+                  ELSE (SELECT name FROM teams WHERE id = lp.team_id LIMIT 1)
+                END)                   as sublabel,
                NULL                    as countryCode,
                NULL                    as logoUrl
         FROM players p

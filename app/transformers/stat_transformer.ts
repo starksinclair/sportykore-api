@@ -7,7 +7,7 @@ import StatTypeTransformer from '#transformers/stats_type_transformer'
 export default class StatTransformer extends BaseTransformer<Stat> {
   toObject() {
     return {
-      ...this.pick(this.resource, ['id', 'minute', 'isStoppageTime', 'numericValue']),
+      ...this.pick(this.resource, ['id', 'minute', 'isStoppageTime', 'isPenalty', 'numericValue']),
       isUnaccredited: this.resource.playerId === null,
       type: StatTypeTransformer.transform(this.whenLoaded(this.resource.type)),
       team: TeamTransformer.transform(this.whenLoaded(this.resource.team)),

@@ -4,6 +4,7 @@ import Team from '#models/team'
 import Season from '#models/season'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import League from '#models/league'
+import Stage from '#models/stage'
 
 export default class Standing extends StandingSchema {
   @belongsTo(() => League)
@@ -14,4 +15,7 @@ export default class Standing extends StandingSchema {
 
   @belongsTo(() => Team)
   declare team: BelongsTo<typeof Team>
+
+  @belongsTo(() => Stage)
+  declare stage: BelongsTo<typeof Stage>
 }

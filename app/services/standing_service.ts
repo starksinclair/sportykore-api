@@ -1,13 +1,14 @@
-import db from '@adonisjs/lucid/services/db'
 import type { TransactionClientContract } from '@adonisjs/lucid/types/database'
+import db from '@adonisjs/lucid/services/db'
 import Game from '#models/game'
-import League from '#models/league'
 import Season from '#models/season'
 import Standing from '#models/standing'
+import StandingAdjustment from '#models/standing_adjustment'
 import Team from '#models/team'
-import { sortStandingsByTiebreaker, type StandingSortRow } from '#services/standing_tiebreaker'
+import { compareTableRows } from '#services/standings/compute_table'
 import { STANDING_GAME_STATUSES } from '#types/game_status'
-import { DEFAULT_LEAGUE_TIEBREAKER, type LeagueTiebreaker } from '#types/tiebreaker'
+import StageService from '#services/stage_service'
+import { inject } from '@adonisjs/core'
 
 const ZERO_STANDING = {
   position: 0,
@@ -36,7 +37,16 @@ type TeamStandingStats = {
   form: string | null
 }
 
-function computeTeamStandingStats(teamId: number, games: Game[]): TeamStandingStats {
+type StandingPositionRow = Pick<
+  Standing,
+  'id' | 'teamId' | 'points' | 'goalDifference' | 'goalsFor'
+>
+
+function computeTeamStandingStats(
+  teamId: number,
+  games: Game[],
+  pointsAdjustment: number = 0
+): TeamStandingStats {
   let played = 0
   let wins = 0
   let draws = 0
@@ -76,14 +86,22 @@ function computeTeamStandingStats(teamId: number, games: Game[]): TeamStandingSt
     goalsFor,
     goalsAgainst,
     goalDifference: goalsFor - goalsAgainst,
-    points: wins * 3 + draws,
+    points: wins * 3 + draws + pointsAdjustment,
     form: outcomes.length > 0 ? outcomes.slice(-FORM_LIMIT).join(',') : null,
   }
 }
 
+@inject()
 export default class StandingService {
+  private stageService: StageService
+
+  constructor(stageService?: StageService) {
+    this.stageService = stageService ?? new StageService()
+  }
+
   /**
    * Ensure a zeroed standing row exists for a team in a season (idempotent).
+   * Safe under concurrent writers: unique (season_id, team_id) races are ignored.
    */
   async ensureForTeam(
     leagueId: number,
@@ -92,17 +110,33 @@ export default class StandingService {
     client?: TransactionClientContract
   ) {
     const options = client ? { client } : undefined
+    const stage = await this.stageService.ensureRoundRobinStage(seasonId, client)
 
-    await Standing.firstOrCreate(
-      { seasonId, teamId },
-      { leagueId, ...ZERO_STANDING },
-      options
-    )
+    const existing = await Standing.query(options)
+      .where('season_id', seasonId)
+      .where('team_id', teamId)
+      .first()
+    if (existing) {
+      return existing
+    }
+
+    try {
+      return await Standing.create(
+        { seasonId, teamId, leagueId, stageId: stage.id, ...ZERO_STANDING },
+        options
+      )
+    } catch (error) {
+      // Concurrent ensureForTeam / recalculateTeam won the insert
+      if (this.isUniqueConstraintError(error)) {
+        return Standing.query(options)
+          .where('season_id', seasonId)
+          .where('team_id', teamId)
+          .firstOrFail()
+      }
+      throw error
+    }
   }
 
-  /**
-   * Seed zeroed standing rows for all teams in a season, then assign positions.
-   */
   async ensureForTeams(
     leagueId: number,
     seasonId: number,
@@ -116,9 +150,6 @@ export default class StandingService {
     await this.recalculatePositions(seasonId, client)
   }
 
-  /**
-   * Seed zeroed standing rows for league teams missing from a season table.
-   */
   async ensureLeagueTeamsInSeason(leagueId: number, seasonId: number) {
     const teams = await Team.query().where('league_id', leagueId).select('id')
     if (teams.length === 0) {
@@ -129,7 +160,6 @@ export default class StandingService {
     const existingRows = await Standing.query()
       .where('season_id', seasonId)
       .whereIn('team_id', teamIds)
-      .select('team_id')
 
     const existingIds = new Set(existingRows.map((row) => row.teamId))
     const missingIds = teamIds.filter((id) => !existingIds.has(id))
@@ -137,6 +167,33 @@ export default class StandingService {
     if (missingIds.length > 0) {
       await this.ensureForTeams(leagueId, seasonId, missingIds)
     }
+  }
+
+  /** Sums standing_adjustments for a team on a stage — folded into stored points. */
+  private async sumPointsAdjustment(
+    stageId: number,
+    teamId: number,
+    client?: TransactionClientContract
+  ): Promise<number> {
+    const adjustments = await StandingAdjustment.query({ client })
+      .where('stage_id', stageId)
+      .where('team_id', teamId)
+
+    return adjustments.reduce((total, adjustment) => total + adjustment.pointsDelta, 0)
+  }
+
+  private isUniqueConstraintError(error: unknown): boolean {
+    if (!error || typeof error !== 'object') {
+      return false
+    }
+    const message = 'message' in error ? String((error as { message: unknown }).message) : ''
+    const code = 'code' in error ? String((error as { code: unknown }).code) : ''
+    return (
+      code === 'SQLITE_CONSTRAINT_UNIQUE' ||
+      code === '23505' ||
+      /UNIQUE constraint failed/i.test(message) ||
+      /duplicate key/i.test(message)
+    )
   }
 
   async recalculate(seasonId: number, teamId: number) {
@@ -154,28 +211,48 @@ export default class StandingService {
     })
   }
 
-  async recalculateTeam(
-    seasonId: number,
-    teamId: number,
-    client?: TransactionClientContract
-  ) {
+  async recalculateTeam(seasonId: number, teamId: number, client?: TransactionClientContract) {
     const team = await Team.query({ client }).where('id', teamId).firstOrFail()
+    const stage = await this.stageService.ensureRoundRobinStage(seasonId, client)
 
-    const games = await Game.query({ client })
-      .where('season_id', seasonId)
-      .where((query) => query.where('home_team_id', teamId).orWhere('away_team_id', teamId))
-      .whereIn('status', [...STANDING_GAME_STATUSES])
-      .orderBy('played_at', 'asc')
+    const [games, pointsAdjustment] = await Promise.all([
+      Game.query({ client })
+        .where('season_id', seasonId)
+        .where('stage_id', stage.id)
+        .where((query) => query.where('home_team_id', teamId).orWhere('away_team_id', teamId))
+        .whereIn('status', [...STANDING_GAME_STATUSES])
+        .orderBy('played_at', 'asc'),
+      this.sumPointsAdjustment(stage.id, teamId, client),
+    ])
 
-    const stats = computeTeamStandingStats(teamId, games)
-    await Standing.updateOrCreate(
-      { seasonId, teamId },
-      {
+    const stats = computeTeamStandingStats(teamId, games, pointsAdjustment)
+    const options = client ? { client } : undefined
+    try {
+      await Standing.updateOrCreate(
+        { seasonId, teamId },
+        {
+          leagueId: team.leagueId,
+          stageId: stage.id,
+          ...stats,
+        },
+        options
+      )
+    } catch (error) {
+      // Rare race with ensureForTeam inserting the same (season, team) row
+      if (!this.isUniqueConstraintError(error)) {
+        throw error
+      }
+      const row = await Standing.query(options)
+        .where('season_id', seasonId)
+        .where('team_id', teamId)
+        .firstOrFail()
+      row.merge({
         leagueId: team.leagueId,
+        stageId: stage.id,
         ...stats,
-      },
-      client ? { client } : undefined
-    )
+      })
+      await row.save()
+    }
   }
 
   async recalculatePositionsForLeague(leagueId: number) {
@@ -193,26 +270,42 @@ export default class StandingService {
   }
 
   async recalculatePositions(seasonId: number, client?: TransactionClientContract) {
-    const season = await Season.query({ client }).where('id', seasonId).firstOrFail()
-    const league = await League.query({ client }).where('id', season.leagueId).firstOrFail()
-    const tiebreaker = (league.tiebreaker ?? DEFAULT_LEAGUE_TIEBREAKER) as LeagueTiebreaker
-
     const standings = await Standing.query({ client }).where('season_id', seasonId)
-    const games = await Game.query({ client })
-      .where('season_id', seasonId)
-      .whereIn('status', [...STANDING_GAME_STATUSES])
+    if (standings.length === 0) {
+      return
+    }
 
-    const sorted = sortStandingsByTiebreaker(standings, tiebreaker, games)
+    const teamIds = standings.map((row) => row.teamId)
+    const teams = await Team.query({ client }).whereIn('id', teamIds).select('id', 'name')
+    const nameByTeam = new Map(teams.map((team) => [team.id, team.name]))
+
+    const sorted = [...standings].sort((a, b) =>
+      compareTableRows(
+        {
+          points: a.points ?? 0,
+          goalDifference: a.goalDifference ?? 0,
+          goalsFor: a.goalsFor ?? 0,
+          teamName: nameByTeam.get(a.teamId) ?? '',
+        },
+        {
+          points: b.points ?? 0,
+          goalDifference: b.goalDifference ?? 0,
+          goalsFor: b.goalsFor ?? 0,
+          teamName: nameByTeam.get(b.teamId) ?? '',
+        }
+      )
+    )
+
     await this.applyPositions(sorted, client)
   }
 
-  private async applyPositions(
-    sorted: StandingSortRow[],
-    client?: TransactionClientContract
-  ) {
+  private async applyPositions(sorted: StandingPositionRow[], client?: TransactionClientContract) {
     const writePositions = async (writer: TransactionClientContract) => {
       for (const [index, standing] of sorted.entries()) {
-        await writer.from('standings').where('id', standing.id).update({ position: index + 1 })
+        await writer
+          .from('standings')
+          .where('id', standing.id)
+          .update({ position: index + 1 })
       }
     }
 

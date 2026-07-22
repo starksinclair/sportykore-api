@@ -8,7 +8,6 @@ import CountryTransformer from '#transformers/country_transformer'
 import { inject } from '@adonisjs/core'
 import SeasonTransformer from '#transformers/season_transformer'
 import StatTypeTransformer from '#transformers/stats_type_transformer'
-import InviteService from '#services/invite_service'
 import League from '#models/league'
 import string from '@adonisjs/core/helpers/string'
 import FileService from '#services/file_service'
@@ -20,7 +19,6 @@ import env from '#start/env'
 export default class LeaguesController {
   constructor(
     protected leagueService: LeagueService,
-    protected inviteService: InviteService,
     protected fileService: FileService
   ) {}
   async store({ auth, request, response }: HttpContext) {
@@ -52,13 +50,42 @@ export default class LeaguesController {
       countryId: data.countryId,
       seasonName: data.seasonName,
       tiebreaker: data.tiebreaker,
+      startDate: data.startDate ?? null,
+      endDate: data.endDate ?? null,
       teams,
+      format: data.format,
+      knockout: data.knockout
+        ? {
+            name: data.knockout.name,
+            seed: data.knockout.seed,
+            config: {
+              format: {
+                starting_round: data.knockout.config.format?.starting_round,
+                has_third_place: data.knockout.config.format?.has_third_place ?? false,
+              },
+              ties: data.knockout.config.ties,
+            },
+          }
+        : undefined,
+      group: data.group
+        ? {
+            name: data.group.name,
+            config: data.group.config,
+          }
+        : undefined,
     })
 
     const baseUrl = env.get('MOBILE_APP_URL') ?? env.get('APP_URL')
     await mail.send(new LeagueCreatedNotification(user, result.league, `${baseUrl}`))
 
-    return response.created({ message: 'League created successfully' })
+    return response.created({
+      message: 'League created successfully',
+      leagueId: result.league.id,
+      seasonId: result.season.id,
+      stageId: result.stage.id,
+      format: result.format,
+      seeded: result.seeded,
+    })
   }
   async index({ serialize, request, auth }: HttpContext) {
     const { countryId, gameStatus, gameDate, timeZone: timeZoneQuery } = request.qs()
@@ -115,15 +142,14 @@ export default class LeaguesController {
     }
     const data = await request.validateUsing(updateLeagueValidator)
     const league = await League.findOrFail(leagueId)
-    const tiebreakerChanged =
-      data.tiebreaker !== undefined && data.tiebreaker !== league.tiebreaker
+    const tiebreakerChanged = data.tiebreaker !== undefined && data.tiebreaker !== league.tiebreaker
 
     if (data.logo) {
       const key = `leagues/${string.uuid()}.${data.logo.extname}`
       league.logoUrl = await this.fileService.upload(data.logo, key)
     }
 
-    const { logo: _logo, ...fields } = data
+    const { logo: logo, ...fields } = data
     league.merge(fields)
     await league.save()
 

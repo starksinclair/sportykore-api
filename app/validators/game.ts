@@ -4,6 +4,8 @@ import { GAME_STATUSES } from '#types/game_status'
 
 const dateFormats = ['iso8601', 'YYYY-MM-DD', 'YYYY-MM-DD HH:mm:ss']
 
+const optionalVenueId = resourceId('venues').nullable().optional()
+
 export const createGameValidator = vine.create({
   leagueId: resourceId('leagues'),
   seasonId: resourceId('seasons'),
@@ -17,6 +19,7 @@ export const createGameValidator = vine.create({
   extraTimeDuration: vine.number().withoutDecimals().min(1).max(60).nullable().optional(),
   status: vine.enum(GAME_STATUSES).optional(),
   venueName: vine.string().trim().maxLength(255).nullable().optional(),
+  venueId: optionalVenueId,
 })
 
 export const updateGameValidator = vine.create({
@@ -28,4 +31,5 @@ export const updateGameValidator = vine.create({
   status: vine.enum(GAME_STATUSES).optional(),
   playedAt: vine.date({ formats: dateFormats }).optional(),
   venueName: vine.string().trim().maxLength(255).nullable().optional(),
+  venueId: optionalVenueId,
 })

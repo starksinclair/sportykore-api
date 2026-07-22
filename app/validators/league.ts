@@ -1,6 +1,11 @@
 import vine from '@vinejs/vine'
 import { optionalImage, resourceId } from '#validators/common'
 import { LEAGUE_TIEBREAKERS } from '#types/tiebreaker'
+import { groupStageConfigSchema, knockoutStageConfigSchema } from '#validators/stage'
+
+const dateFormats = ['iso8601', 'YYYY-MM-DD']
+
+export const COMPETITION_FORMATS = ['league', 'knockout', 'group'] as const
 
 export const createLeagueWithSeasonValidator = vine.create({
   name: vine.string().trim().minLength(1).maxLength(255),
@@ -10,6 +15,31 @@ export const createLeagueWithSeasonValidator = vine.create({
   countryId: resourceId('countries'),
   seasonName: vine.string().trim().minLength(1).maxLength(120),
   tiebreaker: vine.enum(LEAGUE_TIEBREAKERS).optional(),
+  startDate: vine.date({ formats: dateFormats }).nullable().optional(),
+  endDate: vine.date({ formats: dateFormats }).nullable().optional(),
+  /**
+   * Competition format for the first season.
+   * `league` (default) → round_robin; `knockout` → knockout only; `group` → group stage.
+   */
+  format: vine.enum(COMPETITION_FORMATS).optional(),
+  knockout: vine
+    .object({
+      /** Stage display name (default "Cup"). */
+      name: vine.string().trim().minLength(1).maxLength(255).optional(),
+      /**
+       * When true (default) and at least 2 teams are sent, seed the bracket in create order.
+       * Set false to create an unseeded knockout stage and call seed later.
+       */
+      seed: vine.boolean().optional(),
+      config: knockoutStageConfigSchema,
+    })
+    .optional(),
+  group: vine
+    .object({
+      name: vine.string().trim().minLength(1).maxLength(255).optional(),
+      config: groupStageConfigSchema.optional(),
+    })
+    .optional(),
   teams: vine
     .array(
       vine.object({
@@ -26,4 +56,6 @@ export const updateLeagueValidator = vine.create({
   gender: vine.string().trim().maxLength(32).nullable().optional(),
   logo: optionalImage(),
   tiebreaker: vine.enum(LEAGUE_TIEBREAKERS).optional(),
+  startDate: vine.date({ formats: dateFormats }).nullable().optional(),
+  endDate: vine.date({ formats: dateFormats }).nullable().optional(),
 })

@@ -5,6 +5,11 @@ import Game from '#models/game'
 import League from '#models/league'
 import LeaguePlayer from '#models/league_player'
 import Stat from '#models/stat'
+import Venue from '#models/venue'
+import Stage from '#models/stage'
+import StandingAdjustment from '#models/standing_adjustment'
+import StandingOverride from '#models/standing_override'
+import StandingZone from '#models/standing_zone'
 
 export default class LeagueOwnerMiddleware {
   async handle(ctx: HttpContext, next: NextFn) {
@@ -49,6 +54,53 @@ export default class LeagueOwnerMiddleware {
       throw new Exception('Game not found', { status: 404 })
     }
 
+    const path = request.url()
+
+    if (params.aid !== undefined && path.includes('/adjustments/')) {
+      const aid = Number(params.aid)
+      if (!Number.isFinite(aid) || aid <= 0) {
+        throw new Exception('Invalid adjustment id', { status: 400 })
+      }
+      const adjustment = await StandingAdjustment.query()
+        .where('id', aid)
+        .preload('stage', (q) => q.preload('season'))
+        .first()
+      if (adjustment?.stage?.season) {
+        return adjustment.stage.season.leagueId
+      }
+      throw new Exception('Adjustment not found', { status: 404 })
+    }
+
+    if (params.oid !== undefined && path.includes('/overrides/')) {
+      const oid = Number(params.oid)
+      if (!Number.isFinite(oid) || oid <= 0) {
+        throw new Exception('Invalid override id', { status: 400 })
+      }
+      const override = await StandingOverride.query()
+        .where('id', oid)
+        .preload('stage', (q) => q.preload('season'))
+        .first()
+      if (override?.stage?.season) {
+        return override.stage.season.leagueId
+      }
+      throw new Exception('Override not found', { status: 404 })
+    }
+
+    if (params.zid !== undefined && path.includes('/zones/')) {
+      const zid = Number(params.zid)
+      if (!Number.isFinite(zid) || zid <= 0) {
+        throw new Exception('Invalid zone id', { status: 400 })
+      }
+      const zone = await StandingZone.query()
+        .where('id', zid)
+        .preload('stage', (q) => q.preload('season'))
+        .first()
+      if (zone?.stage?.season) {
+        return zone.stage.season.leagueId
+      }
+      throw new Exception('Zone not found', { status: 404 })
+    }
+
     const resourceId = params.id
     if (resourceId !== undefined && resourceId !== null && resourceId !== '') {
       const id = Number(resourceId)
@@ -56,11 +108,24 @@ export default class LeagueOwnerMiddleware {
         throw new Exception('Invalid resource id', { status: 400 })
       }
 
-      const path = request.url()
       if (path.includes('/games/')) {
         const game = await Game.find(id)
         if (game) {
           return game.leagueId
+        }
+      }
+
+      if (path.includes('/venues/')) {
+        const venue = await Venue.find(id)
+        if (venue) {
+          return venue.leagueId
+        }
+      }
+
+      if (path.includes('/stages/')) {
+        const stage = await Stage.query().where('id', id).preload('season').first()
+        if (stage?.season) {
+          return stage.season.leagueId
         }
       }
 

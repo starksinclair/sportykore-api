@@ -10,12 +10,24 @@ import League from '#models/league'
 import Season from '#models/season'
 import Team from '#models/team'
 import TeamAdmin from '#models/team_admin'
+import Tie from '#models/tie'
 import type User from '#models/user'
 import StatType from '#models/stat_type'
 import Player from '#models/player'
+import PlayerHighlight from '#models/player_highlight'
 import LeaguePlayer from '#models/league_player'
 import Stat from '#models/stat'
+import type { PlayerPosition, PreferredFoot } from '#types/player'
 import StandingService from '#services/standing_service'
+import StageService from '#services/stage_service'
+import BracketService from '#services/bracket_service'
+import TieResolver from '#services/tie_resolver'
+import GroupStageService from '#services/group_stage_service'
+import QualifierService from '#services/qualifier_service'
+import StageStandingService from '#services/stage_standing_service'
+import StandingAdjustmentService from '#services/standing_adjustment_service'
+import StandingOverrideService from '#services/standing_override_service'
+import StandingZoneService from '#services/standing_zone_service'
 import type { FormationSlot } from '#types/formation'
 
 import UserFactory from '#factories/user_factory'
@@ -27,9 +39,11 @@ import {
 } from '../data/seed_footballers.js'
 
 const USER_COUNT = 15
-const LEAGUES_PER_USER = 2
+const LEAGUES_PER_USER = 3
 const SEASONS_PER_LEAGUE = 2
 const TEAMS_PER_LEAGUE = 10
+const KNOCKOUT_SEED_TEAM_COUNT = 8
+const GROUP_STAGE_TEAM_COUNT = 8
 const GAMES_PER_SEASON = 21
 
 const AFRICAN_COUNTRY_CODES = [
@@ -106,6 +120,29 @@ const LINEUP_SUBSTITUTES = 3
 const MIN_STATS_PER_GAME = 5
 const MAX_STATS_PER_GAME = 12
 
+const CITY_SUFFIXES = ['Central', 'Port', 'Heights', 'Springs', 'Valley', 'Bay'] as const
+const PREFERRED_FEET_CYCLE = [
+  'right',
+  'right',
+  'left',
+  'both',
+] as const satisfies readonly PreferredFoot[]
+const HEIGHT_RANGES_CM: Record<PlayerPosition, readonly [number, number]> = {
+  goalkeeper: [185, 198],
+  defence: [175, 190],
+  midfield: [168, 182],
+  attack: [170, 185],
+}
+const HIGHLIGHT_TITLES = [
+  'Hat-trick highlights',
+  "Season's best goals",
+  'Man of the match display',
+  'Assist compilation',
+  'Debut season highlights',
+] as const
+/** Every Nth seeded player (by creation order) gets sample highlight clips. */
+const HIGHLIGHT_PLAYER_INTERVAL = 5
+
 const SEASON_STATUSES = ['completed', 'active'] as const
 const DEFAULT_FORMATION_NAME = '4-3-3'
 
@@ -116,6 +153,15 @@ type Fixture = {
 
 export default class DataSeeder extends BaseSeeder {
   private standingService = new StandingService()
+  private stageService = new StageService()
+  private bracketService = new BracketService(this.stageService, new TieResolver())
+  private tieResolver = new TieResolver()
+  private groupStageService = new GroupStageService()
+  private stageStandingService = new StageStandingService()
+  private qualifierService = new QualifierService()
+  private standingAdjustmentService = new StandingAdjustmentService()
+  private standingOverrideService = new StandingOverrideService()
+  private standingZoneService = new StandingZoneService()
   private statTypesByName = new Map<string, StatType>()
   private playerNameIndex = 0
 
@@ -135,21 +181,33 @@ export default class DataSeeder extends BaseSeeder {
           throw new Error('Not enough countries to seed all leagues.')
         }
 
-        const leagueName = `${country.name} League ${userIndex + 1}-${leagueIndex + 1}`
+        // leagueIndex 0 → round-robin league; 1 → knockout cup; 2 → group championship
+        const format = leagueIndex === 1 ? 'knockout' : leagueIndex === 2 ? 'group' : 'league'
+        const competitionName =
+          format === 'knockout'
+            ? `${country.name} Cup ${userIndex + 1}`
+            : format === 'group'
+              ? `${country.name} Championship ${userIndex + 1}`
+              : `${country.name} League ${userIndex + 1}-${leagueIndex + 1}`
+
         const league = await League.create({
           userId: user.id,
           countryId: country.id,
-          name: leagueName,
-          description: `Seeded league for ${user.fullName ?? user.email}.`,
+          name: competitionName,
+          description:
+            format === 'knockout'
+              ? `Seeded knockout cup for ${user.fullName ?? user.email}.`
+              : format === 'group'
+                ? `Seeded group championship for ${user.fullName ?? user.email}.`
+                : `Seeded league for ${user.fullName ?? user.email}.`,
           gender: 'mixed',
-          logoUrl: leagueLogoUrl(leagueName),
+          logoUrl: leagueLogoUrl(competitionName),
         })
 
         leagues.push(league)
 
         const { teams, teamPlayers } = await this.seedTeams(league, country, user)
         await this.seedTeamAdmins(league, teams, user, users)
-        const fixtures = this.buildFixtures(teams)
 
         for (let seasonIndex = 0; seasonIndex < SEASONS_PER_LEAGUE; seasonIndex++) {
           const season = await Season.create({
@@ -159,17 +217,42 @@ export default class DataSeeder extends BaseSeeder {
           })
 
           const playersByTeam = await this.seedLeaguePlayers(league, season, teams, teamPlayers)
-          await this.seedStandings(league, season, teams)
-          await this.seedGames(
-            league,
-            season,
-            fixtures,
-            country.name,
-            playersByTeam,
-            formation,
-            formationSlots
-          )
-          await this.recalculateStandings(season.id, teams)
+
+          if (format === 'knockout') {
+            await this.seedKnockoutSeason(
+              league,
+              season,
+              teams,
+              playersByTeam,
+              formation,
+              formationSlots
+            )
+          } else if (format === 'group') {
+            await this.seedGroupSeason(
+              user,
+              league,
+              season,
+              teams,
+              playersByTeam,
+              formation,
+              formationSlots
+            )
+          } else {
+            const fixtures = this.buildFixtures(teams)
+            const stage = await this.stageService.ensureRoundRobinStage(season.id)
+            await this.seedStandings(league, season, teams)
+            await this.seedGames(
+              league,
+              season,
+              stage.id,
+              fixtures,
+              country.name,
+              playersByTeam,
+              formation,
+              formationSlots
+            )
+            await this.recalculateStandings(season.id, teams)
+          }
         }
       }
     }
@@ -238,6 +321,7 @@ export default class DataSeeder extends BaseSeeder {
       const players: Player[] = []
       for (let p = 0; p < PLAYERS_PER_TEAM; p++) {
         const playerName = this.nextFootballerName()
+        const globalPlayerIndex = this.playerNameIndex - 1
         const playerEmail = `player.l${league.id}.t${team.id}.n${p}@sportykore.seed`
 
         const playerUser = await UserFactory.merge({
@@ -245,14 +329,37 @@ export default class DataSeeder extends BaseSeeder {
           fullName: playerName,
         }).create()
 
+        const primaryPosition = this.rosterPositionForIndex(p)
+        const secondaryPosition = this.secondaryPositionFor(p, primaryPosition)
+        const [minHeight, maxHeight] = HEIGHT_RANGES_CM[primaryPosition]
+
         const player = await Player.create({
           addedBy: user.id,
           userId: playerUser.id,
           countryId: country.id,
           name: playerName,
-          bio: null,
+          bio: `${playerName} is a ${primaryPosition} for ${teamName}.`,
           avatarUrl: playerAvatarUrl(playerName),
+          primaryPosition,
+          secondaryPosition,
+          preferredFoot: PREFERRED_FEET_CYCLE[p % PREFERRED_FEET_CYCLE.length],
+          heightCm: minHeight + Math.floor(Math.random() * (maxHeight - minHeight + 1)),
+          dateOfBirth: DateTime.now().minus({
+            years: 17 + Math.floor(Math.random() * 18),
+            days: Math.floor(Math.random() * 300),
+          }),
+          city: `${country.name} ${CITY_SUFFIXES[(index + p) % CITY_SUFFIXES.length]}`,
+          state: null,
+          nationality: country.name,
+          socialHandle: `@${this.socialHandleSlug(playerName)}`,
+          // One private player per league (first team's goalkeeper) so the
+          // stub-on-every-surface rule has a real row to exercise manually.
+          visibility: index === 0 && p === 0 ? 'private' : 'active',
         })
+
+        if (globalPlayerIndex % HIGHLIGHT_PLAYER_INTERVAL === 0) {
+          await this.seedHighlightsForPlayer(player)
+        }
 
         players.push(player)
       }
@@ -308,9 +415,252 @@ export default class DataSeeder extends BaseSeeder {
     return fixtures
   }
 
+  private async seedKnockoutSeason(
+    league: League,
+    season: Season,
+    teams: Team[],
+    playersByTeam: Map<number, Player[]>,
+    formation: Formation,
+    formationSlots: FormationSlot[]
+  ) {
+    const stage = await this.stageService.createKnockoutStage(league.id, season.id, {
+      name: 'Cup',
+      config: {
+        format: { starting_round: 'qf', has_third_place: false },
+        ties: { default: { tie_format: 'single' } },
+      },
+    })
+
+    const seededTeams = teams.slice(0, KNOCKOUT_SEED_TEAM_COUNT)
+    await this.bracketService.generateKnockoutPhase(
+      stage.id,
+      seededTeams.map((team) => team.id)
+    )
+
+    const qfTies = await Tie.query()
+      .where('stage_id', stage.id)
+      .where('round', 'qf')
+      .where('is_bye', false)
+      .orderBy('bracket_position', 'asc')
+
+    for (const [index, tie] of qfTies.entries()) {
+      const game = await Game.query().where('tie_id', tie.id).firstOrFail()
+      game.status = 'full_time'
+      game.homeScore = 2
+      game.awayScore = 1
+      game.winnerTeamId = game.homeTeamId
+      game.playedAt = DateTime.utc().minus({ days: 7 - index })
+      await game.save()
+
+      const homePlayers = playersByTeam.get(game.homeTeamId) ?? []
+      const awayPlayers = playersByTeam.get(game.awayTeamId) ?? []
+      await this.seedLineupsForGame(
+        game,
+        formation,
+        formationSlots,
+        game.homeTeamId,
+        game.awayTeamId,
+        homePlayers,
+        awayPlayers
+      )
+
+      await this.tieResolver.advanceTie(tie.id)
+    }
+
+    await this.bracketService.generateNextRound(stage.id, 'qf')
+  }
+
+  private async seedGroupSeason(
+    owner: User,
+    league: League,
+    season: Season,
+    teams: Team[],
+    playersByTeam: Map<number, Player[]>,
+    formation: Formation,
+    formationSlots: FormationSlot[]
+  ) {
+    const audit = { leagueId: league.id, actorId: owner.id }
+
+    const { stage, groups } = await this.groupStageService.createGroupStage(
+      league.id,
+      season.id,
+      {
+        name: 'Group Stage',
+        config: {
+          format: { group_count: 2, double_round_robin: false },
+          advancement: { per_group: 2 },
+        },
+      },
+      undefined,
+      { actorId: owner.id }
+    )
+
+    const groupTeams = teams.slice(0, GROUP_STAGE_TEAM_COUNT)
+    const assignments = await this.groupStageService.assignTeams(
+      stage.id,
+      { mode: 'auto', teamIds: groupTeams.map((team) => team.id) },
+      audit
+    )
+    await this.groupStageService.generateGroupFixtures(stage.id, audit)
+
+    // Bottom-of-group elimination band alongside the auto-created qualified zone
+    const teamsPerGroup = GROUP_STAGE_TEAM_COUNT / groups.length
+    await this.standingZoneService.create(
+      stage.id,
+      {
+        positionStart: teamsPerGroup,
+        positionEnd: teamsPerGroup,
+        zoneType: 'relegation',
+        label: 'Eliminated',
+      },
+      audit
+    )
+
+    const isCompleted = season.status === 'completed'
+    const [groupA, groupB] = groups
+
+    for (const group of groups) {
+      const games = await Game.query()
+        .where('stage_id', stage.id)
+        .where('stage_group_id', group.id)
+        .orderBy('played_at', 'asc')
+
+      // Group B in completed seasons is all draws so the whole group ties on
+      // points + played — that cohort is then reordered via a standing override.
+      const allDraws = isCompleted && group.id === groupB?.id
+      const playedCount = isCompleted ? games.length : Math.ceil(games.length / 2)
+
+      for (const [index, game] of games.entries()) {
+        if (index > playedCount) {
+          continue
+        }
+
+        const isLive = !isCompleted && index === playedCount
+
+        if (isLive) {
+          game.status = 'first_half'
+          game.homeScore = 1
+          game.awayScore = 0
+          game.playedAt = DateTime.utc().minus({ minutes: 30 })
+          game.firstHalfStartedAt = DateTime.utc().minus({ minutes: 30 })
+        } else {
+          const playedAt = DateTime.utc()
+            .startOf('day')
+            .minus({ days: playedCount - index + 1 })
+          game.status = 'full_time'
+          game.homeScore = allDraws ? 1 : (index % 3) + 1
+          game.awayScore = allDraws ? 1 : index % 2
+          game.winnerTeamId =
+            game.homeScore > game.awayScore
+              ? game.homeTeamId
+              : game.awayScore > game.homeScore
+                ? game.awayTeamId
+                : null
+          game.playedAt = playedAt
+          game.firstHalfStartedAt = playedAt
+          game.secondHalfStartedAt = playedAt.plus({ hours: 1 })
+        }
+
+        game.firstHalfDuration = 45
+        game.secondHalfDuration = 45
+        await game.save()
+
+        await this.seedLineupsForGame(
+          game,
+          formation,
+          formationSlots,
+          game.homeTeamId,
+          game.awayTeamId,
+          playersByTeam.get(game.homeTeamId) ?? [],
+          playersByTeam.get(game.awayTeamId) ?? []
+        )
+        await this.seedStatsForGame(game, playersByTeam)
+      }
+    }
+
+    // Points deduction for the last-seeded team in group A
+    const groupATeamIds = assignments
+      .filter((assignment) => assignment.stageGroupId === groupA!.id)
+      .map((assignment) => assignment.teamId)
+    await this.standingAdjustmentService.create(
+      stage.id,
+      {
+        teamId: groupATeamIds[groupATeamIds.length - 1]!,
+        stageGroupId: groupA!.id,
+        pointsDelta: -3,
+        reason: 'Fielded an ineligible player',
+        createdBy: owner.id,
+      },
+      audit
+    )
+
+    if (!isCompleted) {
+      return
+    }
+
+    // Reorder the fully tied group B cohort with a manual override
+    const groupBRows = await this.stageStandingService.rawTableRows(stage.id, groupB!.id)
+    const isFullCohort =
+      groupBRows.length >= 2 &&
+      groupBRows.every(
+        (row) => row.points === groupBRows[0]!.points && row.played === groupBRows[0]!.played
+      )
+    if (isFullCohort) {
+      await this.standingOverrideService.setCohort(
+        stage.id,
+        {
+          stageGroupId: groupB!.id,
+          reason: 'Fair-play ranking applied by organizer',
+          createdBy: owner.id,
+          ranks: [...groupBRows]
+            .reverse()
+            .map((row, index) => ({ teamId: row.teamId, manualRank: index + 1 })),
+        },
+        audit
+      )
+    }
+
+    // Qualifiers → knockout (marks the group stage completed)
+    const knockout = await this.qualifierService.generateKnockout(
+      stage.id,
+      { name: 'Knockout', targetRound: 'sf' },
+      audit
+    )
+
+    const sfTies = await Tie.query()
+      .where('stage_id', knockout.stage.id)
+      .where('round', 'sf')
+      .where('is_bye', false)
+      .orderBy('bracket_position', 'asc')
+
+    for (const [index, tie] of sfTies.entries()) {
+      const game = await Game.query().where('tie_id', tie.id).firstOrFail()
+      game.status = 'full_time'
+      game.homeScore = 2
+      game.awayScore = 1
+      game.winnerTeamId = game.homeTeamId
+      game.playedAt = DateTime.utc().minus({ days: 2 - index })
+      await game.save()
+
+      await this.seedLineupsForGame(
+        game,
+        formation,
+        formationSlots,
+        game.homeTeamId,
+        game.awayTeamId,
+        playersByTeam.get(game.homeTeamId) ?? [],
+        playersByTeam.get(game.awayTeamId) ?? []
+      )
+      await this.tieResolver.advanceTie(tie.id)
+    }
+
+    await this.bracketService.generateNextRound(knockout.stage.id, 'sf')
+  }
+
   private async seedGames(
     league: League,
     season: Season,
+    stageId: number,
     fixtures: Fixture[],
     countryName: string,
     playersByTeam: Map<number, Player[]>,
@@ -319,22 +669,19 @@ export default class DataSeeder extends BaseSeeder {
   ) {
     // Games start 8 days ago: indices 0–7 are full_time (past), index 8 is first_half (today), 9+ are scheduled (future)
     const baseDate = DateTime.now().startOf('day').minus({ days: 8 })
-    const eventStatTypes = [
-      this.statTypesByName.get('goals')!,
-      this.statTypesByName.get('assists')!,
-      this.statTypesByName.get('yellow_card')!,
-    ]
 
     for (const [index, fixture] of fixtures.entries()) {
       const playedAt = baseDate.plus({ days: index })
       const status = index < 8 ? 'full_time' : index === 8 ? 'first_half' : 'scheduled'
-      const homeScore = status === 'scheduled' ? null : (index % 4) + (status === 'first_half' ? 1 : 0)
+      const homeScore =
+        status === 'scheduled' ? null : (index % 4) + (status === 'first_half' ? 1 : 0)
       const awayScore =
         status === 'scheduled' ? null : ((index + 1) % 3) + (status === 'first_half' ? 1 : 0)
 
       const game = await Game.create({
         leagueId: league.id,
         seasonId: season.id,
+        stageId,
         homeTeamId: fixture.homeTeam.id,
         awayTeamId: fixture.awayTeam.id,
         playedAt,
@@ -369,32 +716,40 @@ export default class DataSeeder extends BaseSeeder {
         continue
       }
 
-      const statCount =
-        Math.floor(Math.random() * (MAX_STATS_PER_GAME - MIN_STATS_PER_GAME + 1)) +
-        MIN_STATS_PER_GAME
+      await this.seedStatsForGame(game, playersByTeam)
+    }
+  }
 
-      for (let s = 0; s < statCount; s++) {
-        const isHome = Math.random() < 0.5
-        const team = isHome ? fixture.homeTeam : fixture.awayTeam
-        const players = playersByTeam.get(team.id) ?? []
-        if (players.length === 0) continue
+  private async seedStatsForGame(game: Game, playersByTeam: Map<number, Player[]>) {
+    const eventStatTypes = [
+      this.statTypesByName.get('goals')!,
+      this.statTypesByName.get('assists')!,
+      this.statTypesByName.get('yellow_card')!,
+    ]
 
-        const player = players[Math.floor(Math.random() * players.length)]!
-        const statType = eventStatTypes[Math.floor(Math.random() * eventStatTypes.length)]!
+    const statCount =
+      Math.floor(Math.random() * (MAX_STATS_PER_GAME - MIN_STATS_PER_GAME + 1)) + MIN_STATS_PER_GAME
 
-        await Stat.create({
-          gameId: game.id,
-          leagueId: league.id,
-          seasonId: season.id,
-          playerId: player.id,
-          teamId: team.id,
-          statTypeId: statType.id,
-          minute: Math.floor(Math.random() * 90) + 1,
-          numericValue: 1,
-          value: null,
-          isStoppageTime: false,
-        })
-      }
+    for (let s = 0; s < statCount; s++) {
+      const teamId = Math.random() < 0.5 ? game.homeTeamId : game.awayTeamId
+      const players = playersByTeam.get(teamId) ?? []
+      if (players.length === 0) continue
+
+      const player = players[Math.floor(Math.random() * players.length)]!
+      const statType = eventStatTypes[Math.floor(Math.random() * eventStatTypes.length)]!
+
+      await Stat.create({
+        gameId: game.id,
+        leagueId: game.leagueId,
+        seasonId: game.seasonId,
+        playerId: player.id,
+        teamId,
+        statTypeId: statType.id,
+        minute: Math.floor(Math.random() * 90) + 1,
+        numericValue: 1,
+        value: null,
+        isStoppageTime: false,
+      })
     }
   }
 
@@ -529,14 +884,54 @@ export default class DataSeeder extends BaseSeeder {
     }
   }
 
-  private rosterPositionForIndex(
-    index: number
-  ): 'attack' | 'defence' | 'midfield' | 'goalkeeper' {
+  private rosterPositionForIndex(index: number): 'attack' | 'defence' | 'midfield' | 'goalkeeper' {
     if (index === 0) {
       return 'goalkeeper'
     }
 
     const outfield = ['defence', 'midfield', 'attack'] as const
     return outfield[(index - 1) % outfield.length]!
+  }
+
+  /** Strips diacritics before slugifying so accented names don't leave stray dots. */
+  private socialHandleSlug(name: string): string {
+    return name
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z]+/g, '.')
+      .replace(/^\.+|\.+$/g, '')
+  }
+
+  /** A minority of outfield players carry a secondary position, like real squads. */
+  private secondaryPositionFor(index: number, primary: PlayerPosition): PlayerPosition | null {
+    if (primary === 'goalkeeper' || index % 4 !== 3) {
+      return null
+    }
+
+    const outfield: PlayerPosition[] = ['defence', 'midfield', 'attack']
+    const primaryIndex = outfield.indexOf(primary)
+    return outfield[(primaryIndex + 1) % outfield.length]!
+  }
+
+  private async seedHighlightsForPlayer(player: Player) {
+    const count = 1 + (player.id % 2)
+    const rows = Array.from({ length: count }, (_, i) => ({
+      playerId: player.id,
+      videoId: this.syntheticVideoId(player.id, i),
+      title: HIGHLIGHT_TITLES[(player.id + i) % HIGHLIGHT_TITLES.length]!,
+      sortOrder: i,
+    }))
+
+    await PlayerHighlight.createMany(rows)
+  }
+
+  /**
+   * 11-char IDs matching the real YouTube video ID shape, derived from the
+   * player's own id so they're unique across the whole dataset by
+   * construction — no shared counter to keep in sync.
+   */
+  private syntheticVideoId(playerId: number, index: number): string {
+    return (playerId * 10 + index).toString(36).padStart(11, 'a')
   }
 }

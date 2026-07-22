@@ -6,6 +6,9 @@ import Team from '#models/team'
 import League from '#models/league'
 import Stat from '#models/stat'
 import GameLineup from '#models/game_lineup'
+import Venue from '#models/venue'
+import Stage from '#models/stage'
+import Tie from '#models/tie'
 import { events } from '#generated/events'
 
 export default class Game extends GameSchema {
@@ -20,6 +23,18 @@ export default class Game extends GameSchema {
 
   @belongsTo(() => Season)
   declare season: BelongsTo<typeof Season>
+
+  @belongsTo(() => Venue)
+  declare venue: BelongsTo<typeof Venue>
+
+  @belongsTo(() => Stage)
+  declare stage: BelongsTo<typeof Stage>
+
+  @belongsTo(() => Tie)
+  declare tie: BelongsTo<typeof Tie>
+
+  @belongsTo(() => Team, { foreignKey: 'winnerTeamId' })
+  declare winnerTeam: BelongsTo<typeof Team>
 
   @hasMany(() => Stat)
   declare stats: HasMany<typeof Stat>

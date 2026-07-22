@@ -11,6 +11,7 @@ export const createStatValidator = vine.create({
   relatedPlayerId: resourceId('players').nullable().optional(),
   minute: vine.number().withoutDecimals().min(0).max(130).nullable().optional(),
   isStoppageTime: vine.boolean().optional(),
+  isPenalty: vine.boolean().optional(),
   value: vine.string().trim().maxLength(500).nullable().optional(),
   numericValue: vine.number().withoutDecimals().min(0).max(999).optional(),
 })
@@ -19,6 +20,7 @@ export const updateStatValidator = vine.create({
   relatedPlayerId: resourceId('players').nullable().optional(),
   minute: vine.number().withoutDecimals().min(0).max(130).nullable().optional(),
   isStoppageTime: vine.boolean().optional(),
+  isPenalty: vine.boolean().optional(),
   value: vine.string().trim().maxLength(500).nullable().optional(),
   numericValue: vine.number().withoutDecimals().min(0).max(999).optional(),
 })

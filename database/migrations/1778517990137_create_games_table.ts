@@ -50,11 +50,7 @@ export default class extends BaseSchema {
 
       table.timestamp('paused_at').nullable()
       table
-        .enum('paused_from_status', [
-          'first_half',
-          'second_half',
-          'extra_time',
-        ])
+        .enum('paused_from_status', ['first_half', 'second_half', 'extra_time'])
         .nullable()
 
       table
@@ -64,6 +60,7 @@ export default class extends BaseSchema {
           'half_time',
           'second_half',
           'extra_time',
+          'penalty_shootout',
           'full_time',
           'cancelled',
           'postponed',
@@ -72,7 +69,51 @@ export default class extends BaseSchema {
         .defaultTo('scheduled')
 
       table.string('venue_name').nullable()
+      table
+        .integer('venue_id')
+        .unsigned()
+        .references('id')
+        .inTable('venues')
+        .nullable()
+        .onDelete('SET NULL')
 
+      table
+        .integer('stage_id')
+        .unsigned()
+        .references('id')
+        .inTable('stages')
+        .nullable()
+        .onDelete('CASCADE')
+      table
+        .integer('stage_group_id')
+        .unsigned()
+        .references('id')
+        .inTable('stage_groups')
+        .nullable()
+        .onDelete('SET NULL')
+      table
+        .integer('tie_id')
+        .unsigned()
+        .references('id')
+        .inTable('ties')
+        .nullable()
+        .onDelete('CASCADE')
+      table.smallint('leg').nullable()
+      table
+        .enum('round', ['r256', 'r128', 'r64', 'r32', 'r16', 'qf', 'sf', 'final', 'third_place'])
+        .nullable()
+      table.integer('bracket_position').nullable()
+      table.smallint('home_penalty_score').nullable()
+      table.smallint('away_penalty_score').nullable()
+      table
+        .integer('winner_team_id')
+        .unsigned()
+        .references('id')
+        .inTable('teams')
+        .nullable()
+        .onDelete('SET NULL')
+
+      table.index(['tie_id', 'leg'])
       table.check('?? <> ??', ['home_team_id', 'away_team_id'])
       table.timestamp('created_at')
       table.timestamp('updated_at')

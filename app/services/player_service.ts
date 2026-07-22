@@ -1,11 +1,11 @@
 import Game from '#models/game'
-import League from '#models/league'
+import type League from '#models/league'
 import LeaguePlayer from '#models/league_player'
 import Player from '#models/player'
-import Season from '#models/season'
+import type Season from '#models/season'
 import Stat from '#models/stat'
 import StatType from '#models/stat_type'
-import Team from '#models/team'
+import type Team from '#models/team'
 
 import type { PlayerLeagueDetail } from '#transformers/player_league_detail_transformer'
 import type { PlayerSeasonDetail } from '#transformers/player_season_detail_transformer'
@@ -25,7 +25,13 @@ export type PlayerDetailResult = {
 
 export class PlayerService {
   async getPlayerDetail(id: string | number): Promise<PlayerDetailResult> {
-    const player = await Player.query().where('id', id).preload('country').firstOrFail()
+    const player = await Player.query()
+      .where('id', id)
+      .preload('country')
+      .preload('highlights', (highlightsQuery) => {
+        highlightsQuery.orderBy('sort_order', 'asc').orderBy('id', 'asc')
+      })
+      .firstOrFail()
 
     const memberships = await LeaguePlayer.query()
       .where('player_id', player.id)
@@ -42,7 +48,7 @@ export class PlayerService {
         .preload('team')
         .preload('relatedPlayer')
         .preload('game', (gameQuery) => {
-          gameQuery.preload('homeTeam').preload('awayTeam')
+          gameQuery.preload('homeTeam').preload('awayTeam').preload('venue')
         }),
       StatType.query().orderBy('category').orderBy('display_name'),
       this.loadTeamGames(memberships),
@@ -83,7 +89,9 @@ export class PlayerService {
     const leagues = [...leagueGroups.values()]
       .map((group) => ({
         league: group.league,
-        seasons: [...group.seasons.values()].sort((a, b) => this.compareSeasons(a.season, b.season)),
+        seasons: [...group.seasons.values()].sort((a, b) =>
+          this.compareSeasons(a.season, b.season)
+        ),
       }))
       .sort((a, b) => a.league.name.localeCompare(b.league.name))
 
@@ -130,6 +138,7 @@ export class PlayerService {
       })
       .preload('homeTeam')
       .preload('awayTeam')
+      .preload('venue')
   }
 
   private ensureSeasonBucket(
@@ -182,10 +191,7 @@ export class PlayerService {
     return bCreated - aCreated
   }
 
-  private comparePlayedAt(
-    a: Game['playedAt'],
-    b: Game['playedAt']
-  ): number {
+  private comparePlayedAt(a: Game['playedAt'], b: Game['playedAt']): number {
     const aMs = a?.toMillis() ?? 0
     const bMs = b?.toMillis() ?? 0
     return aMs - bMs

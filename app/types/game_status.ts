@@ -4,6 +4,7 @@ export const GAME_STATUSES = [
   'half_time',
   'second_half',
   'extra_time',
+  'penalty_shootout',
   'full_time',
   'cancelled',
   'postponed',
@@ -17,6 +18,7 @@ export const LIVE_GAME_STATUSES: GameStatus[] = [
   'first_half',
   'second_half',
   'extra_time',
+  'penalty_shootout',
   'paused',
 ]
 
@@ -26,6 +28,7 @@ export const STANDING_GAME_STATUSES: GameStatus[] = [
   'half_time',
   'second_half',
   'extra_time',
+  'penalty_shootout',
   'full_time',
   'paused',
 ]

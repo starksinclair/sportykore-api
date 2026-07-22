@@ -205,14 +205,16 @@ export default class CountryService {
         }
 
         const membership = membershipByPlayerId.get(player.id)
+        // Private players appear as a minimal stub — no position/team details
+        const isPrivate = player.visibility === 'private'
 
         return {
           player: {
             id: String(player.id),
             name: player.name ?? 'Unknown',
             avatarInitials: avatarInitialsFromName(player.name),
-            position: formatPlayerPosition(membership?.position),
-            teamId: membership?.teamId ? String(membership.teamId) : null,
+            position: isPrivate ? null : formatPlayerPosition(membership?.position),
+            teamId: !isPrivate && membership?.teamId ? String(membership.teamId) : null,
             countryCode: country.code,
           },
           goals: Number(row.goals),
