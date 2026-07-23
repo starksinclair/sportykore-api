@@ -753,11 +753,11 @@ export class VenueSchema extends BaseModel {
   @column({ isPrimary: true })
   declare id: number
   @column()
-  declare latitude: string | null
+  declare latitude: number | null
   @column()
   declare leagueId: number
   @column()
-  declare longitude: string | null
+  declare longitude: number | null
   @column()
   declare name: string
   @column()

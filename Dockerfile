@@ -23,4 +23,5 @@ COPY package*.json ./
 RUN npm ci --omit=dev
 COPY --from=build /app/build ./
 EXPOSE 8080
-CMD ["sh", "-c", "node ace db:wipe --force && node ace migration:run --force && node bin/server.js"]
+# ALLOW_DEMO_SEED required because NODE_ENV=production. Reviewer emails must be set in env.
+CMD ["sh", "-c", "node ace migration:run --force && ALLOW_DEMO_SEED=true node ace db:seed --files=database/seeders/demo_seeder.ts && node bin/server.js"]

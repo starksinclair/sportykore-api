@@ -104,4 +104,21 @@ export default await Env.create(new URL('../', import.meta.url), {
   REDIS_PORT: Env.schema.number(),
   REDIS_PASSWORD: Env.schema.string.optional(),
   REDIS_TLS: Env.schema.boolean.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | App Store / Play Store reviewer OTP bypass (optional)
+  |----------------------------------------------------------
+  */
+  REVIEW_ACCOUNT_ENABLED: Env.schema.boolean.optional(),
+  REVIEW_ADMIN_EMAIL: Env.schema.string.optional(),
+  REVIEW_PLAYER_EMAIL: Env.schema.string.optional(),
+  REVIEW_OTP_CODE: Env.schema.string.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | DemoSeeder gate — required when NODE_ENV=production
+  |----------------------------------------------------------
+  */
+  ALLOW_DEMO_SEED: Env.schema.boolean.optional(),
 })
