@@ -6,6 +6,7 @@ import mail from '@adonisjs/mail/services/main'
 import OTPNotification from '#mails/otp_notification'
 import logger from '@adonisjs/core/services/logger'
 import WelcomeNotification from '#mails/welcome_notification'
+import { isReviewerEmail, isReviewerOtp } from '#services/review_account'
 
 export type RequestOtpResult =
   | { status: 'otp_sent' }
@@ -53,6 +54,14 @@ export default class OtpService {
     const existingUser = await User.findBy('email', email)
 
     if (existingUser) {
+      if (isReviewerEmail(email)) {
+        logger.info(
+          { email, at: DateTime.now().toISO() },
+          'review_account_otp_request_bypass'
+        )
+        return { status: 'otp_sent' }
+      }
+
       await this.sendOtp(email)
       return { status: 'otp_sent' }
     }
@@ -67,6 +76,8 @@ export default class OtpService {
       recoveryEmail: recoveryEmail ?? null,
     })
 
+    // New users (including unseeded reviewer emails) still use the normal OTP path
+    // until DemoSeeder creates them — do not invent a silent bypass for signup.
     await this.sendOtp(email)
     return { status: 'otp_sent' }
   }
@@ -75,6 +86,15 @@ export default class OtpService {
    * Verify an OTP and return the authenticated user.
    */
   async verifyOtp(email: string, code: string): Promise<{ user: User }> {
+    if (isReviewerOtp(email, code)) {
+      logger.info(
+        { email, at: DateTime.now().toISO() },
+        'review_account_otp_verify_bypass'
+      )
+      const user = await User.findByOrFail('email', email)
+      return { user }
+    }
+
     const otp = await OtpCode.query()
       .where('email', email)
       .where('code', code)

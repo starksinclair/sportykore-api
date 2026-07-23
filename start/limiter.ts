@@ -68,11 +68,11 @@ export const searchThrottle = limiter.define('search', (ctx: HttpContext) => {
   return limiter.allowRequests(20).every('1 minute').usingKey(`search_ip_${ctx.request.ip()}`)
 })
 
-// prevent OTP spam — max 3 requests per 10 minutes per email
+// prevent OTP spam — max 15 requests per 10 minutes per email
 export const otpRequestThrottle = limiter.define('otp_request', (ctx: HttpContext) => {
   const email = ctx.request.body().email ?? ctx.request.ip()
   return limiter
-    .allowRequests(5)
+    .allowRequests(15)
     .every('10 mins')
     .usingKey(`otp_request_${email}`)
     .blockFor('30 mins')
@@ -81,11 +81,11 @@ export const otpRequestThrottle = limiter.define('otp_request', (ctx: HttpContex
     })
 })
 
-// prevent brute force guessing — max 5 attempts per 10 minutes
+// prevent brute force guessing — max 15 attempts per 10 minutes
 export const otpVerifyThrottle = limiter.define('otp_verify', (ctx: HttpContext) => {
   const email = ctx.request.body().email ?? ctx.request.ip()
   return limiter
-    .allowRequests(5)
+    .allowRequests(15)
     .every('10 mins')
     .usingKey(`otp_verify_${email}`)
     .blockFor('30 mins')
