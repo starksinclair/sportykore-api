@@ -56,6 +56,7 @@ export type ScannedRoutes = {
     'favourite_leagues.destroy': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'game_score.update': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
     'game_score.accredit': { paramsTuple: [ParamValue,ParamValue]; params: {'gameId': ParamValue,'statId': ParamValue} }
+    'player_awards.set_motm': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
     'game_time.start_first_half': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
     'game_time.start_half_time': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
     'game_time.start_second_half': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
@@ -249,6 +250,7 @@ export type ScannedRoutes = {
     'me_player.update': { paramsTuple?: []; params?: {} }
     'player_highlights.reorder': { paramsTuple?: []; params?: {} }
     'player_highlights.update': { paramsTuple: [ParamValue]; params: {'hid': ParamValue} }
+    'player_awards.set_motm': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
     'game_lineups.set': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
     'leagues.update': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'seasons.update': { paramsTuple: [ParamValue,ParamValue]; params: {'leagueId': ParamValue,'seasonId': ParamValue} }

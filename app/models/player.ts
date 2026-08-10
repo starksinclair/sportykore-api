@@ -7,6 +7,7 @@ import Stat from '#models/stat'
 import GameLineup from '#models/game_lineup'
 import Country from '#models/country'
 import PlayerHighlight from '#models/player_highlight'
+import PlayerAward from '#models/player_award'
 import type { PlayerPosition, PlayerVisibility, PreferredFoot } from '#types/player'
 
 export default class Player extends PlayerSchema {
@@ -37,6 +38,9 @@ export default class Player extends PlayerSchema {
 
   @hasMany(() => PlayerHighlight)
   declare highlights: HasMany<typeof PlayerHighlight>
+
+  @hasMany(() => PlayerAward)
+  declare awards: HasMany<typeof PlayerAward>
 
   @belongsTo(() => Country)
   declare country: BelongsTo<typeof Country>

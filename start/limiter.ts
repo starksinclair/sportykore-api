@@ -10,9 +10,9 @@
 */
 
 import limiter from '@adonisjs/limiter/services/main'
-import { HttpContext } from '@adonisjs/core/http'
+import type { HttpContext } from '@adonisjs/core/http'
 
-// general API — applies to all routes
+// general API, applies to all routes
 export const globalThrottle = limiter.define('global', (ctx: HttpContext) => {
   // authenticated users get more requests
   if (ctx.auth.user) {
@@ -23,7 +23,7 @@ export const globalThrottle = limiter.define('global', (ctx: HttpContext) => {
   return limiter.allowRequests(30).every('1 minute').usingKey(`ip_${ctx.request.ip()}`)
 })
 
-// strict — for auth endpoints (login, register)
+// strict, for auth endpoints (login, register)
 export const authThrottle = limiter.define('auth', (ctx: HttpContext) => {
   return limiter
     .allowRequests(5)
@@ -37,7 +37,7 @@ export const authThrottle = limiter.define('auth', (ctx: HttpContext) => {
     })
 })
 
-// invite generation — prevent spam
+// invite generation, prevent spam
 export const inviteThrottle = limiter.define('invite', (ctx: HttpContext) => {
   return limiter
     .allowRequests(10)
@@ -48,18 +48,51 @@ export const inviteThrottle = limiter.define('invite', (ctx: HttpContext) => {
     })
 })
 
-// score/stat updates — prevent abuse during live games
+// score updates, allow fast live score tapping without blocking clock or lineup actions
+export const scoreUpdateThrottle = limiter.define('score_update', (ctx: HttpContext) => {
+  return limiter
+    .allowRequests(120)
+    .every('1 minute')
+    .usingKey(`score_update_${ctx.auth.user!.id}`)
+    .limitExceeded((error: any) => {
+      error.setStatus(429).setMessage('Slow down, too many score updates')
+    })
+})
+
+// stat updates, for goal accreditation and event edits
+export const statUpdateThrottle = limiter.define('stat_update', (ctx: HttpContext) => {
+  return limiter
+    .allowRequests(90)
+    .every('1 minute')
+    .usingKey(`stat_update_${ctx.auth.user!.id}`)
+    .limitExceeded((error: any) => {
+      error.setStatus(429).setMessage('Slow down, too many stat updates')
+    })
+})
+
+// clock updates, for period transitions, pauses, and final decisions
+export const clockUpdateThrottle = limiter.define('clock_update', (ctx: HttpContext) => {
+  return limiter
+    .allowRequests(30)
+    .every('1 minute')
+    .usingKey(`clock_update_${ctx.auth.user!.id}`)
+    .limitExceeded((error: any) => {
+      error.setStatus(429).setMessage('Slow down, too many clock updates')
+    })
+})
+
+// lineup updates, prevent abuse during live games
 export const gameUpdateThrottle = limiter.define('game_update', (ctx: HttpContext) => {
   return limiter
     .allowRequests(60)
     .every('1 minute')
     .usingKey(`game_update_${ctx.auth.user!.id}`)
     .limitExceeded((error: any) => {
-      error.setStatus(429).setMessage('Slow down — too many game updates')
+      error.setStatus(429).setMessage('Slow down, too many lineup updates')
     })
 })
 
-// search — prevent scraping
+// search, prevent scraping
 export const searchThrottle = limiter.define('search', (ctx: HttpContext) => {
   if (ctx.auth.user) {
     return limiter.allowRequests(60).every('1 minute').usingKey(`search_${ctx.auth.user.id}`)
@@ -68,7 +101,7 @@ export const searchThrottle = limiter.define('search', (ctx: HttpContext) => {
   return limiter.allowRequests(20).every('1 minute').usingKey(`search_ip_${ctx.request.ip()}`)
 })
 
-// prevent OTP spam — max 15 requests per 10 minutes per email
+// prevent OTP spam, max 15 requests per 10 minutes per email
 export const otpRequestThrottle = limiter.define('otp_request', (ctx: HttpContext) => {
   const email = ctx.request.body().email ?? ctx.request.ip()
   return limiter
@@ -81,7 +114,7 @@ export const otpRequestThrottle = limiter.define('otp_request', (ctx: HttpContex
     })
 })
 
-// prevent brute force guessing — max 15 attempts per 10 minutes
+// prevent brute force guessing, max 15 attempts per 10 minutes
 export const otpVerifyThrottle = limiter.define('otp_verify', (ctx: HttpContext) => {
   const email = ctx.request.body().email ?? ctx.request.ip()
   return limiter

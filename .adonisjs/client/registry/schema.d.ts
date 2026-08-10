@@ -631,6 +631,18 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/game_score_controller').default['accredit']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
+  'player_awards.set_motm': {
+    methods: ["PUT"]
+    pattern: '/api/v1/games/:gameId/awards/motm'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/player_award').setMotmAwardValidator)>>
+      paramsTuple: [ParamValue]
+      params: { gameId: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/player_award').setMotmAwardValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/player_awards_controller').default['setMotm']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/player_awards_controller').default['setMotm']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
   'game_time.start_first_half': {
     methods: ["POST"]
     pattern: '/api/v1/games/:gameId/start-first-half'

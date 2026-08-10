@@ -14,6 +14,7 @@ import Tie from '#models/tie'
 import type User from '#models/user'
 import StatType from '#models/stat_type'
 import Player from '#models/player'
+import PlayerAward from '#models/player_award'
 import PlayerHighlight from '#models/player_highlight'
 import LeaguePlayer from '#models/league_player'
 import Stat from '#models/stat'
@@ -463,6 +464,7 @@ export default class DataSeeder extends BaseSeeder {
         homePlayers,
         awayPlayers
       )
+      await this.seedMotmAward(game, homePlayers, awayPlayers)
 
       await this.tieResolver.advanceTie(tie.id)
     }
@@ -574,6 +576,11 @@ export default class DataSeeder extends BaseSeeder {
           playersByTeam.get(game.homeTeamId) ?? [],
           playersByTeam.get(game.awayTeamId) ?? []
         )
+        await this.seedMotmAward(
+          game,
+          playersByTeam.get(game.homeTeamId) ?? [],
+          playersByTeam.get(game.awayTeamId) ?? []
+        )
         await this.seedStatsForGame(game, playersByTeam)
       }
     }
@@ -651,6 +658,11 @@ export default class DataSeeder extends BaseSeeder {
         playersByTeam.get(game.homeTeamId) ?? [],
         playersByTeam.get(game.awayTeamId) ?? []
       )
+      await this.seedMotmAward(
+        game,
+        playersByTeam.get(game.homeTeamId) ?? [],
+        playersByTeam.get(game.awayTeamId) ?? []
+      )
       await this.tieResolver.advanceTie(tie.id)
     }
 
@@ -716,8 +728,25 @@ export default class DataSeeder extends BaseSeeder {
         continue
       }
 
+      await this.seedMotmAward(game, homePlayers, awayPlayers)
       await this.seedStatsForGame(game, playersByTeam)
     }
+  }
+
+  private async seedMotmAward(game: Game, homePlayers: Player[], awayPlayers: Player[]) {
+    const pool = [...homePlayers.slice(0, 11), ...awayPlayers.slice(0, 11)]
+    if (pool.length === 0) {
+      return
+    }
+
+    const winnerPool = game.winnerTeamId === game.awayTeamId ? awayPlayers : homePlayers
+    const candidates = winnerPool.length > 0 ? winnerPool.slice(0, 11) : pool
+    const player = candidates[Math.floor(Math.random() * candidates.length)]!
+
+    await PlayerAward.updateOrCreate(
+      { gameId: game.id, awardType: 'motm' },
+      { playerId: player.id, awardedBy: null }
+    )
   }
 
   private async seedStatsForGame(game: Game, playersByTeam: Map<number, Player[]>) {

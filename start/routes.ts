@@ -13,12 +13,15 @@ import router from '@adonisjs/core/services/router'
 import transmit from '@adonisjs/transmit/services/main'
 import {
   authThrottle,
+  clockUpdateThrottle,
   gameUpdateThrottle,
   globalThrottle,
   inviteThrottle,
   otpRequestThrottle,
   otpVerifyThrottle,
+  scoreUpdateThrottle,
   searchThrottle,
+  statUpdateThrottle,
 } from '#start/limiter'
 
 transmit.registerRoutes()
@@ -46,7 +49,7 @@ router
  */
 router
   .group(() => {
-    // Deprecated — email/password + Google OAuth (see ROUTES.md)
+    // Deprecated, email/password + Google OAuth (see ROUTES.md)
     // router.post('signup', [controllers.Users, 'signup'])
     // router.post('login', [controllers.Users, 'login'])
     // router.post('forgot-password', [controllers.Users, 'forgotPassword'])
@@ -101,7 +104,7 @@ router
     router.get('players/:id', [controllers.Players, 'show'])
 
     // Own player profile (two-state CTA resolver) + personal YouTube highlights.
-    // Ownership here is the authenticated user's own player record — not leagueOwner.
+    // Ownership here is the authenticated user's own player record, not leagueOwner.
     router
       .group(() => {
         router.get('me/player', [controllers.MePlayer, 'show'])
@@ -141,9 +144,25 @@ router
       .use(middleware.apiAuth())
 
     router
+      .post('games/:gameId/score', [controllers.GameScore, 'update'])
+      .use(middleware.apiAuth())
+      .use(middleware.leagueOwner())
+      .use(scoreUpdateThrottle)
+
+    router
+      .patch('games/:gameId/stats/:statId/accredit', [controllers.GameScore, 'accredit'])
+      .use(middleware.apiAuth())
+      .use(middleware.leagueOwner())
+      .use(statUpdateThrottle)
+
+    router
+      .put('games/:gameId/awards/motm', [controllers.PlayerAwards, 'setMotm'])
+      .use(middleware.apiAuth())
+      .use(middleware.leagueOwner())
+      .use(statUpdateThrottle)
+
+    router
       .group(() => {
-        router.post('games/:gameId/score', [controllers.GameScore, 'update'])
-        router.patch('games/:gameId/stats/:statId/accredit', [controllers.GameScore, 'accredit'])
         router.post('games/:gameId/start-first-half', [controllers.GameTime, 'startFirstHalf'])
         router.post('games/:gameId/half-time', [controllers.GameTime, 'startHalfTime'])
         router.post('games/:gameId/start-second-half', [controllers.GameTime, 'startSecondHalf'])
@@ -162,7 +181,7 @@ router
       })
       .use(middleware.apiAuth())
       .use(middleware.leagueOwner())
-      .use(gameUpdateThrottle)
+      .use(clockUpdateThrottle)
 
     router
       .group(() => {

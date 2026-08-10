@@ -5,6 +5,7 @@ import type Player from '#models/player'
 import StatTransformer from '#transformers/stat_transformer'
 import CountryTransformer from '#transformers/country_transformer'
 import PlayerHighlightTransformer from '#transformers/player_highlight_transformer'
+import PlayerAwardTransformer from '#transformers/player_award_transformer'
 
 /**
  * The single serialization path for players. Two invariants live here:
@@ -74,6 +75,9 @@ export default class PlayerTransformer extends BaseTransformer<Player> {
       age: this.age(),
       country: CountryTransformer.transform(this.whenLoaded(this.resource.country)),
       highlights: PlayerHighlightTransformer.transform(this.whenLoaded(this.resource.highlights)),
+      awards: PlayerAwardTransformer.transform(this.whenLoaded(this.resource.awards))
+        ?.useVariant('forPlayerProfile')
+        ?.depth(3),
     }
   }
 

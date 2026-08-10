@@ -30,7 +30,7 @@ export default class InviteService {
   async accept(token: string, userId: number) {
     const invite = await Invite.query()
       .where('token', token)
-      .where('status', 'pending')
+      .whereIn('status', ['pending', 'accepted'])
       .where('expires_at', '>', DateTime.now().toSQL())
       .firstOrFail()
 
@@ -66,7 +66,9 @@ export default class InviteService {
       })
     }
 
-    invite.status = 'accepted'
+    if (invite.status === 'pending') {
+      invite.status = 'accepted'
+    }
     invite.acceptedAt = DateTime.now()
     await invite.save()
 

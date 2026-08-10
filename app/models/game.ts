@@ -9,6 +9,7 @@ import GameLineup from '#models/game_lineup'
 import Venue from '#models/venue'
 import Stage from '#models/stage'
 import Tie from '#models/tie'
+import PlayerAward from '#models/player_award'
 import { events } from '#generated/events'
 
 export default class Game extends GameSchema {
@@ -41,6 +42,9 @@ export default class Game extends GameSchema {
 
   @hasMany(() => GameLineup)
   declare lineups: HasMany<typeof GameLineup>
+
+  @hasMany(() => PlayerAward)
+  declare awards: HasMany<typeof PlayerAward>
 
   @afterSave()
   static async onSave(game: Game) {

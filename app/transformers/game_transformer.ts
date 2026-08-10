@@ -7,6 +7,7 @@ import LeagueTransformer from '#transformers/league_transformer'
 import StatTransformer from '#transformers/stat_transformer'
 import LineupGroupTransformer from '#transformers/lineup_group_transformer'
 import VenueTransformer from '#transformers/venue_transformer'
+import PlayerAwardTransformer from '#transformers/player_award_transformer'
 import { groupLineupsByTeam } from '#services/lineup_service'
 
 const gameTimeService = new GameTimeService()
@@ -41,6 +42,7 @@ export default class GameTransformer extends BaseTransformer<Game> {
       homeTeam: TeamTransformer.transform(this.whenLoaded(this.resource.homeTeam)),
       awayTeam: TeamTransformer.transform(this.whenLoaded(this.resource.awayTeam)),
       winnerTeam: TeamTransformer.transform(this.whenLoaded(this.resource.winnerTeam)),
+      awards: PlayerAwardTransformer.transform(this.whenLoaded(this.resource.awards))?.depth(3),
       venueId: this.resource.venueId,
       venue: VenueTransformer.transform(this.whenLoaded(this.resource.venue))
         ?.useVariant('forGame')

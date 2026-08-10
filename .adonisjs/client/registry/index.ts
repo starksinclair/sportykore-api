@@ -318,6 +318,12 @@ const routes = {
     tokens: [{"old":"/api/v1/games/:gameId/stats/:statId/accredit","type":0,"val":"api","end":""},{"old":"/api/v1/games/:gameId/stats/:statId/accredit","type":0,"val":"v1","end":""},{"old":"/api/v1/games/:gameId/stats/:statId/accredit","type":0,"val":"games","end":""},{"old":"/api/v1/games/:gameId/stats/:statId/accredit","type":1,"val":"gameId","end":""},{"old":"/api/v1/games/:gameId/stats/:statId/accredit","type":0,"val":"stats","end":""},{"old":"/api/v1/games/:gameId/stats/:statId/accredit","type":1,"val":"statId","end":""},{"old":"/api/v1/games/:gameId/stats/:statId/accredit","type":0,"val":"accredit","end":""}],
     types: placeholder as Registry['game_score.accredit']['types'],
   },
+  'player_awards.set_motm': {
+    methods: ["PUT"],
+    pattern: '/api/v1/games/:gameId/awards/motm',
+    tokens: [{"old":"/api/v1/games/:gameId/awards/motm","type":0,"val":"api","end":""},{"old":"/api/v1/games/:gameId/awards/motm","type":0,"val":"v1","end":""},{"old":"/api/v1/games/:gameId/awards/motm","type":0,"val":"games","end":""},{"old":"/api/v1/games/:gameId/awards/motm","type":1,"val":"gameId","end":""},{"old":"/api/v1/games/:gameId/awards/motm","type":0,"val":"awards","end":""},{"old":"/api/v1/games/:gameId/awards/motm","type":0,"val":"motm","end":""}],
+    types: placeholder as Registry['player_awards.set_motm']['types'],
+  },
   'game_time.start_first_half': {
     methods: ["POST"],
     pattern: '/api/v1/games/:gameId/start-first-half',

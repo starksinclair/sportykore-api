@@ -329,6 +329,25 @@ export class PasswordResetSchema extends BaseModel {
   declare userId: number
 }
 
+export class PlayerAwardSchema extends BaseModel {
+  static $columns = ['awardType', 'awardedBy', 'createdAt', 'gameId', 'id', 'playerId', 'updatedAt'] as const
+  $columns = PlayerAwardSchema.$columns
+  @column()
+  declare awardType: string
+  @column()
+  declare awardedBy: number | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare gameId: number
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare playerId: number | null
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+}
+
 export class PlayerHighlightSchema extends BaseModel {
   static $columns = ['createdAt', 'id', 'playerId', 'sortOrder', 'title', 'updatedAt', 'videoId'] as const
   $columns = PlayerHighlightSchema.$columns
@@ -753,11 +772,11 @@ export class VenueSchema extends BaseModel {
   @column({ isPrimary: true })
   declare id: number
   @column()
-  declare latitude: number | null
+  declare latitude: string | null
   @column()
   declare leagueId: number
   @column()
-  declare longitude: number | null
+  declare longitude: string | null
   @column()
   declare name: string
   @column()

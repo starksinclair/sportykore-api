@@ -80,6 +80,15 @@ export default class PlayerProfileService {
 
   async resolveOwn(userId: number): Promise<ResolvedProfile> {
     const player = await this.findOwnOrFail(userId)
+    await player.load('awards', (awardsQuery) => {
+      awardsQuery
+        .where('award_type', 'motm')
+        .preload('game', (gameQuery) => {
+          gameQuery.preload('homeTeam').preload('awayTeam').preload('venue')
+        })
+        .preload('awardedByUser')
+        .orderBy('created_at', 'desc')
+    })
 
     const [highlightsCount, memberships] = await Promise.all([
       PlayerHighlight.query().where('player_id', player.id).count('* as total'),

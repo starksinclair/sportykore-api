@@ -113,6 +113,9 @@ export interface ApiDefinition {
     update: typeof routes['game_score.update']
     accredit: typeof routes['game_score.accredit']
   }
+  playerAwards: {
+    setMotm: typeof routes['player_awards.set_motm']
+  }
   gameTime: {
     startFirstHalf: typeof routes['game_time.start_first_half']
     startHalfTime: typeof routes['game_time.start_half_time']

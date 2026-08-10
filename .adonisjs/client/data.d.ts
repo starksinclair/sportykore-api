@@ -35,6 +35,7 @@ import type TeamTransformer from '#transformers/team_transformer'
 import type TieTransformer from '#transformers/tie_transformer'
 import type UserTransformer from '#transformers/user_transformer'
 import type VenueTransformer from '#transformers/venue_transformer'
+import type PlayerAwardTransformer from '#transformers/player_award_transformer'
 import type InertiaMiddleware from '#middleware/inertia_middleware'
 
 export namespace Data {
@@ -153,6 +154,10 @@ export namespace Data {
   export type Venue = InferData<VenueTransformer>
   export namespace Venue {
     export type Variants = InferVariants<VenueTransformer>
+  }
+  export type PlayerAward = InferData<PlayerAwardTransformer>
+  export namespace PlayerAward {
+    export type Variants = InferVariants<PlayerAwardTransformer>
   }
   export type SharedProps = InferSharedProps<InertiaMiddleware>
 }

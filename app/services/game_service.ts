@@ -11,6 +11,13 @@ export class GameService {
       .preload('stats', (statsQuery) => {
         statsQuery.preload('type').preload('player').preload('team').preload('relatedPlayer')
       })
+      .preload('awards', (awardsQuery) => {
+        awardsQuery
+          .where('award_type', 'motm')
+          .preload('player')
+          .preload('awardedByUser')
+          .orderBy('id', 'asc')
+      })
       .preload('lineups', (lineupsQuery) => {
         lineupsQuery
           .preload('player')

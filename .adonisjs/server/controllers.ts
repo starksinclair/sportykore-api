@@ -19,6 +19,7 @@ export const controllers = {
   Leagues: () => import('#controllers/leagues_controller'),
   MePlayer: () => import('#controllers/me_player_controller'),
   NewAccount: () => import('#controllers/new_account_controller'),
+  PlayerAwards: () => import('#controllers/player_awards_controller'),
   PlayerHighlights: () => import('#controllers/player_highlights_controller'),
   Players: () => import('#controllers/players_controller'),
   Searches: () => import('#controllers/searches_controller'),
