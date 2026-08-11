@@ -17,6 +17,7 @@ import type LeaguePlayerTransformer from '#transformers/league_player_transforme
 import type LeagueTransformer from '#transformers/league_transformer'
 import type LineupGroupTransformer from '#transformers/lineup_group_transformer'
 import type OwnedLeagueTransformer from '#transformers/owned_league_transformer'
+import type PlayerAwardTransformer from '#transformers/player_award_transformer'
 import type PlayerHighlightTransformer from '#transformers/player_highlight_transformer'
 import type PlayerLeagueDetailTransformer from '#transformers/player_league_detail_transformer'
 import type PlayerSeasonDetailTransformer from '#transformers/player_season_detail_transformer'
@@ -35,7 +36,6 @@ import type TeamTransformer from '#transformers/team_transformer'
 import type TieTransformer from '#transformers/tie_transformer'
 import type UserTransformer from '#transformers/user_transformer'
 import type VenueTransformer from '#transformers/venue_transformer'
-import type PlayerAwardTransformer from '#transformers/player_award_transformer'
 import type InertiaMiddleware from '#middleware/inertia_middleware'
 
 export namespace Data {
@@ -82,6 +82,10 @@ export namespace Data {
   export type OwnedLeague = InferData<OwnedLeagueTransformer>
   export namespace OwnedLeague {
     export type Variants = InferVariants<OwnedLeagueTransformer>
+  }
+  export type PlayerAward = InferData<PlayerAwardTransformer>
+  export namespace PlayerAward {
+    export type Variants = InferVariants<PlayerAwardTransformer>
   }
   export type PlayerHighlight = InferData<PlayerHighlightTransformer>
   export namespace PlayerHighlight {
@@ -154,10 +158,6 @@ export namespace Data {
   export type Venue = InferData<VenueTransformer>
   export namespace Venue {
     export type Variants = InferVariants<VenueTransformer>
-  }
-  export type PlayerAward = InferData<PlayerAwardTransformer>
-  export namespace PlayerAward {
-    export type Variants = InferVariants<PlayerAwardTransformer>
   }
   export type SharedProps = InferSharedProps<InertiaMiddleware>
 }

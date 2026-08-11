@@ -307,6 +307,42 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/searches_controller').default['search']>>>
     }
   }
+  'support.faqs': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/support/faqs'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/support_controller').default['faqs']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/support_controller').default['faqs']>>>
+    }
+  }
+  'support.bug_report': {
+    methods: ["POST"]
+    pattern: '/api/v1/support/bug-reports'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/support').bugReportValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/support').bugReportValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/support_controller').default['bugReport']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/support_controller').default['bugReport']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'support.seed_faqs': {
+    methods: ["POST"]
+    pattern: '/api/v1/support/faqs/seed'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/support_controller').default['seedFaqs']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/support_controller').default['seedFaqs']>>>
+    }
+  }
   'games.show': {
     methods: ["GET","HEAD"]
     pattern: '/api/v1/games/:id'
@@ -641,6 +677,18 @@ export interface Registry {
       query: ExtractQuery<InferInput<(typeof import('#validators/player_award').setMotmAwardValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/player_awards_controller').default['setMotm']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/player_awards_controller').default['setMotm']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'stats.record_tracking_events': {
+    methods: ["POST"]
+    pattern: '/api/v1/games/:gameId/tracking-events'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/stat').recordTrackingEventsValidator)>>
+      paramsTuple: [ParamValue]
+      params: { gameId: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/stat').recordTrackingEventsValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/stats_controller').default['recordTrackingEvents']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/stats_controller').default['recordTrackingEvents']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'game_time.start_first_half': {

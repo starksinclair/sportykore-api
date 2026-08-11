@@ -156,6 +156,24 @@ const routes = {
     tokens: [{"old":"/api/v1/search","type":0,"val":"api","end":""},{"old":"/api/v1/search","type":0,"val":"v1","end":""},{"old":"/api/v1/search","type":0,"val":"search","end":""}],
     types: placeholder as Registry['searches.search']['types'],
   },
+  'support.faqs': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/support/faqs',
+    tokens: [{"old":"/api/v1/support/faqs","type":0,"val":"api","end":""},{"old":"/api/v1/support/faqs","type":0,"val":"v1","end":""},{"old":"/api/v1/support/faqs","type":0,"val":"support","end":""},{"old":"/api/v1/support/faqs","type":0,"val":"faqs","end":""}],
+    types: placeholder as Registry['support.faqs']['types'],
+  },
+  'support.bug_report': {
+    methods: ["POST"],
+    pattern: '/api/v1/support/bug-reports',
+    tokens: [{"old":"/api/v1/support/bug-reports","type":0,"val":"api","end":""},{"old":"/api/v1/support/bug-reports","type":0,"val":"v1","end":""},{"old":"/api/v1/support/bug-reports","type":0,"val":"support","end":""},{"old":"/api/v1/support/bug-reports","type":0,"val":"bug-reports","end":""}],
+    types: placeholder as Registry['support.bug_report']['types'],
+  },
+  'support.seed_faqs': {
+    methods: ["POST"],
+    pattern: '/api/v1/support/faqs/seed',
+    tokens: [{"old":"/api/v1/support/faqs/seed","type":0,"val":"api","end":""},{"old":"/api/v1/support/faqs/seed","type":0,"val":"v1","end":""},{"old":"/api/v1/support/faqs/seed","type":0,"val":"support","end":""},{"old":"/api/v1/support/faqs/seed","type":0,"val":"faqs","end":""},{"old":"/api/v1/support/faqs/seed","type":0,"val":"seed","end":""}],
+    types: placeholder as Registry['support.seed_faqs']['types'],
+  },
   'games.show': {
     methods: ["GET","HEAD"],
     pattern: '/api/v1/games/:id',
@@ -323,6 +341,12 @@ const routes = {
     pattern: '/api/v1/games/:gameId/awards/motm',
     tokens: [{"old":"/api/v1/games/:gameId/awards/motm","type":0,"val":"api","end":""},{"old":"/api/v1/games/:gameId/awards/motm","type":0,"val":"v1","end":""},{"old":"/api/v1/games/:gameId/awards/motm","type":0,"val":"games","end":""},{"old":"/api/v1/games/:gameId/awards/motm","type":1,"val":"gameId","end":""},{"old":"/api/v1/games/:gameId/awards/motm","type":0,"val":"awards","end":""},{"old":"/api/v1/games/:gameId/awards/motm","type":0,"val":"motm","end":""}],
     types: placeholder as Registry['player_awards.set_motm']['types'],
+  },
+  'stats.record_tracking_events': {
+    methods: ["POST"],
+    pattern: '/api/v1/games/:gameId/tracking-events',
+    tokens: [{"old":"/api/v1/games/:gameId/tracking-events","type":0,"val":"api","end":""},{"old":"/api/v1/games/:gameId/tracking-events","type":0,"val":"v1","end":""},{"old":"/api/v1/games/:gameId/tracking-events","type":0,"val":"games","end":""},{"old":"/api/v1/games/:gameId/tracking-events","type":1,"val":"gameId","end":""},{"old":"/api/v1/games/:gameId/tracking-events","type":0,"val":"tracking-events","end":""}],
+    types: placeholder as Registry['stats.record_tracking_events']['types'],
   },
   'game_time.start_first_half': {
     methods: ["POST"],

@@ -30,6 +30,7 @@ export const controllers = {
   StandingOverrides: () => import('#controllers/standing_overrides_controller'),
   StandingZones: () => import('#controllers/standing_zones_controller'),
   Stats: () => import('#controllers/stats_controller'),
+  Support: () => import('#controllers/support_controller'),
   TeamAdmins: () => import('#controllers/team_admins_controller'),
   Teams: () => import('#controllers/teams_controller'),
   Users: () => import('#controllers/users_controller'),

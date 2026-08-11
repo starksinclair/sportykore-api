@@ -290,7 +290,7 @@ export default class DataSeeder extends BaseSeeder {
     const statTypes = await StatType.query()
     this.statTypesByName = new Map(statTypes.map((statType) => [statType.name, statType]))
 
-    for (const name of ['goals', 'assists', 'yellow_card'] as const) {
+    for (const name of ['goals', 'assists', 'yellow_card', 'pass', 'shot'] as const) {
       if (!this.statTypesByName.has(name)) {
         throw new Error(`Stat type "${name}" not found — run migrations first.`)
       }
@@ -779,6 +779,55 @@ export default class DataSeeder extends BaseSeeder {
         value: null,
         isStoppageTime: false,
       })
+    }
+
+    await this.seedTrackingStatsForGame(game, playersByTeam)
+  }
+
+  private async seedTrackingStatsForGame(game: Game, playersByTeam: Map<number, Player[]>) {
+    const passType = this.statTypesByName.get('pass')!
+    const shotType = this.statTypesByName.get('shot')!
+
+    for (const teamId of [game.homeTeamId, game.awayTeamId]) {
+      const players = playersByTeam.get(teamId) ?? []
+      if (players.length === 0) continue
+
+      const passCount = Math.floor(Math.random() * 26) + 20
+      const shotCount = Math.floor(Math.random() * 7) + 4
+
+      for (let index = 0; index < passCount; index++) {
+        const player = players[Math.floor(Math.random() * players.length)]!
+        await Stat.create({
+          gameId: game.id,
+          leagueId: game.leagueId,
+          seasonId: game.seasonId,
+          playerId: player.id,
+          teamId,
+          statTypeId: passType.id,
+          minute: Math.floor(Math.random() * 90) + 1,
+          numericValue: 1,
+          value: null,
+          qualifiers: { completed: Math.random() < 0.78 },
+          isStoppageTime: false,
+        })
+      }
+
+      for (let index = 0; index < shotCount; index++) {
+        const player = players[Math.floor(Math.random() * players.length)]!
+        await Stat.create({
+          gameId: game.id,
+          leagueId: game.leagueId,
+          seasonId: game.seasonId,
+          playerId: player.id,
+          teamId,
+          statTypeId: shotType.id,
+          minute: Math.floor(Math.random() * 90) + 1,
+          numericValue: 1,
+          value: null,
+          qualifiers: { on_target: Math.random() < 0.42 },
+          isStoppageTime: false,
+        })
+      }
     }
   }
 

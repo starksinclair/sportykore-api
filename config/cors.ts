@@ -23,7 +23,7 @@ const corsConfig = defineConfig({
   /**
    * HTTP methods accepted for cross-origin requests.
    */
-  methods: ['GET', 'HEAD', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'],
 
   /**
    * Reflect request headers by default. Use a string array to restrict
@@ -34,7 +34,7 @@ const corsConfig = defineConfig({
   /**
    * Response headers exposed to the browser.
    */
-  exposeHeaders: [],
+  exposeHeaders: ['Idempotency-Replayed'],
 
   /**
    * Allow cookies/authorization headers on cross-origin requests.

@@ -204,6 +204,37 @@ export class GameSchema extends BaseModel {
   declare winnerTeamId: number | null
 }
 
+export class IdempotencyKeySchema extends BaseModel {
+  static $columns = ['createdAt', 'expiresAt', 'id', 'keyHash', 'method', 'path', 'requestHash', 'responseBody', 'responseHeaders', 'responseStatus', 'status', 'updatedAt', 'userId'] as const
+  $columns = IdempotencyKeySchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column.dateTime()
+  declare expiresAt: DateTime
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare keyHash: string
+  @column()
+  declare method: string
+  @column()
+  declare path: string
+  @column()
+  declare requestHash: string
+  @column()
+  declare responseBody: any | null
+  @column()
+  declare responseHeaders: any | null
+  @column()
+  declare responseStatus: number | null
+  @column()
+  declare status: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare userId: number | null
+}
+
 export class InviteSchema extends BaseModel {
   static $columns = ['acceptedAt', 'createdAt', 'expiresAt', 'id', 'invitedUserId', 'leagueId', 'seasonId', 'status', 'teamId', 'token', 'updatedAt'] as const
   $columns = InviteSchema.$columns
@@ -620,8 +651,10 @@ export class StatTypeSchema extends BaseModel {
 }
 
 export class StatSchema extends BaseModel {
-  static $columns = ['createdAt', 'gameId', 'id', 'isPenalty', 'isStoppageTime', 'leagueId', 'minute', 'numericValue', 'playerId', 'relatedPlayerId', 'seasonId', 'statTypeId', 'teamId', 'updatedAt', 'value'] as const
+  static $columns = ['clientEventId', 'createdAt', 'gameId', 'id', 'isPenalty', 'isStoppageTime', 'leagueId', 'minute', 'numericValue', 'playerId', 'qualifiers', 'relatedPlayerId', 'seasonId', 'statTypeId', 'teamId', 'updatedAt', 'value'] as const
   $columns = StatSchema.$columns
+  @column()
+  declare clientEventId: string | null
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime | null
   @column()
@@ -640,6 +673,8 @@ export class StatSchema extends BaseModel {
   declare numericValue: number | null
   @column()
   declare playerId: number | null
+  @column()
+  declare qualifiers: any
   @column()
   declare relatedPlayerId: number | null
   @column()

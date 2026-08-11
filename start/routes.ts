@@ -87,6 +87,9 @@ router
     router.get('leagues/:leagueId', [controllers.Leagues, 'show'])
     router.post('leagues', [controllers.Leagues, 'store']).use(middleware.apiAuth())
     router.get('search', [controllers.Searches, 'search']).use(searchThrottle)
+    router.get('support/faqs', [controllers.Support, 'faqs'])
+    router.post('support/bug-reports', [controllers.Support, 'bugReport'])
+    router.post('support/faqs/seed', [controllers.Support, 'seedFaqs']).use(middleware.apiAuth())
     router.get('games/:id', [controllers.Games, 'show'])
     router.get('formations', [controllers.Formations, 'index'])
     router.get('formations/:id', [controllers.Formations, 'show'])
@@ -157,6 +160,12 @@ router
 
     router
       .put('games/:gameId/awards/motm', [controllers.PlayerAwards, 'setMotm'])
+      .use(middleware.apiAuth())
+      .use(middleware.leagueOwner())
+      .use(statUpdateThrottle)
+
+    router
+      .post('games/:gameId/tracking-events', [controllers.Stats, 'recordTrackingEvents'])
       .use(middleware.apiAuth())
       .use(middleware.leagueOwner())
       .use(statUpdateThrottle)

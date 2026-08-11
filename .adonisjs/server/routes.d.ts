@@ -29,6 +29,9 @@ export type ScannedRoutes = {
     'leagues.show': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'leagues.store': { paramsTuple?: []; params?: {} }
     'searches.search': { paramsTuple?: []; params?: {} }
+    'support.faqs': { paramsTuple?: []; params?: {} }
+    'support.bug_report': { paramsTuple?: []; params?: {} }
+    'support.seed_faqs': { paramsTuple?: []; params?: {} }
     'games.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'formations.index': { paramsTuple?: []; params?: {} }
     'formations.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -57,6 +60,7 @@ export type ScannedRoutes = {
     'game_score.update': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
     'game_score.accredit': { paramsTuple: [ParamValue,ParamValue]; params: {'gameId': ParamValue,'statId': ParamValue} }
     'player_awards.set_motm': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
+    'stats.record_tracking_events': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
     'game_time.start_first_half': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
     'game_time.start_half_time': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
     'game_time.start_second_half': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
@@ -127,6 +131,7 @@ export type ScannedRoutes = {
     'leagues.index': { paramsTuple?: []; params?: {} }
     'leagues.show': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'searches.search': { paramsTuple?: []; params?: {} }
+    'support.faqs': { paramsTuple?: []; params?: {} }
     'games.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'formations.index': { paramsTuple?: []; params?: {} }
     'formations.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -164,6 +169,7 @@ export type ScannedRoutes = {
     'leagues.index': { paramsTuple?: []; params?: {} }
     'leagues.show': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'searches.search': { paramsTuple?: []; params?: {} }
+    'support.faqs': { paramsTuple?: []; params?: {} }
     'games.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'formations.index': { paramsTuple?: []; params?: {} }
     'formations.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -197,6 +203,8 @@ export type ScannedRoutes = {
     'auth.request_recovery': { paramsTuple?: []; params?: {} }
     'auth.logout': { paramsTuple?: []; params?: {} }
     'leagues.store': { paramsTuple?: []; params?: {} }
+    'support.bug_report': { paramsTuple?: []; params?: {} }
+    'support.seed_faqs': { paramsTuple?: []; params?: {} }
     'me_player.store': { paramsTuple?: []; params?: {} }
     'me_player.photo': { paramsTuple?: []; params?: {} }
     'player_highlights.store': { paramsTuple?: []; params?: {} }
@@ -204,6 +212,7 @@ export type ScannedRoutes = {
     'players.accept_league_player_request': { paramsTuple?: []; params?: {} }
     'favourite_leagues.store': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'game_score.update': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
+    'stats.record_tracking_events': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
     'game_time.start_first_half': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
     'game_time.start_half_time': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
     'game_time.start_second_half': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
