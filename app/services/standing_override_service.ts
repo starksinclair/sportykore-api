@@ -5,7 +5,7 @@ import Stage from '#models/stage'
 import StandingOverride from '#models/standing_override'
 import AuditService from '#services/audit_service'
 import { cohortSignature } from '#services/standings/compute_table'
-import StageStandingService from './stage_standing_service.ts'
+import StageStandingService from './stage_standing_service.js'
 
 @inject()
 export default class StandingOverrideService {

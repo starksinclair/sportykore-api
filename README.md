@@ -442,6 +442,12 @@ After pulling these migrations, run `node ace migration:run` and commit the upda
 - **Uploads:** `DRIVE_DISK=fs` → `storage/` + `/uploads/…`; `gcs` → public GCS URLs; `s3` → S3 URLs
 - **Service:** `app/services/file_service.ts`
 - Validators: `optionalImage()` in `app/validators/common.ts` (max 2 MB, jpg/png/webp)
+- **Object layout for new uploads:**
+  - League logos: `leagues/{leagueId}-{leagueSlug}/logo/{uuid}.{ext}`
+  - Team logos: `leagues/{leagueId}-{leagueSlug}/teams/{teamId}-{teamSlug}/logo/{uuid}.{ext}`
+  - Player avatars: `players/{playerId}-{playerSlug}/avatar/{uuid}.{ext}`
+
+Existing uploaded URLs are not migrated automatically; they continue to work from the path already stored in the database.
 
 Ensure `storage/` exists and is writable in local/Docker dev.
 

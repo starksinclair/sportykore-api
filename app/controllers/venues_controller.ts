@@ -3,8 +3,8 @@ import Venue from '#models/venue'
 import VenueTransformer from '#transformers/venue_transformer'
 import { createVenueValidator, updateVenueValidator } from '#validators/venue'
 
-function coordToDb(value: number | null | undefined): number | null | undefined {
-  return value
+function coordToDb(value: number | null | undefined): string | null | undefined {
+  return value === null || value === undefined ? value : value.toFixed(7)
 }
 
 export default class VenuesController {

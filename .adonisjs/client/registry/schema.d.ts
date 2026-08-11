@@ -343,6 +343,42 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/support_controller').default['seedFaqs']>>>
     }
   }
+  'push_notifications.register_token': {
+    methods: ["POST"]
+    pattern: '/api/v1/push/tokens'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/push_notification').registerPushTokenValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/push_notification').registerPushTokenValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/push_notifications_controller').default['registerToken']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/push_notifications_controller').default['registerToken']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'push_notifications.show_league_preference': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/leagues/:leagueId/notifications'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { leagueId: ParamValue }
+      query: ExtractQueryForGet<InferInput<(typeof import('#validators/push_notification').leagueNotificationPreferenceParamsValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/push_notifications_controller').default['showLeaguePreference']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/push_notifications_controller').default['showLeaguePreference']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'push_notifications.update_league_preference': {
+    methods: ["PUT"]
+    pattern: '/api/v1/leagues/:leagueId/notifications'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/push_notification').leagueNotificationPreferenceParamsValidator)>|InferInput<(typeof import('#validators/push_notification').updateLeagueNotificationPreferenceValidator)>>
+      paramsTuple: [ParamValue]
+      params: { leagueId: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/push_notification').leagueNotificationPreferenceParamsValidator)>|InferInput<(typeof import('#validators/push_notification').updateLeagueNotificationPreferenceValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/push_notifications_controller').default['updateLeaguePreference']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/push_notifications_controller').default['updateLeaguePreference']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
   'games.show': {
     methods: ["GET","HEAD"]
     pattern: '/api/v1/games/:id'

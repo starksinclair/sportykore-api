@@ -107,6 +107,13 @@ export default await Env.create(new URL('../', import.meta.url), {
 
   /*
   |----------------------------------------------------------
+  | Expo Push Notifications
+  |----------------------------------------------------------
+  */
+  EXPO_PUSH_ACCESS_TOKEN: Env.schema.string.optional(),
+
+  /*
+  |----------------------------------------------------------
   | Variables for configuring the mail package
   |----------------------------------------------------------
   */

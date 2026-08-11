@@ -27,6 +27,9 @@ export default class LeagueTransformer extends BaseTransformer<League> {
     return {
       ...this.toObject(),
       isFavourited: this.userId ? Number(this.resource.$extras.is_favourited ?? 0) > 0 : false,
+      notificationsEnabled: this.userId
+        ? Number(this.resource.$extras.notifications_enabled ?? 0) > 0
+        : false,
     }
   }
 }

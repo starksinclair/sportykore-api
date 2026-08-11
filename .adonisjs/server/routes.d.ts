@@ -32,6 +32,9 @@ export type ScannedRoutes = {
     'support.faqs': { paramsTuple?: []; params?: {} }
     'support.bug_report': { paramsTuple?: []; params?: {} }
     'support.seed_faqs': { paramsTuple?: []; params?: {} }
+    'push_notifications.register_token': { paramsTuple?: []; params?: {} }
+    'push_notifications.show_league_preference': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
+    'push_notifications.update_league_preference': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'games.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'formations.index': { paramsTuple?: []; params?: {} }
     'formations.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -132,6 +135,7 @@ export type ScannedRoutes = {
     'leagues.show': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'searches.search': { paramsTuple?: []; params?: {} }
     'support.faqs': { paramsTuple?: []; params?: {} }
+    'push_notifications.show_league_preference': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'games.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'formations.index': { paramsTuple?: []; params?: {} }
     'formations.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -170,6 +174,7 @@ export type ScannedRoutes = {
     'leagues.show': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'searches.search': { paramsTuple?: []; params?: {} }
     'support.faqs': { paramsTuple?: []; params?: {} }
+    'push_notifications.show_league_preference': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'games.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'formations.index': { paramsTuple?: []; params?: {} }
     'formations.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -205,6 +210,7 @@ export type ScannedRoutes = {
     'leagues.store': { paramsTuple?: []; params?: {} }
     'support.bug_report': { paramsTuple?: []; params?: {} }
     'support.seed_faqs': { paramsTuple?: []; params?: {} }
+    'push_notifications.register_token': { paramsTuple?: []; params?: {} }
     'me_player.store': { paramsTuple?: []; params?: {} }
     'me_player.photo': { paramsTuple?: []; params?: {} }
     'player_highlights.store': { paramsTuple?: []; params?: {} }
@@ -256,6 +262,7 @@ export type ScannedRoutes = {
     'stats.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }
   PUT: {
+    'push_notifications.update_league_preference': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'me_player.update': { paramsTuple?: []; params?: {} }
     'player_highlights.reorder': { paramsTuple?: []; params?: {} }
     'player_highlights.update': { paramsTuple: [ParamValue]; params: {'hid': ParamValue} }

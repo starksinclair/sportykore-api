@@ -238,6 +238,15 @@ export default class LeagueService {
               favQuery.where('favourite_leagues.user_id', userId!).count('*').as('is_favourited')
             })
           )
+          .if(userId, (query) =>
+            query.withAggregate('notificationPreferences', (prefQuery) => {
+              prefQuery
+                .where('league_notification_preferences.user_id', userId!)
+                .where('league_notification_preferences.enabled', true)
+                .count('*')
+                .as('notifications_enabled')
+            })
+          )
           .if(userId, (query) => query.orderByRaw('is_favourited desc, favourites_count desc'))
           .if(!userId, (query) => query.orderByRaw('favourites_count desc'))
           .preload('games', (gameQuery) => {
@@ -253,7 +262,7 @@ export default class LeagueService {
       .orderBy('name', 'asc')
   }
 
-  async listCountriesWithLeagues(countryId?: number): Promise<Country[]> {
+  async listCountriesWithLeagues(countryId?: number, userId?: number): Promise<Country[]> {
     return Country.query()
       .if(countryId, (query) => query.where('id', countryId as number))
       .has('leagues')
@@ -263,6 +272,20 @@ export default class LeagueService {
           .withAggregate('favouritedBy', (favQuery) => {
             favQuery.count('*').as('favourites_count')
           })
+          .if(userId, (query) =>
+            query.withAggregate('favouritedBy', (favQuery) => {
+              favQuery.where('favourite_leagues.user_id', userId!).count('*').as('is_favourited')
+            })
+          )
+          .if(userId, (query) =>
+            query.withAggregate('notificationPreferences', (prefQuery) => {
+              prefQuery
+                .where('league_notification_preferences.user_id', userId!)
+                .where('league_notification_preferences.enabled', true)
+                .count('*')
+                .as('notifications_enabled')
+            })
+          )
           .orderByRaw('favourites_count desc')
       )
       .orderBy('name', 'asc')

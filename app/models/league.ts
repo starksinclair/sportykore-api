@@ -9,6 +9,7 @@ import Stat from '#models/stat'
 import Standing from '#models/standing'
 import Invite from '#models/invite'
 import Venue from '#models/venue'
+import LeagueNotificationPreference from '#models/league_notification_preference'
 
 export default class League extends LeagueSchema {
   @belongsTo(() => Country)
@@ -34,6 +35,9 @@ export default class League extends LeagueSchema {
 
   @hasMany(() => Venue)
   declare venues: HasMany<typeof Venue>
+
+  @hasMany(() => LeagueNotificationPreference)
+  declare notificationPreferences: HasMany<typeof LeagueNotificationPreference>
 
   @manyToMany(() => User, {
     pivotTable: 'favourite_leagues',

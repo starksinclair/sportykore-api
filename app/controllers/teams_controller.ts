@@ -7,9 +7,10 @@ import StandingService from '#services/standing_service'
 import { inject } from '@adonisjs/core'
 import Team from '#models/team'
 import Season from '#models/season'
+import League from '#models/league'
 import { createTeamValidator, updateTeamValidator } from '#validators/team'
-import string from '@adonisjs/core/helpers/string'
 import FileService from '#services/file_service'
+import { teamLogoKey } from '#helpers/storage_paths'
 
 @inject()
 export default class TeamsController {
@@ -33,18 +34,21 @@ export default class TeamsController {
   async store({ request, response, auth }: HttpContext) {
     const user = auth.getUserOrFail()
     const data = await request.validateUsing(createTeamValidator)
-    let logoUrl: string | null = null
-
-    if (data.logo) {
-      const key = `teams/${string.uuid()}.${data.logo.extname}`
-      logoUrl = await this.fileService.upload(data.logo, key)
-    }
+    const league = await League.findOrFail(data.leagueId)
     const team = await Team.create({
       leagueId: data.leagueId,
       addedBy: user.id,
       name: data.name,
-      logoUrl: logoUrl ?? null,
+      logoUrl: null,
     })
+
+    if (data.logo) {
+      team.logoUrl = await this.fileService.upload(
+        data.logo,
+        teamLogoKey(league, team, data.logo.extname)
+      )
+      await team.save()
+    }
 
     const activeSeason = await Season.query()
       .where('league_id', data.leagueId)
@@ -61,14 +65,22 @@ export default class TeamsController {
   async update({ params, response, request }: HttpContext) {
     const { id } = params
     const data = await request.validateUsing(updateTeamValidator)
-    const team = await Team.findOrFail(id)
+    const team = await Team.query()
+      .where('id', id)
+      .where('league_id', params.leagueId)
+      .preload('league')
+      .firstOrFail()
 
     if (data.logo) {
-      const key = `teams/${string.uuid()}.${data.logo.extname}`
-      team.logoUrl = await this.fileService.upload(data.logo, key)
+      const pathTeam = { id: team.id, name: data.name ?? team.name }
+      team.logoUrl = await this.fileService.upload(
+        data.logo,
+        teamLogoKey(team.league, pathTeam, data.logo.extname)
+      )
     }
 
-    const { logo: _logo, ...fields } = data
+    const { logo: logoFile, ...fields } = data
+    void logoFile
     team.merge(fields)
     await team.save()
     return response.ok({ message: 'Team updated successfully' })

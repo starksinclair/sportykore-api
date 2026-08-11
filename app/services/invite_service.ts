@@ -1,8 +1,8 @@
 import type { MultipartFile } from '@adonisjs/core/bodyparser'
 import { inject } from '@adonisjs/core'
 import { Exception } from '@adonisjs/core/exceptions'
-import string from '@adonisjs/core/helpers/string'
 import { DateTime } from 'luxon'
+import { playerAvatarKey } from '#helpers/storage_paths'
 import Invite from '#models/invite'
 import Player from '#models/player'
 import LeaguePlayer from '#models/league_player'
@@ -93,20 +93,21 @@ export default class InviteService {
       throw new Exception('Player profile already exists', { status: 409 })
     }
 
-    let avatarUrl: string | null = null
-
-    if (profileData.avatar) {
-      const key = `players/${string.uuid()}.${profileData.avatar.extname}`
-      avatarUrl = await this.fileService.upload(profileData.avatar, key)
-    }
-
-    await Player.create({
+    const player = await Player.create({
       userId,
       name: profileData.name,
       countryId: profileData.countryId,
       bio: profileData.bio ?? null,
-      avatarUrl,
+      avatarUrl: null,
     })
+
+    if (profileData.avatar) {
+      player.avatarUrl = await this.fileService.upload(
+        profileData.avatar,
+        playerAvatarKey(player, profileData.avatar.extname)
+      )
+      await player.save()
+    }
 
     return this.accept(token, userId)
   }

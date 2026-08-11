@@ -174,6 +174,24 @@ const routes = {
     tokens: [{"old":"/api/v1/support/faqs/seed","type":0,"val":"api","end":""},{"old":"/api/v1/support/faqs/seed","type":0,"val":"v1","end":""},{"old":"/api/v1/support/faqs/seed","type":0,"val":"support","end":""},{"old":"/api/v1/support/faqs/seed","type":0,"val":"faqs","end":""},{"old":"/api/v1/support/faqs/seed","type":0,"val":"seed","end":""}],
     types: placeholder as Registry['support.seed_faqs']['types'],
   },
+  'push_notifications.register_token': {
+    methods: ["POST"],
+    pattern: '/api/v1/push/tokens',
+    tokens: [{"old":"/api/v1/push/tokens","type":0,"val":"api","end":""},{"old":"/api/v1/push/tokens","type":0,"val":"v1","end":""},{"old":"/api/v1/push/tokens","type":0,"val":"push","end":""},{"old":"/api/v1/push/tokens","type":0,"val":"tokens","end":""}],
+    types: placeholder as Registry['push_notifications.register_token']['types'],
+  },
+  'push_notifications.show_league_preference': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/leagues/:leagueId/notifications',
+    tokens: [{"old":"/api/v1/leagues/:leagueId/notifications","type":0,"val":"api","end":""},{"old":"/api/v1/leagues/:leagueId/notifications","type":0,"val":"v1","end":""},{"old":"/api/v1/leagues/:leagueId/notifications","type":0,"val":"leagues","end":""},{"old":"/api/v1/leagues/:leagueId/notifications","type":1,"val":"leagueId","end":""},{"old":"/api/v1/leagues/:leagueId/notifications","type":0,"val":"notifications","end":""}],
+    types: placeholder as Registry['push_notifications.show_league_preference']['types'],
+  },
+  'push_notifications.update_league_preference': {
+    methods: ["PUT"],
+    pattern: '/api/v1/leagues/:leagueId/notifications',
+    tokens: [{"old":"/api/v1/leagues/:leagueId/notifications","type":0,"val":"api","end":""},{"old":"/api/v1/leagues/:leagueId/notifications","type":0,"val":"v1","end":""},{"old":"/api/v1/leagues/:leagueId/notifications","type":0,"val":"leagues","end":""},{"old":"/api/v1/leagues/:leagueId/notifications","type":1,"val":"leagueId","end":""},{"old":"/api/v1/leagues/:leagueId/notifications","type":0,"val":"notifications","end":""}],
+    types: placeholder as Registry['push_notifications.update_league_preference']['types'],
+  },
   'games.show': {
     methods: ["GET","HEAD"],
     pattern: '/api/v1/games/:id',

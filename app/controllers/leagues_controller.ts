@@ -9,11 +9,11 @@ import { inject } from '@adonisjs/core'
 import SeasonTransformer from '#transformers/season_transformer'
 import StatTypeTransformer from '#transformers/stats_type_transformer'
 import League from '#models/league'
-import string from '@adonisjs/core/helpers/string'
 import FileService from '#services/file_service'
 import LeagueCreatedNotification from '#mails/league_created_notification'
 import mail from '@adonisjs/mail/services/main'
 import env from '#start/env'
+import { leagueLogoKey, teamLogoKey } from '#helpers/storage_paths'
 
 @inject()
 export default class LeaguesController {
@@ -24,35 +24,19 @@ export default class LeaguesController {
   async store({ auth, request, response }: HttpContext) {
     const data = await request.validateUsing(createLeagueWithSeasonValidator)
     const user = auth.getUserOrFail()
-    let logoUrl: string | null = null
-
-    if (data.logo) {
-      const key = `leagues/${string.uuid()}.${data.logo.extname}`
-      logoUrl = await this.fileService.upload(data.logo, key)
-    }
-
-    const teams = await Promise.all(
-      (data.teams ?? []).map(async (team) => {
-        let teamLogoUrl: string | null = null
-        if (team.logo) {
-          const key = `teams/${string.uuid()}.${team.logo.extname}`
-          teamLogoUrl = await this.fileService.upload(team.logo, key)
-        }
-        return { name: team.name, logoUrl: teamLogoUrl }
-      })
-    )
+    const teamInputs = data.teams ?? []
 
     const result = await this.leagueService.createWithSeason(user.id, {
       name: data.name,
       description: data.description ?? null,
       gender: data.gender ?? null,
-      logoUrl: logoUrl ?? null,
+      logoUrl: null,
       countryId: data.countryId,
       seasonName: data.seasonName,
       tiebreaker: data.tiebreaker,
       startDate: data.startDate ?? null,
       endDate: data.endDate ?? null,
-      teams,
+      teams: teamInputs.map((team) => ({ name: team.name, logoUrl: null })),
       format: data.format,
       knockout: data.knockout
         ? {
@@ -75,6 +59,27 @@ export default class LeaguesController {
         : undefined,
     })
 
+    if (data.logo) {
+      result.league.logoUrl = await this.fileService.upload(
+        data.logo,
+        leagueLogoKey(result.league, data.logo.extname)
+      )
+      await result.league.save()
+    }
+
+    await Promise.all(
+      teamInputs.map(async (teamInput, index) => {
+        if (!teamInput.logo) return
+        const team = result.teams[index]
+        if (!team) return
+        team.logoUrl = await this.fileService.upload(
+          teamInput.logo,
+          teamLogoKey(result.league, team, teamInput.logo.extname)
+        )
+        await team.save()
+      })
+    )
+
     const baseUrl = env.get('MOBILE_APP_URL') ?? env.get('APP_URL')
     await mail.send(new LeagueCreatedNotification(user, result.league, `${baseUrl}`))
 
@@ -95,7 +100,7 @@ export default class LeaguesController {
     const userId = isLoggedIn ? auth.use('api').getUserOrFail().id : undefined
 
     const [countriesWithLeagues, leagueWithMatchesByCountry] = await Promise.all([
-      this.leagueService.listCountriesWithLeagues(countryId),
+      this.leagueService.listCountriesWithLeagues(countryId, userId),
       this.leagueService.listLeagueByCountry(
         countryId,
         gameStatus,
@@ -105,9 +110,13 @@ export default class LeaguesController {
       ),
     ])
 
+    const transformedLeagues = userId
+      ? CountryTransformer.transform(countriesWithLeagues, userId)?.useVariant('WithFavourites')
+      : CountryTransformer.transform(countriesWithLeagues)
+
     return serialize({
       matchDay: { gameDate: matchDay.gameDate, timeZone: matchDay.timeZone },
-      leagues: CountryTransformer.transform(countriesWithLeagues),
+      leagues: transformedLeagues,
       matches: CountryTransformer.transform(leagueWithMatchesByCountry, userId)?.useVariant(
         'WithFavourites'
       ),
@@ -145,8 +154,11 @@ export default class LeaguesController {
     const tiebreakerChanged = data.tiebreaker !== undefined && data.tiebreaker !== league.tiebreaker
 
     if (data.logo) {
-      const key = `leagues/${string.uuid()}.${data.logo.extname}`
-      league.logoUrl = await this.fileService.upload(data.logo, key)
+      const pathLeague = { id: league.id, name: data.name ?? league.name }
+      league.logoUrl = await this.fileService.upload(
+        data.logo,
+        leagueLogoKey(pathLeague, data.logo.extname)
+      )
     }
 
     const { logo: logo, ...fields } = data

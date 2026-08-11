@@ -262,6 +262,27 @@ export class InviteSchema extends BaseModel {
   declare updatedAt: DateTime | null
 }
 
+export class LeagueNotificationPreferenceSchema extends BaseModel {
+  static $columns = ['createdAt', 'enabled', 'finalScoreEnabled', 'id', 'kickoffEnabled', 'leagueId', 'updatedAt', 'userId'] as const
+  $columns = LeagueNotificationPreferenceSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare enabled: boolean
+  @column()
+  declare finalScoreEnabled: boolean
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare kickoffEnabled: boolean
+  @column()
+  declare leagueId: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare userId: number
+}
+
 export class LeaguePlayerSchema extends BaseModel {
   static $columns = ['createdAt', 'id', 'isCaptain', 'jerseyNumber', 'joinedAt', 'leagueId', 'leftAt', 'playerId', 'position', 'seasonId', 'status', 'teamId', 'updatedAt'] as const
   $columns = LeaguePlayerSchema.$columns
@@ -766,6 +787,31 @@ export class TieSchema extends BaseModel {
   declare updatedAt: DateTime | null
   @column()
   declare winnerTeamId: number | null
+}
+
+export class UserPushTokenSchema extends BaseModel {
+  static $columns = ['createdAt', 'deviceId', 'disabledAt', 'id', 'lastSeenAt', 'platform', 'provider', 'token', 'updatedAt', 'userId'] as const
+  $columns = UserPushTokenSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare deviceId: string | null
+  @column.dateTime()
+  declare disabledAt: DateTime | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column.dateTime()
+  declare lastSeenAt: DateTime
+  @column()
+  declare platform: string | null
+  @column()
+  declare provider: string
+  @column()
+  declare token: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare userId: number
 }
 
 export class UserSchema extends BaseModel {

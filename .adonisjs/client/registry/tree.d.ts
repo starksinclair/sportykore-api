@@ -51,6 +51,11 @@ export interface ApiDefinition {
     bugReport: typeof routes['support.bug_report']
     seedFaqs: typeof routes['support.seed_faqs']
   }
+  pushNotifications: {
+    registerToken: typeof routes['push_notifications.register_token']
+    showLeaguePreference: typeof routes['push_notifications.show_league_preference']
+    updateLeaguePreference: typeof routes['push_notifications.update_league_preference']
+  }
   games: {
     show: typeof routes['games.show']
     store: typeof routes['games.store']

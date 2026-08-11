@@ -1052,6 +1052,60 @@ Derived metrics on game detail:
 | Pass completion | completed pass rows / all pass rows. |
 | Shot accuracy | on-target shot rows / all shot rows. |
 
+## Push Notifications
+
+Push alerts are explicit league opt-in. A user only receives alerts for leagues where
+they turned notifications on. Favourites do not automatically enable push alerts.
+
+### `POST /api/v1/push/tokens`
+
+Auth required. Registers or refreshes the user's Expo push token.
+
+| Field | Rules |
+| --- | --- |
+| `provider` | optional enum: `expo` |
+| `token` | required string, max 255 |
+| `platform` | optional enum: `ios`, `android`, `web`, `unknown` |
+| `deviceId` | optional string, max 128, nullable |
+
+### `GET /api/v1/leagues/:leagueId/notifications`
+
+Auth required. Returns the current user's notification preference for a league.
+Missing rows return `enabled: false` with kickoff/final-score capabilities enabled.
+
+```json
+{
+  "data": {
+    "preference": {
+      "leagueId": 1,
+      "enabled": true,
+      "kickoffEnabled": true,
+      "finalScoreEnabled": true
+    }
+  }
+}
+```
+
+### `PUT /api/v1/leagues/:leagueId/notifications`
+
+Auth required. Enables or disables push alerts for a league.
+
+| Field | Rules |
+| --- | --- |
+| `enabled` | required boolean |
+
+### Notification events
+
+The backend currently sends only low-frequency match alerts:
+
+| Event | Trigger |
+| --- | --- |
+| `kickoff` | Match Center starts first half. |
+| `final_score` | Match Center ends the game or completes a penalty shootout. |
+
+Expo push sends are background best-effort. If Expo is unavailable, the match action
+still succeeds. Expo `DeviceNotRegistered` responses disable that stored token.
+
 ### `setLineupValidator` — `PUT /api/v1/games/:gameId/lineups`
 
 | Field | Rules |
@@ -1114,5 +1168,6 @@ node --env-file=.env.prod ace.js support:seed-faqs
 
 ## Notes
 
-- **Favourites:** Routes use US spelling (`/favorite`); the pivot table is `favourite_leagues`. `POST` attaches the league to the authenticated user; `DELETE` detaches. No `leagueOwner` check — any logged-in user can favourite any league. `GET /api/v1/leagues` sets `isFavourited` on leagues in `matches` when a Bearer token is sent.
-- Logo uploads use Drive (`moveToDisk`); league/team logos are stored and exposed as URLs in `logoUrl`.
+- **Favourites:** Routes use US spelling (`/favorite`); the pivot table is `favourite_leagues`. `POST` attaches the league to the authenticated user; `DELETE` detaches. No `leagueOwner` check — any logged-in user can favourite any league. `GET /api/v1/leagues` sets `isFavourited` on leagues in `matches` and `leagues` when a Bearer token is sent.
+- **League push alerts:** `GET /api/v1/leagues` sets `notificationsEnabled` on leagues in `matches` and `leagues` when a Bearer token is sent. This powers the Home bell icon without a per-row preference request.
+- Logo uploads use Drive (`moveToDisk`); league/team logos are stored and exposed as URLs in `logoUrl`. New league-scoped uploads use `leagues/{leagueId}-{leagueSlug}/logo/{uuid}.{ext}` for league logos and `leagues/{leagueId}-{leagueSlug}/teams/{teamId}-{teamSlug}/logo/{uuid}.{ext}` for team logos. Player avatars remain separate under `players/{playerId}-{playerSlug}/avatar/{uuid}.{ext}`.

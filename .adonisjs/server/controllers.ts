@@ -35,4 +35,5 @@ export const controllers = {
   Teams: () => import('#controllers/teams_controller'),
   Users: () => import('#controllers/users_controller'),
   Venues: () => import('#controllers/venues_controller'),
+  PushNotifications: () => import('#controllers/push_notifications_controller'),
 }

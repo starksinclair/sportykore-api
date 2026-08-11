@@ -24,6 +24,8 @@ import {
   statUpdateThrottle,
 } from '#start/limiter'
 
+const PushNotificationsController = () => import('#controllers/push_notifications_controller')
+
 transmit.registerRoutes()
 
 router.on('/').renderInertia('home', {}).as('home')
@@ -90,6 +92,18 @@ router
     router.get('support/faqs', [controllers.Support, 'faqs'])
     router.post('support/bug-reports', [controllers.Support, 'bugReport'])
     router.post('support/faqs/seed', [controllers.Support, 'seedFaqs']).use(middleware.apiAuth())
+    router
+      .post('push/tokens', [PushNotificationsController, 'registerToken'])
+      .use(middleware.apiAuth())
+    router
+      .get('leagues/:leagueId/notifications', [PushNotificationsController, 'showLeaguePreference'])
+      .use(middleware.apiAuth())
+    router
+      .put('leagues/:leagueId/notifications', [
+        PushNotificationsController,
+        'updateLeaguePreference',
+      ])
+      .use(middleware.apiAuth())
     router.get('games/:id', [controllers.Games, 'show'])
     router.get('formations', [controllers.Formations, 'index'])
     router.get('formations/:id', [controllers.Formations, 'show'])

@@ -10,10 +10,7 @@ import type Stage from '#models/stage'
 import { targetWins } from '#lib/bracket_rounds'
 import type { BracketRound, KnockoutStageConfig, TieFormat, TieFormatConfig } from '#types/stage'
 
-function resolveFormat(
-  config: KnockoutStageConfig,
-  round: BracketRound
-): TieFormatConfig {
+function resolveFormat(config: KnockoutStageConfig, round: BracketRound): TieFormatConfig {
   return config.ties.rounds?.[round] ?? config.ties.default
 }
 
@@ -102,9 +99,7 @@ export default class TieResolver {
         return tie
       }
 
-      const games = await Game.query({ client: trx })
-        .where('tie_id', tie.id)
-        .orderBy('leg', 'asc')
+      const games = await Game.query({ client: trx }).where('tie_id', tie.id).orderBy('leg', 'asc')
 
       const format = tie.tieFormat as TieFormat
 
@@ -182,7 +177,6 @@ export default class TieResolver {
       let homeAwayGoals = 0
       let awayAwayGoals = 0
       for (const game of fullTimeGames) {
-        const hs = game.homeScore ?? 0
         const as = game.awayScore ?? 0
         if (game.homeTeamId === tie.homeTeamId) {
           // leg 1: home plays at home — away team's goals are away goals for away side
@@ -226,7 +220,8 @@ export default class TieResolver {
     let stageModel: Stage | null = null
     if (stage) {
       season = await Season.query({ client: trx }).where('id', stage.seasonId).first()
-      const StageModel = (await import('#models/stage')).default
+      const stageModule = await import('#models/stage')
+      const StageModel = stageModule.default
       stageModel = await StageModel.query({ client: trx }).where('id', stage.stageId!).first()
     }
 
