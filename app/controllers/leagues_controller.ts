@@ -15,6 +15,53 @@ import mail from '@adonisjs/mail/services/main'
 import env from '#start/env'
 import { leagueLogoKey, teamLogoKey } from '#helpers/storage_paths'
 
+function parseJsonField(value: unknown) {
+  if (typeof value !== 'string') return value
+
+  const trimmed = value.trim()
+  if (!trimmed) return value
+
+  try {
+    return JSON.parse(trimmed)
+  } catch {
+    return value
+  }
+}
+
+function normalizeTeamFields(body: Record<string, unknown>, request: HttpContext['request']) {
+  const teamsInput = parseJsonField(request.input('teams'))
+  if (Array.isArray(teamsInput)) return teamsInput
+
+  const byIndex = new Map<number, Record<string, unknown>>()
+
+  for (const [key, value] of Object.entries(body)) {
+    const match = /^teams(?:\.|\[)(\d+)(?:\.|\]\[)(name|logo)\]?$/.exec(key)
+    if (!match) continue
+
+    const index = Number(match[1])
+    const field = match[2]
+    const team = byIndex.get(index) ?? {}
+    team[field] = value
+    byIndex.set(index, team)
+  }
+
+  for (const index of byIndex.keys()) {
+    const team = byIndex.get(index)!
+    const logo =
+      request.file(`teams.${index}.logo`) ??
+      request.file(`teams[${index}][logo]`) ??
+      request.file(`teams[${index}].logo`)
+
+    if (logo) {
+      team.logo = logo
+    }
+  }
+
+  return byIndex.size
+    ? [...byIndex.entries()].sort(([a], [b]) => a - b).map(([, team]) => team)
+    : teamsInput
+}
+
 @inject()
 export default class LeaguesController {
   constructor(
@@ -22,6 +69,13 @@ export default class LeaguesController {
     protected fileService: FileService
   ) {}
   async store({ auth, request, response }: HttpContext) {
+    const body = request.body()
+    request.updateBody({
+      ...body,
+      knockout: parseJsonField(request.input('knockout')),
+      group: parseJsonField(request.input('group')),
+      teams: normalizeTeamFields(body, request),
+    })
     const data = await request.validateUsing(createLeagueWithSeasonValidator)
     const user = auth.getUserOrFail()
     const teamInputs = data.teams ?? []

@@ -17,7 +17,7 @@ export const optionalHttpUrlNullable = () => optionalHttpUrl().nullable().option
 export const optionalImage = () =>
   vine
     .file({
-      size: '2mb',
+      size: '10mb',
       extnames: ['jpg', 'jpeg', 'png', 'webp', 'JPG', 'JPEG', 'PNG', 'WEBP'],
     })
     .optional()
