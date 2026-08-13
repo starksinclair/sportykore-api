@@ -2,7 +2,6 @@ import { Data } from '@generated/data'
 import { toast, Toaster } from 'sonner'
 import { usePage } from '@inertiajs/react'
 import { ReactElement, useEffect } from 'react'
-import { Form, Link } from '@adonisjs/inertia/react'
 
 export default function Layout({ children }: { children: ReactElement<Data.SharedProps> }) {
   const user = children.props.user
@@ -26,7 +25,7 @@ export default function Layout({ children }: { children: ReactElement<Data.Share
       <header>
         <div>
           <div>
-            <Link route="home">
+            <a href="/secret-santa">
               <svg
                 width="120"
                 height="24"
@@ -39,21 +38,20 @@ export default function Layout({ children }: { children: ReactElement<Data.Share
                   fill="currentColor"
                 />
               </svg>
-            </Link>
+            </a>
           </div>
           <div>
             <nav>
               {user ? (
                 <>
                   <span>{initials}</span>
-                  <Form route="session.destroy">
+                  <form method="post" action="/secret-santa/logout">
                     <button type="submit"> Logout </button>
-                  </Form>
+                  </form>
                 </>
               ) : (
                 <>
-                  <Link route="new_account.create">Signup</Link>
-                  <Link route="session.create">Login</Link>
+                  <a href="/secret-santa">Dashboard</a>
                 </>
               )}
             </nav>

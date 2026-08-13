@@ -22,8 +22,10 @@ export const controllers = {
   PlayerAwards: () => import('#controllers/player_awards_controller'),
   PlayerHighlights: () => import('#controllers/player_highlights_controller'),
   Players: () => import('#controllers/players_controller'),
+  PushNotifications: () => import('#controllers/push_notifications_controller'),
   Searches: () => import('#controllers/searches_controller'),
   Seasons: () => import('#controllers/seasons_controller'),
+  SecretSanta: () => import('#controllers/secret_santa_controller'),
   Session: () => import('#controllers/session_controller'),
   Stages: () => import('#controllers/stages_controller'),
   StandingAdjustments: () => import('#controllers/standing_adjustments_controller'),
@@ -35,5 +37,4 @@ export const controllers = {
   Teams: () => import('#controllers/teams_controller'),
   Users: () => import('#controllers/users_controller'),
   Venues: () => import('#controllers/venues_controller'),
-  PushNotifications: () => import('#controllers/push_notifications_controller'),
 }

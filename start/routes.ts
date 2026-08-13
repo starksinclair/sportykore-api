@@ -25,26 +25,17 @@ import {
 } from '#start/limiter'
 
 const PushNotificationsController = () => import('#controllers/push_notifications_controller')
+const SecretSantaController = () => import('#controllers/secret_santa_controller')
 
 transmit.registerRoutes()
 
-router.on('/').renderInertia('home', {}).as('home')
-
 router
   .group(() => {
-    router.get('signup', [controllers.NewAccount, 'create'])
-    router.post('signup', [controllers.NewAccount, 'store'])
-
-    router.get('login', [controllers.Session, 'create'])
-    router.post('login', [controllers.Session, 'store'])
+    router.get('/', [SecretSantaController, 'index'])
+    router.post('/', [SecretSantaController, 'login'])
+    router.post('/logout', [SecretSantaController, 'logout'])
   })
-  .use(middleware.guest())
-
-router
-  .group(() => {
-    router.post('logout', [controllers.Session, 'destroy'])
-  })
-  .use(middleware.auth())
+  .prefix('/secret-santa')
 
 /**
  * Mobile / JSON API authentication (OTP + Bearer tokens).

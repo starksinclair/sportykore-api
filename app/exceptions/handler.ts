@@ -21,8 +21,12 @@ export default class HttpExceptionHandler extends ExceptionHandler {
    * to return the HTML contents to send as a response.
    */
   protected statusPages: Record<StatusPageRange, StatusPageRenderer> = {
-    '404': (_, { inertia }) => inertia.render('errors/not_found', {}),
-    '500..599': (_, { inertia }) => inertia.render('errors/server_error', {}),
+    '404': (_, { response }) =>
+      response.type('html').send('<!doctype html><title>Not found</title><h1>Not found</h1>'),
+    '500..599': (_, { response }) =>
+      response
+        .type('html')
+        .send('<!doctype html><title>Server error</title><h1>Something went wrong</h1>'),
   }
 
   /**

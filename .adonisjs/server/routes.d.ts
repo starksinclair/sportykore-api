@@ -8,12 +8,9 @@ export type ScannedRoutes = {
     'event_stream': { paramsTuple?: []; params?: {} }
     'subscribe': { paramsTuple?: []; params?: {} }
     'unsubscribe': { paramsTuple?: []; params?: {} }
-    'home': { paramsTuple?: []; params?: {} }
-    'new_account.create': { paramsTuple?: []; params?: {} }
-    'new_account.store': { paramsTuple?: []; params?: {} }
-    'session.create': { paramsTuple?: []; params?: {} }
-    'session.store': { paramsTuple?: []; params?: {} }
-    'session.destroy': { paramsTuple?: []; params?: {} }
+    'secret_santa.index': { paramsTuple?: []; params?: {} }
+    'secret_santa.login': { paramsTuple?: []; params?: {} }
+    'secret_santa.logout': { paramsTuple?: []; params?: {} }
     'auth.request_otp': { paramsTuple?: []; params?: {} }
     'auth.verify_otp': { paramsTuple?: []; params?: {} }
     'auth.request_recovery': { paramsTuple?: []; params?: {} }
@@ -122,9 +119,7 @@ export type ScannedRoutes = {
   GET: {
     'drive.fs.serve': { paramsTuple: [...ParamValue[]]; params: {'*': ParamValue[]} }
     'event_stream': { paramsTuple?: []; params?: {} }
-    'home': { paramsTuple?: []; params?: {} }
-    'new_account.create': { paramsTuple?: []; params?: {} }
-    'session.create': { paramsTuple?: []; params?: {} }
+    'secret_santa.index': { paramsTuple?: []; params?: {} }
     'auth_users.me': { paramsTuple?: []; params?: {} }
     'auth_users.managed': { paramsTuple?: []; params?: {} }
     'auth_users.teams': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
@@ -161,9 +156,7 @@ export type ScannedRoutes = {
   HEAD: {
     'drive.fs.serve': { paramsTuple: [...ParamValue[]]; params: {'*': ParamValue[]} }
     'event_stream': { paramsTuple?: []; params?: {} }
-    'home': { paramsTuple?: []; params?: {} }
-    'new_account.create': { paramsTuple?: []; params?: {} }
-    'session.create': { paramsTuple?: []; params?: {} }
+    'secret_santa.index': { paramsTuple?: []; params?: {} }
     'auth_users.me': { paramsTuple?: []; params?: {} }
     'auth_users.managed': { paramsTuple?: []; params?: {} }
     'auth_users.teams': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
@@ -200,9 +193,8 @@ export type ScannedRoutes = {
   POST: {
     'subscribe': { paramsTuple?: []; params?: {} }
     'unsubscribe': { paramsTuple?: []; params?: {} }
-    'new_account.store': { paramsTuple?: []; params?: {} }
-    'session.store': { paramsTuple?: []; params?: {} }
-    'session.destroy': { paramsTuple?: []; params?: {} }
+    'secret_santa.login': { paramsTuple?: []; params?: {} }
+    'secret_santa.logout': { paramsTuple?: []; params?: {} }
     'auth.request_otp': { paramsTuple?: []; params?: {} }
     'auth.verify_otp': { paramsTuple?: []; params?: {} }
     'auth.request_recovery': { paramsTuple?: []; params?: {} }
