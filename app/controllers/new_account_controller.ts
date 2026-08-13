@@ -15,6 +15,6 @@ export default class NewAccountController {
 
     await auth.use('web').login(user)
     await mail.sendLater(new WelcomeNotification(user))
-    response.redirect().toRoute('home')
+    return response.redirect('/secret-santa')
   }
 }

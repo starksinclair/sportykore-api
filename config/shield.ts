@@ -38,7 +38,9 @@ const shieldConfig = defineConfig({
      * Useful for external webhooks or API endpoints.
      */
     exceptRoutes: (ctx: HttpContext) =>
-      ctx.request.url().startsWith('/api') || ctx.request.url().startsWith('/__transmit'),
+      ctx.request.url().startsWith('/api') ||
+      ctx.request.url().startsWith('/__transmit') ||
+      ctx.request.url().startsWith('/secret-santa'),
 
     /**
      * Expose an encrypted XSRF-TOKEN cookie for frontend HTTP clients.

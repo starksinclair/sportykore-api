@@ -16,11 +16,11 @@ import type { HttpContext } from '@adonisjs/core/http'
 export const globalThrottle = limiter.define('global', (ctx: HttpContext) => {
   // authenticated users get more requests
   if (ctx.auth.user) {
-    return limiter.allowRequests(120).every('1 minute').usingKey(`user_${ctx.auth.user.id}`)
+    return limiter.allowRequests(500).every('1 minute').usingKey(`user_${ctx.auth.user.id}`)
   }
 
-  // guests get less
-  return limiter.allowRequests(30).every('1 minute').usingKey(`ip_${ctx.request.ip()}`)
+  // guest requests
+  return limiter.allowRequests(500).every('1 minute').usingKey(`ip_${ctx.request.ip()}`)
 })
 
 // strict, for auth endpoints (login, register)

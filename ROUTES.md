@@ -2,6 +2,20 @@
 
 Scope: JSON API under `/api/v1` from `start/routes.ts`. Mobile authentication (OTP) lives under `/api/v1/auth` — see [Authentication](#authentication-otp) below. Legacy email/password routes are [deprecated](#deprecated-emailpassword--google-oauth).
 
+## Admin dashboard
+
+The old browser/Inertia UI routes (`/`, `/login`, `/signup`, `/logout`) are no longer registered.
+
+`/secret-santa` is a server-rendered, read-only database dashboard outside the mobile API. It is unlocked with the `SECRET_SANTA_PASSWORD` environment variable only. No email/user login is involved.
+
+| Method | Path | Auth | Notes |
+| --- | --- | --- | --- |
+| `GET` | `/secret-santa` | Session unlocked by password | Shows login form, or the dashboard after unlock |
+| `POST` | `/secret-santa` | `SECRET_SANTA_PASSWORD` | Verifies password and unlocks the session |
+| `POST` | `/secret-santa/logout` | Session | Locks the dashboard |
+
+Dashboard view: table list, row counts, column metadata, and paginated rows (`50` per page). It does not create, update, or delete records.
+
 ## Response wrapping
 
 - Endpoints that call `ctx.serialize(...)` return **`{ data: <payload> }`** (see `providers/api_provider.ts`).

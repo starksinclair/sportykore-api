@@ -30,41 +30,23 @@ const routes = {
     tokens: [{"old":"/__transmit/unsubscribe","type":0,"val":"__transmit","end":""},{"old":"/__transmit/unsubscribe","type":0,"val":"unsubscribe","end":""}],
     types: placeholder as Registry['unsubscribe']['types'],
   },
-  'home': {
+  'secret_santa.index': {
     methods: ["GET","HEAD"],
-    pattern: '/',
-    tokens: [{"old":"/","type":0,"val":"/","end":""}],
-    types: placeholder as Registry['home']['types'],
+    pattern: '/secret-santa',
+    tokens: [{"old":"/secret-santa","type":0,"val":"secret-santa","end":""}],
+    types: placeholder as Registry['secret_santa.index']['types'],
   },
-  'new_account.create': {
-    methods: ["GET","HEAD"],
-    pattern: '/signup',
-    tokens: [{"old":"/signup","type":0,"val":"signup","end":""}],
-    types: placeholder as Registry['new_account.create']['types'],
-  },
-  'new_account.store': {
+  'secret_santa.login': {
     methods: ["POST"],
-    pattern: '/signup',
-    tokens: [{"old":"/signup","type":0,"val":"signup","end":""}],
-    types: placeholder as Registry['new_account.store']['types'],
+    pattern: '/secret-santa',
+    tokens: [{"old":"/secret-santa","type":0,"val":"secret-santa","end":""}],
+    types: placeholder as Registry['secret_santa.login']['types'],
   },
-  'session.create': {
-    methods: ["GET","HEAD"],
-    pattern: '/login',
-    tokens: [{"old":"/login","type":0,"val":"login","end":""}],
-    types: placeholder as Registry['session.create']['types'],
-  },
-  'session.store': {
+  'secret_santa.logout': {
     methods: ["POST"],
-    pattern: '/login',
-    tokens: [{"old":"/login","type":0,"val":"login","end":""}],
-    types: placeholder as Registry['session.store']['types'],
-  },
-  'session.destroy': {
-    methods: ["POST"],
-    pattern: '/logout',
-    tokens: [{"old":"/logout","type":0,"val":"logout","end":""}],
-    types: placeholder as Registry['session.destroy']['types'],
+    pattern: '/secret-santa/logout',
+    tokens: [{"old":"/secret-santa/logout","type":0,"val":"secret-santa","end":""},{"old":"/secret-santa/logout","type":0,"val":"logout","end":""}],
+    types: placeholder as Registry['secret_santa.logout']['types'],
   },
   'auth.request_otp': {
     methods: ["POST"],
