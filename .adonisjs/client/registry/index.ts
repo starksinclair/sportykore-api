@@ -156,6 +156,42 @@ const routes = {
     tokens: [{"old":"/api/v1/search","type":0,"val":"api","end":""},{"old":"/api/v1/search","type":0,"val":"v1","end":""},{"old":"/api/v1/search","type":0,"val":"search","end":""}],
     types: placeholder as Registry['searches.search']['types'],
   },
+  'support.faqs': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/support/faqs',
+    tokens: [{"old":"/api/v1/support/faqs","type":0,"val":"api","end":""},{"old":"/api/v1/support/faqs","type":0,"val":"v1","end":""},{"old":"/api/v1/support/faqs","type":0,"val":"support","end":""},{"old":"/api/v1/support/faqs","type":0,"val":"faqs","end":""}],
+    types: placeholder as Registry['support.faqs']['types'],
+  },
+  'support.bug_report': {
+    methods: ["POST"],
+    pattern: '/api/v1/support/bug-reports',
+    tokens: [{"old":"/api/v1/support/bug-reports","type":0,"val":"api","end":""},{"old":"/api/v1/support/bug-reports","type":0,"val":"v1","end":""},{"old":"/api/v1/support/bug-reports","type":0,"val":"support","end":""},{"old":"/api/v1/support/bug-reports","type":0,"val":"bug-reports","end":""}],
+    types: placeholder as Registry['support.bug_report']['types'],
+  },
+  'support.seed_faqs': {
+    methods: ["POST"],
+    pattern: '/api/v1/support/faqs/seed',
+    tokens: [{"old":"/api/v1/support/faqs/seed","type":0,"val":"api","end":""},{"old":"/api/v1/support/faqs/seed","type":0,"val":"v1","end":""},{"old":"/api/v1/support/faqs/seed","type":0,"val":"support","end":""},{"old":"/api/v1/support/faqs/seed","type":0,"val":"faqs","end":""},{"old":"/api/v1/support/faqs/seed","type":0,"val":"seed","end":""}],
+    types: placeholder as Registry['support.seed_faqs']['types'],
+  },
+  'push_notifications.register_token': {
+    methods: ["POST"],
+    pattern: '/api/v1/push/tokens',
+    tokens: [{"old":"/api/v1/push/tokens","type":0,"val":"api","end":""},{"old":"/api/v1/push/tokens","type":0,"val":"v1","end":""},{"old":"/api/v1/push/tokens","type":0,"val":"push","end":""},{"old":"/api/v1/push/tokens","type":0,"val":"tokens","end":""}],
+    types: placeholder as Registry['push_notifications.register_token']['types'],
+  },
+  'push_notifications.show_league_preference': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/leagues/:leagueId/notifications',
+    tokens: [{"old":"/api/v1/leagues/:leagueId/notifications","type":0,"val":"api","end":""},{"old":"/api/v1/leagues/:leagueId/notifications","type":0,"val":"v1","end":""},{"old":"/api/v1/leagues/:leagueId/notifications","type":0,"val":"leagues","end":""},{"old":"/api/v1/leagues/:leagueId/notifications","type":1,"val":"leagueId","end":""},{"old":"/api/v1/leagues/:leagueId/notifications","type":0,"val":"notifications","end":""}],
+    types: placeholder as Registry['push_notifications.show_league_preference']['types'],
+  },
+  'push_notifications.update_league_preference': {
+    methods: ["PUT"],
+    pattern: '/api/v1/leagues/:leagueId/notifications',
+    tokens: [{"old":"/api/v1/leagues/:leagueId/notifications","type":0,"val":"api","end":""},{"old":"/api/v1/leagues/:leagueId/notifications","type":0,"val":"v1","end":""},{"old":"/api/v1/leagues/:leagueId/notifications","type":0,"val":"leagues","end":""},{"old":"/api/v1/leagues/:leagueId/notifications","type":1,"val":"leagueId","end":""},{"old":"/api/v1/leagues/:leagueId/notifications","type":0,"val":"notifications","end":""}],
+    types: placeholder as Registry['push_notifications.update_league_preference']['types'],
+  },
   'games.show': {
     methods: ["GET","HEAD"],
     pattern: '/api/v1/games/:id',
@@ -317,6 +353,18 @@ const routes = {
     pattern: '/api/v1/games/:gameId/stats/:statId/accredit',
     tokens: [{"old":"/api/v1/games/:gameId/stats/:statId/accredit","type":0,"val":"api","end":""},{"old":"/api/v1/games/:gameId/stats/:statId/accredit","type":0,"val":"v1","end":""},{"old":"/api/v1/games/:gameId/stats/:statId/accredit","type":0,"val":"games","end":""},{"old":"/api/v1/games/:gameId/stats/:statId/accredit","type":1,"val":"gameId","end":""},{"old":"/api/v1/games/:gameId/stats/:statId/accredit","type":0,"val":"stats","end":""},{"old":"/api/v1/games/:gameId/stats/:statId/accredit","type":1,"val":"statId","end":""},{"old":"/api/v1/games/:gameId/stats/:statId/accredit","type":0,"val":"accredit","end":""}],
     types: placeholder as Registry['game_score.accredit']['types'],
+  },
+  'player_awards.set_motm': {
+    methods: ["PUT"],
+    pattern: '/api/v1/games/:gameId/awards/motm',
+    tokens: [{"old":"/api/v1/games/:gameId/awards/motm","type":0,"val":"api","end":""},{"old":"/api/v1/games/:gameId/awards/motm","type":0,"val":"v1","end":""},{"old":"/api/v1/games/:gameId/awards/motm","type":0,"val":"games","end":""},{"old":"/api/v1/games/:gameId/awards/motm","type":1,"val":"gameId","end":""},{"old":"/api/v1/games/:gameId/awards/motm","type":0,"val":"awards","end":""},{"old":"/api/v1/games/:gameId/awards/motm","type":0,"val":"motm","end":""}],
+    types: placeholder as Registry['player_awards.set_motm']['types'],
+  },
+  'stats.record_tracking_events': {
+    methods: ["POST"],
+    pattern: '/api/v1/games/:gameId/tracking-events',
+    tokens: [{"old":"/api/v1/games/:gameId/tracking-events","type":0,"val":"api","end":""},{"old":"/api/v1/games/:gameId/tracking-events","type":0,"val":"v1","end":""},{"old":"/api/v1/games/:gameId/tracking-events","type":0,"val":"games","end":""},{"old":"/api/v1/games/:gameId/tracking-events","type":1,"val":"gameId","end":""},{"old":"/api/v1/games/:gameId/tracking-events","type":0,"val":"tracking-events","end":""}],
+    types: placeholder as Registry['stats.record_tracking_events']['types'],
   },
   'game_time.start_first_half': {
     methods: ["POST"],

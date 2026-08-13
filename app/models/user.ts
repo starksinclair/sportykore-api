@@ -10,6 +10,7 @@ import League from '#models/league'
 import Team from '#models/team'
 import Player from '#models/player'
 import Invite from '#models/invite'
+import PlayerAward from '#models/player_award'
 
 export default class User extends compose(UserSchema, withAuthFinder(hash)) {
   static accessTokens = DbAccessTokensProvider.forModel(User, {
@@ -41,6 +42,9 @@ export default class User extends compose(UserSchema, withAuthFinder(hash)) {
 
   @hasMany(() => Invite)
   declare invites: HasMany<typeof Invite>
+
+  @hasMany(() => PlayerAward, { foreignKey: 'awardedBy' })
+  declare playerAwards: HasMany<typeof PlayerAward>
 
   @manyToMany(() => League, {
     pivotTable: 'favourite_leagues',

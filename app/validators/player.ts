@@ -33,7 +33,7 @@ export const updatePlayerProfileValidator = vine.create({
 /** POST /me/player/photo */
 export const playerPhotoValidator = vine.create({
   photo: vine.file({
-    size: '2mb',
+    size: '10mb',
     extnames: ['jpg', 'jpeg', 'png', 'webp', 'JPG', 'JPEG', 'PNG', 'WEBP'],
   }),
 })

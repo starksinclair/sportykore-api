@@ -1,5 +1,6 @@
 import db from '@adonisjs/lucid/services/db'
 import { Exception } from '@adonisjs/core/exceptions'
+import transmit from '@adonisjs/transmit/services/main'
 
 import Game from '#models/game'
 import GameLineup from '#models/game_lineup'
@@ -42,6 +43,47 @@ export type RecordSubstitutionInput = {
   seasonId: number
   teamId: number
   substitutions: SubstitutionSwapInput[]
+}
+
+export type TrackingEventInput = {
+  clientEventId: string
+  type: 'pass' | 'shot'
+  teamId: number
+  playerId: number
+  minute?: number | null
+  isStoppageTime?: boolean
+  completed?: boolean
+  onTarget?: boolean
+}
+
+export type RecordTrackingEventsInput = {
+  events: TrackingEventInput[]
+}
+
+export type TrackingTeamMetrics = {
+  teamId: number
+  passesAttempted: number
+  passesCompleted: number
+  passCompletionPct: number
+  possessionPct: number
+  shotsAttempted: number
+  shotsOnTarget: number
+  shotAccuracyPct: number
+}
+
+export type MatchTrackingMetrics = {
+  possessionTracked: boolean
+  teams: {
+    home: TrackingTeamMetrics
+    away: TrackingTeamMetrics
+  }
+}
+
+type TrackingAccumulator = {
+  passesAttempted: number
+  passesCompleted: number
+  shotsAttempted: number
+  shotsOnTarget: number
 }
 
 export default class StatService {
@@ -187,6 +229,73 @@ export default class StatService {
     })
   }
 
+  async recordTrackingEvents(gameId: number, input: RecordTrackingEventsInput) {
+    const game = await Game.findOrFail(gameId)
+    const passType = await this.resolveStatType('pass')
+    const shotType = await this.resolveStatType('shot')
+    const typeIds = {
+      pass: passType.id,
+      shot: shotType.id,
+    }
+
+    const seenClientIds = new Set<string>()
+    const uniqueEvents = input.events.filter((event) => {
+      if (seenClientIds.has(event.clientEventId)) return false
+      seenClientIds.add(event.clientEventId)
+      return true
+    })
+
+    for (const event of uniqueEvents) {
+      this.validateTrackingEventShape(event)
+
+      if (event.teamId !== game.homeTeamId && event.teamId !== game.awayTeamId) {
+        throw new Exception('Team must be one of the teams playing in this game', { status: 422 })
+      }
+    }
+
+    await this.assertPlayersAreTrackable(game, uniqueEvents)
+
+    const existing = await Stat.query()
+      .whereIn(
+        'client_event_id',
+        uniqueEvents.map((event) => event.clientEventId)
+      )
+      .select('client_event_id')
+
+    const existingIds = new Set(existing.map((stat) => stat.clientEventId).filter(Boolean))
+    const rows = uniqueEvents
+      .filter((event) => !existingIds.has(event.clientEventId))
+      .map((event) => ({
+        gameId: game.id,
+        leagueId: game.leagueId,
+        seasonId: game.seasonId,
+        teamId: event.teamId,
+        playerId: event.playerId,
+        statTypeId: typeIds[event.type],
+        minute: event.minute ?? null,
+        isStoppageTime: event.isStoppageTime ?? false,
+        numericValue: 1,
+        clientEventId: event.clientEventId,
+        qualifiers:
+          event.type === 'pass'
+            ? { completed: event.completed === true }
+            : { on_target: event.onTarget === true },
+      }))
+
+    if (rows.length) {
+      await Stat.createMany(rows)
+      transmit.broadcast(`games/${game.id}`, {
+        type: 'tracking_updated',
+        gameId: game.id,
+      } as Record<string, string | number | null>)
+    }
+
+    return {
+      accepted: rows.length,
+      skipped: input.events.length - rows.length,
+    }
+  }
+
   async accreditPlaceholder(stat: Stat, input: AccreditStatInput): Promise<Stat> {
     const game = await Game.findOrFail(stat.gameId)
     const goalType = await this.resolveStatType('goals')
@@ -280,10 +389,9 @@ export default class StatService {
       .first()
 
     if (!onHome && !onAway) {
-      throw new Exception(
-        'Player must be on the active roster for one of the teams in this game',
-        { status: 422 }
-      )
+      throw new Exception('Player must be on the active roster for one of the teams in this game', {
+        status: 422,
+      })
     }
   }
 
@@ -357,4 +465,153 @@ export default class StatService {
       })
     }
   }
+
+  private validateTrackingEventShape(event: TrackingEventInput) {
+    if (event.type === 'pass' && typeof event.completed !== 'boolean') {
+      throw new Exception('Pass events must define completed', { status: 422 })
+    }
+
+    if (event.type === 'shot' && typeof event.onTarget !== 'boolean') {
+      throw new Exception('Shot events must define onTarget', { status: 422 })
+    }
+  }
+
+  private async assertPlayersAreTrackable(game: Game, events: TrackingEventInput[]) {
+    if (!events.length) return
+
+    const teamIds = Array.from(new Set(events.map((event) => event.teamId)))
+    const lineups = await GameLineup.query()
+      .where('game_id', game.id)
+      .whereIn('team_id', teamIds)
+      .whereIn('status', ['starter', 'substitute'])
+
+    const activeLineupKeys = new Set(lineups.map((lineup) => `${lineup.teamId}:${lineup.playerId}`))
+    const teamsWithLineups = new Set(lineups.map((lineup) => lineup.teamId))
+    const rosterFallbackEvents = events.filter((event) => !teamsWithLineups.has(event.teamId))
+
+    for (const event of events) {
+      if (
+        teamsWithLineups.has(event.teamId) &&
+        !activeLineupKeys.has(`${event.teamId}:${event.playerId}`)
+      ) {
+        throw new Exception('Pass and shot tracking can only use players in the submitted lineup', {
+          status: 422,
+        })
+      }
+    }
+
+    if (!rosterFallbackEvents.length) return
+
+    const activeRosterRows = await LeaguePlayer.query()
+      .where('league_id', game.leagueId)
+      .where('season_id', game.seasonId)
+      .where('status', 'active')
+      .whereIn('team_id', Array.from(new Set(rosterFallbackEvents.map((event) => event.teamId))))
+      .whereIn(
+        'player_id',
+        Array.from(new Set(rosterFallbackEvents.map((event) => event.playerId)))
+      )
+
+    const activeRosterKeys = new Set(activeRosterRows.map((row) => `${row.teamId}:${row.playerId}`))
+
+    for (const event of rosterFallbackEvents) {
+      if (!activeRosterKeys.has(`${event.teamId}:${event.playerId}`)) {
+        throw new Exception(
+          'Pass and shot tracking can only use active roster players before lineups are submitted',
+          { status: 422 }
+        )
+      }
+    }
+  }
+}
+
+export function computeMatchTrackingMetrics(
+  stats: Stat[] | undefined,
+  homeTeamId: number,
+  awayTeamId: number
+): MatchTrackingMetrics {
+  const home = emptyTrackingAccumulator()
+  const away = emptyTrackingAccumulator()
+
+  for (const stat of stats ?? []) {
+    const team = stat.teamId === homeTeamId ? home : stat.teamId === awayTeamId ? away : null
+    if (!team) continue
+
+    const statName = stat.type?.name?.toLowerCase()
+    const qualifiers = normalizeQualifiers(stat.qualifiers)
+
+    if (statName === 'pass') {
+      team.passesAttempted += 1
+      if (qualifiers.completed === true) {
+        team.passesCompleted += 1
+      }
+    }
+
+    if (statName === 'shot') {
+      team.shotsAttempted += 1
+      if (qualifiers.on_target === true) {
+        team.shotsOnTarget += 1
+      }
+    }
+  }
+
+  const totalPasses = home.passesAttempted + away.passesAttempted
+
+  return {
+    possessionTracked: totalPasses > 0,
+    teams: {
+      home: toTrackingMetrics(homeTeamId, home, totalPasses),
+      away: toTrackingMetrics(awayTeamId, away, totalPasses),
+    },
+  }
+}
+
+function emptyTrackingAccumulator(): TrackingAccumulator {
+  return {
+    passesAttempted: 0,
+    passesCompleted: 0,
+    shotsAttempted: 0,
+    shotsOnTarget: 0,
+  }
+}
+
+function toTrackingMetrics(
+  teamId: number,
+  metrics: TrackingAccumulator,
+  totalPasses: number
+): TrackingTeamMetrics {
+  return {
+    teamId,
+    passesAttempted: metrics.passesAttempted,
+    passesCompleted: metrics.passesCompleted,
+    passCompletionPct: pct(metrics.passesCompleted, metrics.passesAttempted),
+    possessionPct: totalPasses > 0 ? pct(metrics.passesAttempted, totalPasses) : 0,
+    shotsAttempted: metrics.shotsAttempted,
+    shotsOnTarget: metrics.shotsOnTarget,
+    shotAccuracyPct: pct(metrics.shotsOnTarget, metrics.shotsAttempted),
+  }
+}
+
+function pct(value: number, total: number) {
+  if (total <= 0) return 0
+  return Math.round((value / total) * 100)
+}
+
+function normalizeQualifiers(value: unknown): Record<string, unknown> {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return value as Record<string, unknown>
+  }
+
+  if (typeof value === 'string' && value.trim()) {
+    try {
+      const parsed = JSON.parse(value) as unknown
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed as Record<string, unknown>
+      }
+    } catch {
+      return {}
+    }
+  }
+
+  return {}
 }

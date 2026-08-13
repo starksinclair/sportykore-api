@@ -4,6 +4,7 @@ import Stat from '#models/stat'
 import StatService from '#services/stat_service'
 import {
   createStatValidator,
+  recordTrackingEventsValidator,
   recordSubstitutionValidator,
   updateStatValidator,
 } from '#validators/stat'
@@ -26,6 +27,17 @@ export default class StatsController {
     return response.created({
       message: 'Substitution(s) recorded successfully',
       statIds: stats.map((stat) => stat.id),
+    })
+  }
+
+  async recordTrackingEvents({ params, request, response }: HttpContext) {
+    console.log('recordTrackingEvents', params.gameId)
+    const data = await request.validateUsing(recordTrackingEventsValidator)
+    const result = await this.statService.recordTrackingEvents(Number(params.gameId), data)
+
+    return response.created({
+      message: 'Tracking events recorded successfully',
+      ...result,
     })
   }
 

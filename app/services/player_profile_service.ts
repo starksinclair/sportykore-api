@@ -1,9 +1,9 @@
 import type { MultipartFile } from '@adonisjs/core/bodyparser'
 import { Exception } from '@adonisjs/core/exceptions'
 import { inject } from '@adonisjs/core'
-import string from '@adonisjs/core/helpers/string'
 import { DateTime } from 'luxon'
 
+import { playerAvatarKey } from '#helpers/storage_paths'
 import LeaguePlayer from '#models/league_player'
 import Player from '#models/player'
 import PlayerHighlight from '#models/player_highlight'
@@ -80,6 +80,15 @@ export default class PlayerProfileService {
 
   async resolveOwn(userId: number): Promise<ResolvedProfile> {
     const player = await this.findOwnOrFail(userId)
+    await player.load('awards', (awardsQuery) => {
+      awardsQuery
+        .where('award_type', 'motm')
+        .preload('game', (gameQuery) => {
+          gameQuery.preload('homeTeam').preload('awayTeam').preload('venue')
+        })
+        .preload('awardedByUser')
+        .orderBy('created_at', 'desc')
+    })
 
     const [highlightsCount, memberships] = await Promise.all([
       PlayerHighlight.query().where('player_id', player.id).count('* as total'),
@@ -152,11 +161,10 @@ export default class PlayerProfileService {
     return player
   }
 
-  /** Upload/replace the profile photo via the existing S3 pipeline (players/ prefix). */
+  /** Upload/replace the profile photo via the existing Drive pipeline. */
   async uploadPhoto(userId: number, photo: MultipartFile): Promise<Player> {
     const player = await this.findOwnOrFail(userId)
-    const key = `players/${string.uuid()}.${photo.extname}`
-    player.avatarUrl = await this.fileService.upload(photo, key)
+    player.avatarUrl = await this.fileService.upload(photo, playerAvatarKey(player, photo.extname))
     await player.save()
     return player
   }

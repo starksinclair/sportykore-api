@@ -5,6 +5,9 @@ import { ReactElement, useEffect } from 'react'
 import { Form, Link } from '@adonisjs/inertia/react'
 
 export default function Layout({ children }: { children: ReactElement<Data.SharedProps> }) {
+  const user = children.props.user
+  const initials = user ? initialsFromName(user.fullName ?? user.email) : null
+
   useEffect(() => {
     toast.dismiss()
   }, [usePage().url])
@@ -40,9 +43,9 @@ export default function Layout({ children }: { children: ReactElement<Data.Share
           </div>
           <div>
             <nav>
-              {children.props.user ? (
+              {user ? (
                 <>
-                  <span>{children.props.user.initials}</span>
+                  <span>{initials}</span>
                   <Form route="session.destroy">
                     <button type="submit"> Logout </button>
                   </Form>
@@ -61,4 +64,15 @@ export default function Layout({ children }: { children: ReactElement<Data.Share
       <Toaster position="top-center" richColors />
     </>
   )
+}
+
+function initialsFromName(value: string) {
+  const parts = value
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+
+  if (parts.length === 0) return 'SK'
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase()
+  return `${parts[0]![0]}${parts[1]![0]}`.toUpperCase()
 }

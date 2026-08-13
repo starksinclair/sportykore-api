@@ -40,3 +40,18 @@ export const recordSubstitutionValidator = vine.create({
   teamId: resourceId('teams'),
   substitutions: vine.array(substitutionSwap).minLength(1).maxLength(11),
 })
+
+const trackingEvent = vine.object({
+  clientEventId: vine.string().uuid(),
+  type: vine.enum(['pass', 'shot']),
+  teamId: resourceId('teams'),
+  playerId: resourceId('players'),
+  minute: vine.number().withoutDecimals().min(0).max(130).nullable().optional(),
+  isStoppageTime: vine.boolean().optional(),
+  completed: vine.boolean().optional(),
+  onTarget: vine.boolean().optional(),
+})
+
+export const recordTrackingEventsValidator = vine.create({
+  events: vine.array(trackingEvent).minLength(1).maxLength(250),
+})

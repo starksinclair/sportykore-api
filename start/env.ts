@@ -56,6 +56,26 @@ export default await Env.create(new URL('../', import.meta.url), {
    * Omit on GCP when using Application Default Credentials (Cloud Run, GKE).
    */
   GCS_KEY: Env.schema.string.optional(),
+  GOOGLE_APPLICATION_CREDENTIALS: Env.schema.string.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | Google Sheets-backed support content
+  |----------------------------------------------------------
+  */
+  SUPPORT_SHEETS_SPREADSHEET_ID: Env.schema.string.optional(),
+  SUPPORT_FAQ_SHEET_NAME: Env.schema.string.optional(),
+  SUPPORT_BUGS_SHEET_NAME: Env.schema.string.optional(),
+  GOOGLE_SHEETS_SPREADSHEET_ID: Env.schema.string.optional(),
+  GOOGLE_SHEETS_FAQ_NAME: Env.schema.string.optional(),
+  GOOGLE_SHEETS_BUGS_NAME: Env.schema.string.optional(),
+  SUPPORT_GOOGLE_CLIENT_EMAIL: Env.schema.string.optional(),
+  SUPPORT_GOOGLE_PRIVATE_KEY: Env.schema.string.optional(),
+  SUPPORT_GOOGLE_SERVICE_ACCOUNT_KEY: Env.schema.string.optional(),
+  GOOGLE_CLIENT_EMAIL: Env.schema.string.optional(),
+  GOOGLE_PRIVATE_KEY: Env.schema.string.optional(),
+  GOOGLE_SERVICE_ACCOUNT: Env.schema.string.optional(),
+  SUPPORT_SEED_TOKEN: Env.schema.string.optional(),
 
   /*
   |----------------------------------------------------------
@@ -84,6 +104,13 @@ export default await Env.create(new URL('../', import.meta.url), {
   |----------------------------------------------------------
   */
   MOBILE_APP_URL: Env.schema.string.optional(),
+
+  /*
+  |----------------------------------------------------------
+  | Expo Push Notifications
+  |----------------------------------------------------------
+  */
+  EXPO_PUSH_ACCESS_TOKEN: Env.schema.string.optional(),
 
   /*
   |----------------------------------------------------------

@@ -77,6 +77,22 @@ export default class extends BaseSchema {
           updated_at: now,
         },
         {
+          name: 'pass',
+          display_name: 'Passes',
+          icon_name: 'swap-horizontal',
+          category: 'performance',
+          created_at: now,
+          updated_at: now,
+        },
+        {
+          name: 'shot',
+          display_name: 'Shots',
+          icon_name: 'radio-button-on',
+          category: 'performance',
+          created_at: now,
+          updated_at: now,
+        },
+        {
           name: 'fouls_conceded',
           display_name: 'Fouls Conceded',
           icon_name: 'whistle',

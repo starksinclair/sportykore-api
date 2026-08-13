@@ -14,6 +14,7 @@ import Tie from '#models/tie'
 import type User from '#models/user'
 import StatType from '#models/stat_type'
 import Player from '#models/player'
+import PlayerAward from '#models/player_award'
 import PlayerHighlight from '#models/player_highlight'
 import LeaguePlayer from '#models/league_player'
 import Stat from '#models/stat'
@@ -289,7 +290,7 @@ export default class DataSeeder extends BaseSeeder {
     const statTypes = await StatType.query()
     this.statTypesByName = new Map(statTypes.map((statType) => [statType.name, statType]))
 
-    for (const name of ['goals', 'assists', 'yellow_card'] as const) {
+    for (const name of ['goals', 'assists', 'yellow_card', 'pass', 'shot'] as const) {
       if (!this.statTypesByName.has(name)) {
         throw new Error(`Stat type "${name}" not found — run migrations first.`)
       }
@@ -463,6 +464,7 @@ export default class DataSeeder extends BaseSeeder {
         homePlayers,
         awayPlayers
       )
+      await this.seedMotmAward(game, homePlayers, awayPlayers)
 
       await this.tieResolver.advanceTie(tie.id)
     }
@@ -574,6 +576,11 @@ export default class DataSeeder extends BaseSeeder {
           playersByTeam.get(game.homeTeamId) ?? [],
           playersByTeam.get(game.awayTeamId) ?? []
         )
+        await this.seedMotmAward(
+          game,
+          playersByTeam.get(game.homeTeamId) ?? [],
+          playersByTeam.get(game.awayTeamId) ?? []
+        )
         await this.seedStatsForGame(game, playersByTeam)
       }
     }
@@ -651,6 +658,11 @@ export default class DataSeeder extends BaseSeeder {
         playersByTeam.get(game.homeTeamId) ?? [],
         playersByTeam.get(game.awayTeamId) ?? []
       )
+      await this.seedMotmAward(
+        game,
+        playersByTeam.get(game.homeTeamId) ?? [],
+        playersByTeam.get(game.awayTeamId) ?? []
+      )
       await this.tieResolver.advanceTie(tie.id)
     }
 
@@ -716,8 +728,25 @@ export default class DataSeeder extends BaseSeeder {
         continue
       }
 
+      await this.seedMotmAward(game, homePlayers, awayPlayers)
       await this.seedStatsForGame(game, playersByTeam)
     }
+  }
+
+  private async seedMotmAward(game: Game, homePlayers: Player[], awayPlayers: Player[]) {
+    const pool = [...homePlayers.slice(0, 11), ...awayPlayers.slice(0, 11)]
+    if (pool.length === 0) {
+      return
+    }
+
+    const winnerPool = game.winnerTeamId === game.awayTeamId ? awayPlayers : homePlayers
+    const candidates = winnerPool.length > 0 ? winnerPool.slice(0, 11) : pool
+    const player = candidates[Math.floor(Math.random() * candidates.length)]!
+
+    await PlayerAward.updateOrCreate(
+      { gameId: game.id, awardType: 'motm' },
+      { playerId: player.id, awardedBy: null }
+    )
   }
 
   private async seedStatsForGame(game: Game, playersByTeam: Map<number, Player[]>) {
@@ -750,6 +779,55 @@ export default class DataSeeder extends BaseSeeder {
         value: null,
         isStoppageTime: false,
       })
+    }
+
+    await this.seedTrackingStatsForGame(game, playersByTeam)
+  }
+
+  private async seedTrackingStatsForGame(game: Game, playersByTeam: Map<number, Player[]>) {
+    const passType = this.statTypesByName.get('pass')!
+    const shotType = this.statTypesByName.get('shot')!
+
+    for (const teamId of [game.homeTeamId, game.awayTeamId]) {
+      const players = playersByTeam.get(teamId) ?? []
+      if (players.length === 0) continue
+
+      const passCount = Math.floor(Math.random() * 26) + 20
+      const shotCount = Math.floor(Math.random() * 7) + 4
+
+      for (let index = 0; index < passCount; index++) {
+        const player = players[Math.floor(Math.random() * players.length)]!
+        await Stat.create({
+          gameId: game.id,
+          leagueId: game.leagueId,
+          seasonId: game.seasonId,
+          playerId: player.id,
+          teamId,
+          statTypeId: passType.id,
+          minute: Math.floor(Math.random() * 90) + 1,
+          numericValue: 1,
+          value: null,
+          qualifiers: { completed: Math.random() < 0.78 },
+          isStoppageTime: false,
+        })
+      }
+
+      for (let index = 0; index < shotCount; index++) {
+        const player = players[Math.floor(Math.random() * players.length)]!
+        await Stat.create({
+          gameId: game.id,
+          leagueId: game.leagueId,
+          seasonId: game.seasonId,
+          playerId: player.id,
+          teamId,
+          statTypeId: shotType.id,
+          minute: Math.floor(Math.random() * 90) + 1,
+          numericValue: 1,
+          value: null,
+          qualifiers: { on_target: Math.random() < 0.42 },
+          isStoppageTime: false,
+        })
+      }
     }
   }
 

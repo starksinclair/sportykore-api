@@ -46,6 +46,16 @@ export interface ApiDefinition {
   searches: {
     search: typeof routes['searches.search']
   }
+  support: {
+    faqs: typeof routes['support.faqs']
+    bugReport: typeof routes['support.bug_report']
+    seedFaqs: typeof routes['support.seed_faqs']
+  }
+  pushNotifications: {
+    registerToken: typeof routes['push_notifications.register_token']
+    showLeaguePreference: typeof routes['push_notifications.show_league_preference']
+    updateLeaguePreference: typeof routes['push_notifications.update_league_preference']
+  }
   games: {
     show: typeof routes['games.show']
     store: typeof routes['games.store']
@@ -113,6 +123,16 @@ export interface ApiDefinition {
     update: typeof routes['game_score.update']
     accredit: typeof routes['game_score.accredit']
   }
+  playerAwards: {
+    setMotm: typeof routes['player_awards.set_motm']
+  }
+  stats: {
+    recordTrackingEvents: typeof routes['stats.record_tracking_events']
+    store: typeof routes['stats.store']
+    recordSubstitutions: typeof routes['stats.record_substitutions']
+    update: typeof routes['stats.update']
+    destroy: typeof routes['stats.destroy']
+  }
   gameTime: {
     startFirstHalf: typeof routes['game_time.start_first_half']
     startHalfTime: typeof routes['game_time.start_half_time']
@@ -161,11 +181,5 @@ export interface ApiDefinition {
     roster: typeof routes['league_players.roster']
     update: typeof routes['league_players.update']
     destroy: typeof routes['league_players.destroy']
-  }
-  stats: {
-    store: typeof routes['stats.store']
-    recordSubstitutions: typeof routes['stats.record_substitutions']
-    update: typeof routes['stats.update']
-    destroy: typeof routes['stats.destroy']
   }
 }

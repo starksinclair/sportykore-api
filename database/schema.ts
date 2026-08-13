@@ -204,6 +204,37 @@ export class GameSchema extends BaseModel {
   declare winnerTeamId: number | null
 }
 
+export class IdempotencyKeySchema extends BaseModel {
+  static $columns = ['createdAt', 'expiresAt', 'id', 'keyHash', 'method', 'path', 'requestHash', 'responseBody', 'responseHeaders', 'responseStatus', 'status', 'updatedAt', 'userId'] as const
+  $columns = IdempotencyKeySchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column.dateTime()
+  declare expiresAt: DateTime
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare keyHash: string
+  @column()
+  declare method: string
+  @column()
+  declare path: string
+  @column()
+  declare requestHash: string
+  @column()
+  declare responseBody: any | null
+  @column()
+  declare responseHeaders: any | null
+  @column()
+  declare responseStatus: number | null
+  @column()
+  declare status: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare userId: number | null
+}
+
 export class InviteSchema extends BaseModel {
   static $columns = ['acceptedAt', 'createdAt', 'expiresAt', 'id', 'invitedUserId', 'leagueId', 'seasonId', 'status', 'teamId', 'token', 'updatedAt'] as const
   $columns = InviteSchema.$columns
@@ -229,6 +260,27 @@ export class InviteSchema extends BaseModel {
   declare token: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
+}
+
+export class LeagueNotificationPreferenceSchema extends BaseModel {
+  static $columns = ['createdAt', 'enabled', 'finalScoreEnabled', 'id', 'kickoffEnabled', 'leagueId', 'updatedAt', 'userId'] as const
+  $columns = LeagueNotificationPreferenceSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare enabled: boolean
+  @column()
+  declare finalScoreEnabled: boolean
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare kickoffEnabled: boolean
+  @column()
+  declare leagueId: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare userId: number
 }
 
 export class LeaguePlayerSchema extends BaseModel {
@@ -327,6 +379,25 @@ export class PasswordResetSchema extends BaseModel {
   declare updatedAt: DateTime | null
   @column()
   declare userId: number
+}
+
+export class PlayerAwardSchema extends BaseModel {
+  static $columns = ['awardType', 'awardedBy', 'createdAt', 'gameId', 'id', 'playerId', 'updatedAt'] as const
+  $columns = PlayerAwardSchema.$columns
+  @column()
+  declare awardType: string
+  @column()
+  declare awardedBy: number | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare gameId: number
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare playerId: number | null
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
 }
 
 export class PlayerHighlightSchema extends BaseModel {
@@ -601,8 +672,10 @@ export class StatTypeSchema extends BaseModel {
 }
 
 export class StatSchema extends BaseModel {
-  static $columns = ['createdAt', 'gameId', 'id', 'isPenalty', 'isStoppageTime', 'leagueId', 'minute', 'numericValue', 'playerId', 'relatedPlayerId', 'seasonId', 'statTypeId', 'teamId', 'updatedAt', 'value'] as const
+  static $columns = ['clientEventId', 'createdAt', 'gameId', 'id', 'isPenalty', 'isStoppageTime', 'leagueId', 'minute', 'numericValue', 'playerId', 'qualifiers', 'relatedPlayerId', 'seasonId', 'statTypeId', 'teamId', 'updatedAt', 'value'] as const
   $columns = StatSchema.$columns
+  @column()
+  declare clientEventId: string | null
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime | null
   @column()
@@ -621,6 +694,8 @@ export class StatSchema extends BaseModel {
   declare numericValue: number | null
   @column()
   declare playerId: number | null
+  @column()
+  declare qualifiers: any
   @column()
   declare relatedPlayerId: number | null
   @column()
@@ -714,6 +789,31 @@ export class TieSchema extends BaseModel {
   declare winnerTeamId: number | null
 }
 
+export class UserPushTokenSchema extends BaseModel {
+  static $columns = ['createdAt', 'deviceId', 'disabledAt', 'id', 'lastSeenAt', 'platform', 'provider', 'token', 'updatedAt', 'userId'] as const
+  $columns = UserPushTokenSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare deviceId: string | null
+  @column.dateTime()
+  declare disabledAt: DateTime | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column.dateTime()
+  declare lastSeenAt: DateTime
+  @column()
+  declare platform: string | null
+  @column()
+  declare provider: string
+  @column()
+  declare token: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare userId: number
+}
+
 export class UserSchema extends BaseModel {
   static $columns = ['createdAt', 'email', 'fullName', 'id', 'password', 'phone', 'recoveryEmail', 'updatedAt'] as const
   $columns = UserSchema.$columns
@@ -753,11 +853,11 @@ export class VenueSchema extends BaseModel {
   @column({ isPrimary: true })
   declare id: number
   @column()
-  declare latitude: number | null
+  declare latitude: string | null
   @column()
   declare leagueId: number
   @column()
-  declare longitude: number | null
+  declare longitude: string | null
   @column()
   declare name: string
   @column()

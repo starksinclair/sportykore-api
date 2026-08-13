@@ -1,13 +1,17 @@
 import { DateTime } from 'luxon'
 import { Exception } from '@adonisjs/core/exceptions'
 import transmit from '@adonisjs/transmit/services/main'
+import logger from '@adonisjs/core/services/logger'
 
 import type Game from '#models/game'
+import PushNotificationService from '#services/push_notification_service'
 
 const PAUSABLE_STATUSES = ['first_half', 'second_half', 'extra_time'] as const
 type PausableStatus = (typeof PAUSABLE_STATUSES)[number]
 
 export default class GameTimeService {
+  private pushNotificationService = new PushNotificationService()
+
   calculateCurrentMinute(game: Game, now: DateTime = DateTime.utc()): number {
     if (game.status === 'paused') {
       if (!game.pausedAt || !game.pausedFromStatus) {
@@ -104,6 +108,7 @@ export default class GameTimeService {
     await game.save()
 
     this.broadcastStatusChanged(game)
+    this.queuePushNotification(this.pushNotificationService.notifyKickoff(game))
     return game
   }
 
@@ -211,6 +216,7 @@ export default class GameTimeService {
     await game.save()
 
     this.broadcastStatusChanged(game)
+    this.queuePushNotification(this.pushNotificationService.notifyFinalScore(game))
 
     if (game.tieId) {
       const { default: TieResolver } = await import('#services/tie_resolver')
@@ -246,14 +252,14 @@ export default class GameTimeService {
 
     game.homePenaltyScore = homePenaltyScore
     game.awayPenaltyScore = awayPenaltyScore
-    game.winnerTeamId =
-      homePenaltyScore > awayPenaltyScore ? game.homeTeamId : game.awayTeamId
+    game.winnerTeamId = homePenaltyScore > awayPenaltyScore ? game.homeTeamId : game.awayTeamId
     game.status = 'full_time'
     game.pausedAt = null
     game.pausedFromStatus = null
     await game.save()
 
     this.broadcastStatusChanged(game)
+    this.queuePushNotification(this.pushNotificationService.notifyFinalScore(game))
 
     if (game.tieId) {
       const { default: TieResolver } = await import('#services/tie_resolver')
@@ -277,5 +283,11 @@ export default class GameTimeService {
       return
     }
     game.winnerTeamId = home > away ? game.homeTeamId : game.awayTeamId
+  }
+
+  private queuePushNotification(task: Promise<void>) {
+    void task.catch((error) => {
+      logger.warn({ error }, 'League push notification failed')
+    })
   }
 }

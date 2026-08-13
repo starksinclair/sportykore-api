@@ -31,6 +31,15 @@ export class PlayerService {
       .preload('highlights', (highlightsQuery) => {
         highlightsQuery.orderBy('sort_order', 'asc').orderBy('id', 'asc')
       })
+      .preload('awards', (awardsQuery) => {
+        awardsQuery
+          .where('award_type', 'motm')
+          .preload('game', (gameQuery) => {
+            gameQuery.preload('homeTeam').preload('awayTeam').preload('venue')
+          })
+          .preload('awardedByUser')
+          .orderBy('created_at', 'desc')
+      })
       .firstOrFail()
 
     const memberships = await LeaguePlayer.query()
