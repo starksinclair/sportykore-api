@@ -13,10 +13,14 @@ import { Exception } from '@adonisjs/core/exceptions'
 import { DateTime } from 'luxon'
 import LeaguePlayerTransformer from '#transformers/league_player_transformer'
 import Player from '#models/player'
+import PushNotificationService from '#services/push_notification_service'
 
 @inject()
 export default class PlayersController {
-  constructor(protected playerService: PlayerService) {}
+  constructor(
+    protected playerService: PlayerService,
+    private pushNotificationService: PushNotificationService
+  ) {}
   async show({ params, serialize }: HttpContext) {
     const { id } = params
     const { player, leagues, statTypes } = await this.playerService.getPlayerDetail(id)
@@ -96,6 +100,11 @@ export default class PlayersController {
     leaguePlayer.status = 'active'
     leaguePlayer.joinedAt = DateTime.now()
     await leaguePlayer.save()
+    await this.pushNotificationService.notifyLeagueOwnerPlayerJoined({
+      leagueId: leaguePlayer.leagueId,
+      playerId: leaguePlayer.playerId,
+      teamId: leaguePlayer.teamId,
+    })
     return response.ok({ message: 'League player request accepted successfully' })
   }
 }

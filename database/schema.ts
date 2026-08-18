@@ -789,6 +789,37 @@ export class TieSchema extends BaseModel {
   declare winnerTeamId: number | null
 }
 
+export class UserNotificationSchema extends BaseModel {
+  static $columns = ['body', 'createdAt', 'data', 'id', 'leagueId', 'playerId', 'readAt', 'route', 'teamId', 'title', 'type', 'updatedAt', 'userId'] as const
+  $columns = UserNotificationSchema.$columns
+  @column()
+  declare body: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare data: any | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare leagueId: number | null
+  @column()
+  declare playerId: number | null
+  @column.dateTime()
+  declare readAt: DateTime | null
+  @column()
+  declare route: string | null
+  @column()
+  declare teamId: number | null
+  @column()
+  declare title: string
+  @column()
+  declare type: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare userId: number
+}
+
 export class UserPushTokenSchema extends BaseModel {
   static $columns = ['createdAt', 'deviceId', 'disabledAt', 'id', 'lastSeenAt', 'platform', 'provider', 'token', 'updatedAt', 'userId'] as const
   $columns = UserPushTokenSchema.$columns

@@ -48,6 +48,10 @@ export interface ApiDefinition {
   }
   pushNotifications: {
     registerToken: typeof routes['push_notifications.register_token']
+    index: typeof routes['push_notifications.index']
+    unreadCount: typeof routes['push_notifications.unread_count']
+    markAllRead: typeof routes['push_notifications.mark_all_read']
+    markRead: typeof routes['push_notifications.mark_read']
     showLeaguePreference: typeof routes['push_notifications.show_league_preference']
     updateLeaguePreference: typeof routes['push_notifications.update_league_preference']
   }

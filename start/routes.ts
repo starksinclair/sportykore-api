@@ -86,6 +86,16 @@ router
     router
       .post('push/tokens', [PushNotificationsController, 'registerToken'])
       .use(middleware.apiAuth())
+    router.get('notifications', [PushNotificationsController, 'index']).use(middleware.apiAuth())
+    router
+      .get('notifications/unread-count', [PushNotificationsController, 'unreadCount'])
+      .use(middleware.apiAuth())
+    router
+      .put('notifications/read-all', [PushNotificationsController, 'markAllRead'])
+      .use(middleware.apiAuth())
+    router
+      .put('notifications/:id/read', [PushNotificationsController, 'markRead'])
+      .use(middleware.apiAuth())
     router
       .get('leagues/:leagueId/notifications', [PushNotificationsController, 'showLeaguePreference'])
       .use(middleware.apiAuth())
@@ -294,3 +304,9 @@ router
   })
   .prefix('/api/v1')
   .use(globalThrottle)
+
+  router.get('health', () => {
+    return {
+      status: 'ok',
+    }
+  })
