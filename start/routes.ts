@@ -310,6 +310,5 @@ router
     return {
       status: 'ok',
       timestamp: new Date().toISOString(),
-      version: env.get('VERSION'),
     }
   })
