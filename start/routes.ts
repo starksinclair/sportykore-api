@@ -23,6 +23,7 @@ import {
   searchThrottle,
   statUpdateThrottle,
 } from '#start/limiter'
+import env from './env.ts'
 
 const PushNotificationsController = () => import('#controllers/push_notifications_controller')
 const SecretSantaController = () => import('#controllers/secret_santa_controller')
@@ -308,5 +309,7 @@ router
   router.get('health', () => {
     return {
       status: 'ok',
+      timestamp: new Date().toISOString(),
+      version: env.get('VERSION'),
     }
   })
