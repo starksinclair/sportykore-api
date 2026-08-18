@@ -30,6 +30,10 @@ export type ScannedRoutes = {
     'support.bug_report': { paramsTuple?: []; params?: {} }
     'support.seed_faqs': { paramsTuple?: []; params?: {} }
     'push_notifications.register_token': { paramsTuple?: []; params?: {} }
+    'push_notifications.index': { paramsTuple?: []; params?: {} }
+    'push_notifications.unread_count': { paramsTuple?: []; params?: {} }
+    'push_notifications.mark_all_read': { paramsTuple?: []; params?: {} }
+    'push_notifications.mark_read': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'push_notifications.show_league_preference': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'push_notifications.update_league_preference': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'games.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -130,6 +134,8 @@ export type ScannedRoutes = {
     'leagues.show': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'searches.search': { paramsTuple?: []; params?: {} }
     'support.faqs': { paramsTuple?: []; params?: {} }
+    'push_notifications.index': { paramsTuple?: []; params?: {} }
+    'push_notifications.unread_count': { paramsTuple?: []; params?: {} }
     'push_notifications.show_league_preference': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'games.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'formations.index': { paramsTuple?: []; params?: {} }
@@ -167,6 +173,8 @@ export type ScannedRoutes = {
     'leagues.show': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'searches.search': { paramsTuple?: []; params?: {} }
     'support.faqs': { paramsTuple?: []; params?: {} }
+    'push_notifications.index': { paramsTuple?: []; params?: {} }
+    'push_notifications.unread_count': { paramsTuple?: []; params?: {} }
     'push_notifications.show_league_preference': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'games.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'formations.index': { paramsTuple?: []; params?: {} }
@@ -254,6 +262,8 @@ export type ScannedRoutes = {
     'stats.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
   }
   PUT: {
+    'push_notifications.mark_all_read': { paramsTuple?: []; params?: {} }
+    'push_notifications.mark_read': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'push_notifications.update_league_preference': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'me_player.update': { paramsTuple?: []; params?: {} }
     'player_highlights.reorder': { paramsTuple?: []; params?: {} }

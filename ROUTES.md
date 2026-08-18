@@ -119,6 +119,36 @@ Account recovery: if the user set a `recovery_email`, **`POST /api/v1/auth/recov
 | `POST` | `/api/v1/auth/logout` | `apiAuth` | Bearer token | `204 No Content` | Invalidates current API token; `401` without token |
 | `DELETE` | `/api/v1/auth/account` | `apiAuth` | Bearer token | `{ message: "Account deleted successfully" }` | Deletes player profile, OTP codes, tokens, and user row; `401` without token |
 
+## Notifications
+
+All routes require `apiAuth`. Push device registration is used for OS-level push alerts. In-app notifications are stored in `user_notifications` and can be listed even if push delivery fails.
+
+| Method | Path | Input | Success response | Notes |
+| --- | --- | --- | --- | --- |
+| `POST` | `/api/v1/push/tokens` | `{ provider: "expo", token, platform?, deviceId? }` | `{ message: "Push token registered" }` | Registers or refreshes a user's Expo push token |
+| `GET` | `/api/v1/notifications` | Query: `limit?` (`1`-`100`, default `50`) | `{ data: { notifications, unreadCount } }` | Most recent first |
+| `GET` | `/api/v1/notifications/unread-count` | none | `{ data: { unreadCount } }` | Lightweight badge endpoint |
+| `PUT` | `/api/v1/notifications/:id/read` | none | `{ data: { notification, unreadCount } }` | Only marks the signed-in user's own notification |
+| `PUT` | `/api/v1/notifications/read-all` | none | `{ data: { unreadCount: 0 } }` | Marks all current notifications as read |
+| `GET` | `/api/v1/leagues/:leagueId/notifications` | none | `{ data: { preference } }` | League follower preference for kickoff/final-score alerts |
+| `PUT` | `/api/v1/leagues/:leagueId/notifications` | `{ enabled }` | `{ data: { preference } }` | Turns follower match alerts on/off for one league |
+
+Owner alert: when a player accepts an invite or accepts a pending league-player request, the league owner receives a `league_player_joined` in-app notification and, if they have a registered push token, a push notification. This owner alert does not depend on the follower notification preference for that league.
+
+### Notification shape
+
+| Field | Notes |
+| --- | --- |
+| `id` | Notification id |
+| `type` | Currently `league_player_joined` |
+| `title`, `body` | Display copy |
+| `route` | Suggested mobile route, e.g. `/manage/:leagueId` |
+| `leagueId`, `playerId`, `teamId` | Context ids where available |
+| `data` | Extra context such as names and route |
+| `readAt` | ISO string or `null` |
+| `createdAt` | ISO string |
+
+
 ### `verify-otp` success payload
 
 ```json

@@ -1,8 +1,13 @@
 import { DateTime } from 'luxon'
 import logger from '@adonisjs/core/services/logger'
+import transmit from '@adonisjs/transmit/services/main'
 
 import Game from '#models/game'
+import League from '#models/league'
 import LeagueNotificationPreference from '#models/league_notification_preference'
+import Player from '#models/player'
+import Team from '#models/team'
+import UserNotification from '#models/user_notification'
 import UserPushToken from '#models/user_push_token'
 import env from '#start/env'
 
@@ -14,6 +19,18 @@ type RegisterPushTokenInput = {
 }
 
 type LeagueNotificationEvent = 'kickoff' | 'final_score'
+
+type AppNotificationInput = {
+  userId: number
+  type: 'league_player_joined'
+  title: string
+  body: string
+  route?: string | null
+  leagueId?: number | null
+  playerId?: number | null
+  teamId?: number | null
+  data?: Record<string, string | number | boolean | null> | null
+}
 
 type ExpoPushMessage = {
   to: string
@@ -87,6 +104,120 @@ export default class PushNotificationService {
     return this.serializePreference(leagueId, preference)
   }
 
+  async listUserNotifications(userId: number, limit: number = 50) {
+    const normalizedLimit = Math.min(Math.max(Math.floor(limit), 1), 100)
+    const [notifications, unreadCount] = await Promise.all([
+      UserNotification.query()
+        .where('user_id', userId)
+        .orderBy('created_at', 'desc')
+        .limit(normalizedLimit),
+      this.unreadCount(userId),
+    ])
+
+    return {
+      notifications: notifications.map((notification) => this.serializeNotification(notification)),
+      unreadCount,
+    }
+  }
+
+  async unreadCount(userId: number): Promise<number> {
+    const row = await UserNotification.query()
+      .where('user_id', userId)
+      .whereNull('read_at')
+      .count('* as total')
+      .first()
+
+    return Number(row?.$extras.total ?? 0)
+  }
+
+  async markNotificationRead(userId: number, notificationId: number) {
+    const notification = await UserNotification.query()
+      .where('id', notificationId)
+      .where('user_id', userId)
+      .firstOrFail()
+
+    if (!notification.readAt) {
+      notification.readAt = DateTime.utc()
+      await notification.save()
+      await this.broadcastNotificationBadge(userId, 'notification_read', notification.id)
+    }
+
+    return this.serializeNotification(notification)
+  }
+
+  async markAllNotificationsRead(userId: number): Promise<void> {
+    await UserNotification.query()
+      .where('user_id', userId)
+      .whereNull('read_at')
+      .update({ readAt: DateTime.utc() })
+    await this.broadcastNotificationBadge(userId, 'notifications_read_all')
+  }
+
+  async notifyLeagueOwnerPlayerJoined(input: {
+    leagueId: number
+    playerId: number
+    teamId?: number | null
+  }): Promise<void> {
+    const [league, player, team] = await Promise.all([
+      League.query().where('id', input.leagueId).first(),
+      Player.query().where('id', input.playerId).first(),
+      input.teamId ? Team.query().where('id', input.teamId).first() : Promise.resolve(null),
+    ])
+
+    if (!league || !player || !league.userId) return
+    if (player.userId === league.userId) return
+
+    const playerName = player.name || 'A player'
+    const leagueName = league.name || 'your league'
+    const teamName = team?.name ?? null
+    const title = 'New player joined'
+    const body = teamName
+      ? `${playerName} joined ${teamName} in ${leagueName}.`
+      : `${playerName} joined ${leagueName}.`
+    const route = `/manage/${league.id}`
+    const data = {
+      leagueId: league.id,
+      leagueName,
+      playerId: player.id,
+      playerName,
+      teamId: team?.id ?? null,
+      teamName,
+      route,
+    }
+
+    const notification = await this.createAppNotification({
+      userId: league.userId,
+      type: 'league_player_joined',
+      title,
+      body,
+      route,
+      leagueId: league.id,
+      playerId: player.id,
+      teamId: team?.id ?? null,
+      data,
+    })
+
+    const tokens = await this.activeExpoTokensForUsers([league.userId])
+    if (tokens.length === 0) return
+
+    await this.sendExpoMessages(
+      tokens.map((token) => ({
+        title,
+        body,
+        sound: 'default',
+        data: {
+          type: 'league_player_joined',
+          notificationId: notification.id,
+          leagueId: league.id,
+          playerId: player.id,
+          teamId: team?.id ?? 0,
+          route,
+        },
+        to: token.token,
+      }))
+    )
+  }
+
   async notifyKickoff(game: Game): Promise<void> {
     await this.notifyGameEvent(game.id, 'kickoff')
   }
@@ -115,6 +246,67 @@ export default class PushNotificationService {
     }))
 
     await this.sendExpoMessages(messages)
+  }
+
+  private async createAppNotification(input: AppNotificationInput) {
+    const notification = await UserNotification.create({
+      userId: input.userId,
+      type: input.type,
+      title: input.title,
+      body: input.body,
+      route: input.route ?? null,
+      leagueId: input.leagueId ?? null,
+      playerId: input.playerId ?? null,
+      teamId: input.teamId ?? null,
+      data: input.data ?? null,
+      readAt: null,
+    })
+
+    await this.broadcastNotificationBadge(input.userId, 'notification_created', notification.id)
+
+    return notification
+  }
+
+  private async broadcastNotificationBadge(
+    userId: number,
+    type: 'notification_created' | 'notification_read' | 'notifications_read_all',
+    notificationId?: number
+  ) {
+    try {
+      const unreadCount = type === 'notifications_read_all' ? 0 : await this.unreadCount(userId)
+      transmit.broadcast(`users/${userId}/notifications`, {
+        type,
+        notificationId: notificationId ?? null,
+        unreadCount,
+      } as Record<string, string | number | null>)
+    } catch (error) {
+      logger.warn({ error, userId, type }, 'Transmit notification badge broadcast failed')
+    }
+  }
+
+  private async activeExpoTokensForUsers(userIds: number[]) {
+    if (userIds.length === 0) return []
+
+    return UserPushToken.query()
+      .whereIn('user_id', userIds)
+      .where('provider', 'expo')
+      .whereNull('disabled_at')
+  }
+
+  private serializeNotification(notification: UserNotification) {
+    return {
+      id: notification.id,
+      type: notification.type,
+      title: notification.title,
+      body: notification.body,
+      route: notification.route,
+      leagueId: notification.leagueId,
+      playerId: notification.playerId,
+      teamId: notification.teamId,
+      data: notification.data ?? {},
+      readAt: notification.readAt?.toISO() ?? null,
+      createdAt: notification.createdAt?.toISO() ?? null,
+    }
   }
 
   private async tokensForLeagueEvent(leagueId: number, event: LeagueNotificationEvent) {

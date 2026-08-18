@@ -1,0 +1,41 @@
+# docker-compose.prod.yml
+# Production compose for the Sportykore API on Lightsail (region: eu-west-2 / London).
+#
+# - app image is PULLED from ECR (built in CI), not built on the box
+# - Postgres is the SEPARATE Lightsail managed DB (NOT in this file)
+# - Redis runs here as an internal container (rate limiting + SSE — ephemeral)
+#
+# Set the image via env var before running, or hardcode the full ECR URL:
+#   export IMAGE=<ACCOUNT_ID>.dkr.ecr.eu-west-2.amazonaws.com/sportykore-api:latest
+#
+# Run:
+#   docker compose -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.prod.yml up -d
+#   docker compose -f docker-compose.prod.yml logs -f
+
+services:
+  app:
+    image: 023126614021.dkr.ecr.eu-west-2.amazonaws.com/sportykore-api:latest
+    restart: always
+    depends_on:
+      - redis
+    ports:
+      # host:container — only Nginx on localhost reaches the app.
+      # 3333 is NOT exposed to the internet (firewall keeps it closed).
+      - "127.0.0.1:3333:3333"
+    env_file:
+      - .env
+    healthcheck:
+      # point this at a real lightweight endpoint your app serves (e.g. /health)
+      test: ["CMD", "wget", "-qO-", "http://localhost:3333/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    # no persistence: rate-limit + SSE data is ephemeral, don't write to disk.
+    # not exposed to host/internet — only the app container reaches it at host "redis".
+    command: ["redis-server", "--save", "", "--appendonly", "no"]

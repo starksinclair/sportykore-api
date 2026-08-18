@@ -162,6 +162,30 @@ const routes = {
     tokens: [{"old":"/api/v1/push/tokens","type":0,"val":"api","end":""},{"old":"/api/v1/push/tokens","type":0,"val":"v1","end":""},{"old":"/api/v1/push/tokens","type":0,"val":"push","end":""},{"old":"/api/v1/push/tokens","type":0,"val":"tokens","end":""}],
     types: placeholder as Registry['push_notifications.register_token']['types'],
   },
+  'push_notifications.index': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/notifications',
+    tokens: [{"old":"/api/v1/notifications","type":0,"val":"api","end":""},{"old":"/api/v1/notifications","type":0,"val":"v1","end":""},{"old":"/api/v1/notifications","type":0,"val":"notifications","end":""}],
+    types: placeholder as Registry['push_notifications.index']['types'],
+  },
+  'push_notifications.unread_count': {
+    methods: ["GET","HEAD"],
+    pattern: '/api/v1/notifications/unread-count',
+    tokens: [{"old":"/api/v1/notifications/unread-count","type":0,"val":"api","end":""},{"old":"/api/v1/notifications/unread-count","type":0,"val":"v1","end":""},{"old":"/api/v1/notifications/unread-count","type":0,"val":"notifications","end":""},{"old":"/api/v1/notifications/unread-count","type":0,"val":"unread-count","end":""}],
+    types: placeholder as Registry['push_notifications.unread_count']['types'],
+  },
+  'push_notifications.mark_all_read': {
+    methods: ["PUT"],
+    pattern: '/api/v1/notifications/read-all',
+    tokens: [{"old":"/api/v1/notifications/read-all","type":0,"val":"api","end":""},{"old":"/api/v1/notifications/read-all","type":0,"val":"v1","end":""},{"old":"/api/v1/notifications/read-all","type":0,"val":"notifications","end":""},{"old":"/api/v1/notifications/read-all","type":0,"val":"read-all","end":""}],
+    types: placeholder as Registry['push_notifications.mark_all_read']['types'],
+  },
+  'push_notifications.mark_read': {
+    methods: ["PUT"],
+    pattern: '/api/v1/notifications/:id/read',
+    tokens: [{"old":"/api/v1/notifications/:id/read","type":0,"val":"api","end":""},{"old":"/api/v1/notifications/:id/read","type":0,"val":"v1","end":""},{"old":"/api/v1/notifications/:id/read","type":0,"val":"notifications","end":""},{"old":"/api/v1/notifications/:id/read","type":1,"val":"id","end":""},{"old":"/api/v1/notifications/:id/read","type":0,"val":"read","end":""}],
+    types: placeholder as Registry['push_notifications.mark_read']['types'],
+  },
   'push_notifications.show_league_preference': {
     methods: ["GET","HEAD"],
     pattern: '/api/v1/leagues/:leagueId/notifications',

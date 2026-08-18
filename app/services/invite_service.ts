@@ -7,10 +7,14 @@ import Invite from '#models/invite'
 import Player from '#models/player'
 import LeaguePlayer from '#models/league_player'
 import FileService from '#services/file_service'
+import PushNotificationService from '#services/push_notification_service'
 
 @inject()
 export default class InviteService {
-  constructor(private fileService: FileService) {}
+  constructor(
+    private fileService: FileService,
+    private pushNotificationService: PushNotificationService
+  ) {}
 
   async generate(leagueId: number, seasonId: number, teamId?: number, invitedUserId?: number) {
     const token = crypto.randomUUID()
@@ -62,6 +66,11 @@ export default class InviteService {
         playerId: player.id,
         leagueId: invite.leagueId,
         seasonId: invite.seasonId,
+        teamId: invite.teamId,
+      })
+      await this.pushNotificationService.notifyLeagueOwnerPlayerJoined({
+        leagueId: invite.leagueId,
+        playerId: player.id,
         teamId: invite.teamId,
       })
     }

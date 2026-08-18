@@ -319,6 +319,54 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/push_notifications_controller').default['registerToken']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
+  'push_notifications.index': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/notifications'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/push_notifications_controller').default['index']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/push_notifications_controller').default['index']>>>
+    }
+  }
+  'push_notifications.unread_count': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/notifications/unread-count'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/push_notifications_controller').default['unreadCount']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/push_notifications_controller').default['unreadCount']>>>
+    }
+  }
+  'push_notifications.mark_all_read': {
+    methods: ["PUT"]
+    pattern: '/api/v1/notifications/read-all'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/push_notifications_controller').default['markAllRead']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/push_notifications_controller').default['markAllRead']>>>
+    }
+  }
+  'push_notifications.mark_read': {
+    methods: ["PUT"]
+    pattern: '/api/v1/notifications/:id/read'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/push_notifications_controller').default['markRead']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/push_notifications_controller').default['markRead']>>>
+    }
+  }
   'push_notifications.show_league_preference': {
     methods: ["GET","HEAD"]
     pattern: '/api/v1/leagues/:leagueId/notifications'
