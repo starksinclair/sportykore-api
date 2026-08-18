@@ -1,0 +1,77 @@
+# .github/workflows/deploy.yml
+#
+# Build the Sportykore API image on a native x86 runner, push to ECR (eu-west-2),
+# then deploy to the Lightsail box over SSH (pull + compose up).
+# Triggered on push to main.
+#
+# ── One-time setup: add these GitHub repo secrets
+#    (repo → Settings → Secrets and variables → Actions → New repository secret)
+#
+#   AWS_ACCESS_KEY_ID       - IAM user with ECR PUSH permission (see note below)
+#   AWS_SECRET_ACCESS_KEY
+#   LIGHTSAIL_HOST          - the instance static IP
+#   LIGHTSAIL_USER          - "ubuntu"
+#   LIGHTSAIL_SSH_KEY       - the PRIVATE key for the instance (full .pem contents)
+#
+# ── IAM note: the CI user needs push (AmazonEC2ContainerRegistryPowerUser or a
+#    scoped push policy). The Lightsail box keeps pull-only. Different creds,
+#    least privilege: CI pushes, the box only pulls.
+
+name: Deploy to Lightsail
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}   # lets you trigger manually from the Actions tab
+
+env:
+  AWS_REGION: eu-west-2
+  ECR_REGISTRY: 023126614021.dkr.ecr.eu-west-2.amazonaws.com
+  ECR_REPOSITORY: sportykore-api
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest   # native x86_64 — no cross-build, no emulation
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image
+        run: |
+          IMAGE="${ECR_REGISTRY}/${ECR_REPOSITORY}"
+          # tag with commit SHA (immutable, for rollback) AND latest (moving pointer)
+          docker build -t "${IMAGE}:${{ github.sha }}" -t "${IMAGE}:latest" .
+          docker push "${IMAGE}:${{ github.sha }}"
+          docker push "${IMAGE}:latest"
+
+      - name: Deploy on Lightsail over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.LIGHTSAIL_HOST }}
+          username: ${{ secrets.LIGHTSAIL_USER }}
+          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          script: |
+            set -e
+            cd ~/sportykore-api
+
+            # refresh ECR docker login (token lasts ~12h)
+            aws ecr get-login-password --region ${{ env.AWS_REGION }} \
+              | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
+
+            # pull the freshly built image and restart
+            docker compose -f docker-compose.prod.ecr.yml pull
+            docker compose -f docker-compose.prod.ecr.yml up -d
+
+            # clean up old images so the 2GB box disk doesn't fill up
+            docker image prune -f
