@@ -15,7 +15,7 @@
 
 services:
   app:
-    image: ${023126614021.dkr.ecr.eu-west-2.amazonaws.com/sportykore-api:latest}
+    image: 023126614021.dkr.ecr.eu-west-2.amazonaws.com/sportykore-api:latest
     restart: always
     depends_on:
       - redis
