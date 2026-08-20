@@ -51,6 +51,7 @@ export default await Env.create(new URL('../', import.meta.url), {
   AWS_SECRET_ACCESS_KEY: Env.schema.string.optional(),
   AWS_REGION: Env.schema.string.optional(),
   S3_BUCKET: Env.schema.string.optional(),
+  S3_CDN_URL: Env.schema.string.optional(),
   GCS_BUCKET: Env.schema.string.optional(),
   /**
    * Path to a GCS service account JSON key (e.g. file://gcs_key.json).
