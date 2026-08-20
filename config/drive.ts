@@ -48,6 +48,7 @@ const driveConfig = defineConfig({
       region: env.get('AWS_REGION', 'us-east-1'),
       bucket: env.get('S3_BUCKET', ''),
       visibility: 'public',
+      cdnUrl: env.get('S3_CDN_URL'),
     }),
     gcs: services.gcs({
       ...gcsAuthOptions(),
