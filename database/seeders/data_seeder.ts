@@ -16,6 +16,7 @@ import StatType from '#models/stat_type'
 import Player from '#models/player'
 import PlayerAward from '#models/player_award'
 import PlayerHighlight from '#models/player_highlight'
+import PlayerSocialLink from '#models/player_social_link'
 import LeaguePlayer from '#models/league_player'
 import Stat from '#models/stat'
 import type { PlayerPosition, PreferredFoot } from '#types/player'
@@ -352,11 +353,12 @@ export default class DataSeeder extends BaseSeeder {
           city: `${country.name} ${CITY_SUFFIXES[(index + p) % CITY_SUFFIXES.length]}`,
           state: null,
           nationality: country.name,
-          socialHandle: `@${this.socialHandleSlug(playerName)}`,
           // One private player per league (first team's goalkeeper) so the
           // stub-on-every-surface rule has a real row to exercise manually.
           visibility: index === 0 && p === 0 ? 'private' : 'active',
         })
+
+        await this.seedSocialLinksForPlayer(player)
 
         if (globalPlayerIndex % HIGHLIGHT_PLAYER_INTERVAL === 0) {
           await this.seedHighlightsForPlayer(player)
@@ -972,7 +974,7 @@ export default class DataSeeder extends BaseSeeder {
   }
 
   /** Strips diacritics before slugifying so accented names don't leave stray dots. */
-  private socialHandleSlug(name: string): string {
+  private profileLinkSlug(name: string): string {
     return name
       .normalize('NFD')
       .replace(/[̀-ͯ]/g, '')
@@ -1002,6 +1004,31 @@ export default class DataSeeder extends BaseSeeder {
     }))
 
     await PlayerHighlight.createMany(rows)
+  }
+
+  private async seedSocialLinksForPlayer(player: Player) {
+    const handle = this.profileLinkSlug(player.name ?? `player-${player.id}`)
+    await PlayerSocialLink.updateOrCreate(
+      { playerId: player.id, platform: 'instagram' },
+      {
+        playerId: player.id,
+        platform: 'instagram',
+        url: `https://www.instagram.com/${handle}`,
+        handle,
+      }
+    )
+
+    if (player.id % 3 === 0) {
+      await PlayerSocialLink.updateOrCreate(
+        { playerId: player.id, platform: 'youtube' },
+        {
+          playerId: player.id,
+          platform: 'youtube',
+          url: `https://www.youtube.com/@${handle}`,
+          handle: `@${handle}`,
+        }
+      )
+    }
   }
 
   /**

@@ -21,6 +21,7 @@ import type PlayerAwardTransformer from '#transformers/player_award_transformer'
 import type PlayerHighlightTransformer from '#transformers/player_highlight_transformer'
 import type PlayerLeagueDetailTransformer from '#transformers/player_league_detail_transformer'
 import type PlayerSeasonDetailTransformer from '#transformers/player_season_detail_transformer'
+import type PlayerSocialLinkTransformer from '#transformers/player_social_link_transformer'
 import type PlayerTransformer from '#transformers/player_transformer'
 import type SearchTransformer from '#transformers/search_transformer'
 import type SeasonTransformer from '#transformers/season_transformer'
@@ -98,6 +99,10 @@ export namespace Data {
   export type PlayerSeasonDetail = InferData<PlayerSeasonDetailTransformer>
   export namespace PlayerSeasonDetail {
     export type Variants = InferVariants<PlayerSeasonDetailTransformer>
+  }
+  export type PlayerSocialLink = InferData<PlayerSocialLinkTransformer>
+  export namespace PlayerSocialLink {
+    export type Variants = InferVariants<PlayerSocialLinkTransformer>
   }
   export type Player = InferData<PlayerTransformer>
   export namespace Player {

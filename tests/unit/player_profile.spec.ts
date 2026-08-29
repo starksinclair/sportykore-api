@@ -5,6 +5,7 @@ import { DateTime } from 'luxon'
 import Country from '#models/country'
 import Player from '#models/player'
 import PlayerHighlight from '#models/player_highlight'
+import PlayerSocialLink from '#models/player_social_link'
 import User from '#models/user'
 import FileService from '#services/file_service'
 import PlayerProfileService from '#services/player_profile_service'
@@ -162,9 +163,14 @@ test.group('Player profile service', (group) => {
       avatarUrl: 'https://cdn.example.com/SENTINEL_PHOTO.jpg',
       primaryPosition: 'attack',
       city: 'SENTINEL_CITY',
-      socialHandle: 'SENTINEL_HANDLE',
       dateOfBirth: DateTime.now().minus({ years: 20 }),
       visibility: 'private',
+    })
+    await PlayerSocialLink.create({
+      playerId: player.id,
+      platform: 'instagram',
+      url: 'https://www.instagram.com/SENTINEL_HANDLE',
+      handle: 'SENTINEL_HANDLE',
     })
 
     const stub = { id: player.id, name: 'Private Player', visibility: 'private' }

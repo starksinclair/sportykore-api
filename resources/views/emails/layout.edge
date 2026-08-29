@@ -4,9 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="color-scheme" content="light" />
-    <meta name="supported-color-schemes" content="light" />
-    <title>Sportykore</title>
+    <meta name="color-scheme" content="light dark" />
+    <meta name="supported-color-schemes" content="light dark" />
+    <title>SportyKore</title>
     <!--[if mso]>
     <noscript>
       <xml>
@@ -17,7 +17,7 @@
     </noscript>
     <![endif]-->
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&family=Playfair+Display:wght@700;900&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap');
 
       * { box-sizing: border-box; }
 
@@ -43,129 +43,157 @@
       body {
         margin: 0 !important;
         padding: 0 !important;
-        background-color: #0f0c1c;
+        background-color: #f7f5fb;
         width: 100% !important;
         min-width: 100%;
       }
 
-      .email-wrapper {
-        background-color: #0f0c1c;
-        background-image:
-          linear-gradient(180deg, rgba(74,20,140,0.4) 0%, rgba(15,12,28,1) 50%),
-          repeating-linear-gradient(-45deg, #0f0c1c 0 18px, rgba(230,168,23,0.06) 18px 20px);
+      a { color: #6d3bb8; }
+
+      .sk-wrapper { background-color: #f7f5fb; }
+      .sk-card { background-color: #ffffff; border: 1px solid #e7e1f1; }
+      .sk-brand { color: #4a148c; }
+      .sk-brand-mark { background-color: #4a148c; color: #e6a817; }
+      .sk-title { color: #171023; }
+      .sk-copy { color: #4a415c; }
+      .sk-muted { color: #756a86; }
+      .sk-rule { background-color: #e7e1f1; }
+      .sk-chip { background-color: #f3eefb; border: 1px solid #e7e1f1; }
+      .sk-accent { color: #9a6a00; }
+      .sk-button { background-color: #e6a817; color: #171023; }
+
+      @media (prefers-color-scheme: dark) {
+        body,
+        .sk-wrapper {
+          background-color: #0f0c1c !important;
+        }
+
+        .sk-card {
+          background-color: #181326 !important;
+          border-color: #2d2440 !important;
+        }
+
+        .sk-brand {
+          color: #f1d077 !important;
+        }
+
+        .sk-brand-mark {
+          background-color: #e6a817 !important;
+          color: #171023 !important;
+        }
+
+        .sk-title {
+          color: #ffffff !important;
+        }
+
+        .sk-copy {
+          color: #ded7ea !important;
+        }
+
+        .sk-muted {
+          color: #a99dbd !important;
+        }
+
+        .sk-rule {
+          background-color: #2d2440 !important;
+        }
+
+        .sk-chip {
+          background-color: #211934 !important;
+          border-color: #332846 !important;
+        }
+
+        .sk-accent {
+          color: #f1d077 !important;
+        }
+
+        .sk-button {
+          background-color: #e6a817 !important;
+          color: #171023 !important;
+        }
       }
 
-      .email-container {
-        max-width: 600px;
-        margin: 0 auto;
+      [data-ogsc] body,
+      [data-ogsc] .sk-wrapper {
+        background-color: #0f0c1c !important;
       }
+
+      [data-ogsc] .sk-card {
+        background-color: #181326 !important;
+        border-color: #2d2440 !important;
+      }
+
+      [data-ogsc] .sk-title { color: #ffffff !important; }
+      [data-ogsc] .sk-copy { color: #ded7ea !important; }
+      [data-ogsc] .sk-muted { color: #a99dbd !important; }
+      [data-ogsc] .sk-rule { background-color: #2d2440 !important; }
+      [data-ogsc] .sk-chip {
+        background-color: #211934 !important;
+        border-color: #332846 !important;
+      }
+      [data-ogsc] .sk-accent { color: #f1d077 !important; }
 
       @media only screen and (max-width: 600px) {
-        .email-container { width: 100% !important; }
-        .content-pad { padding: 32px 24px 28px !important; }
-        .header-pad { padding: 28px 24px !important; }
-        .footer-pad { padding: 20px 24px !important; }
-        .hero-headline { font-size: 26px !important; }
+        .sk-container { width: 100% !important; }
+        .sk-outer-pad { padding: 24px 12px 36px !important; }
+        .sk-content-pad { padding: 28px 22px !important; }
+        .sk-footer-pad { padding: 18px 22px 24px !important; }
+        .sk-title { font-size: 25px !important; }
       }
     </style>
   </head>
-  <body style="margin:0;padding:0;background-color:#0f0c1c;width:100%;">
-
-    <!-- Diagonal stripe background wrapper -->
-    <div class="email-wrapper" style="background-color:#0f0c1c;background-image:linear-gradient(180deg,rgba(74,20,140,0.4) 0%,rgba(15,12,28,1) 50%),repeating-linear-gradient(-45deg,#0f0c1c 0 18px,rgba(230,168,23,0.06) 18px 20px);padding:40px 16px 60px;">
-
-      <table class="email-container" width="600" cellpadding="0" cellspacing="0" border="0" align="center" style="max-width:600px;width:100%;">
-
-        <!-- ─── HEADER ─── -->
+  <body class="sk-body" style="margin:0;padding:0;background-color:#f7f5fb;width:100%;">
+    <div class="sk-wrapper sk-outer-pad" style="background-color:#f7f5fb;padding:40px 16px 56px;">
+      <table
+        class="sk-container"
+        width="600"
+        cellpadding="0"
+        cellspacing="0"
+        border="0"
+        align="center"
+        style="max-width:600px;width:100%;"
+      >
         <tr>
-          <td style="border-radius:20px 20px 0 0;overflow:hidden;">
-            <!-- Gold accent bar -->
+          <td style="padding:0 0 14px;">
             <table width="100%" cellpadding="0" cellspacing="0" border="0">
               <tr>
-                <td style="height:4px;background:linear-gradient(90deg,#E6A817 0%,#F2A900 40%,#E6A817 100%);font-size:0;line-height:0;">&nbsp;</td>
-              </tr>
-            </table>
-            <!-- Header body -->
-            <table width="100%" cellpadding="0" cellspacing="0" border="0">
-              <tr>
-                <td
-                  class="header-pad"
-                  style="background:linear-gradient(145deg,#2C0C54 0%,#4A148C 60%,#3B1070 100%);padding:32px 48px 28px;text-align:center;"
-                >
-                  <!-- Wordmark -->
-                  <div style="margin-bottom:6px;">
-                    <span
-                      style="font-family:'Pacifico',Georgia,serif;font-size:36px;color:#E6A817;letter-spacing:-0.5px;line-height:1;"
-                    >Sportykore</span>
-                  </div>
-                  <!-- Tagline -->
-                  <div>
-                    <span
-                      style="font-family:'Open Sans',Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:3px;text-transform:uppercase;"
-                    >The League Platform</span>
-                  </div>
-                </td>
-              </tr>
-            </table>
-            <!-- Separator line -->
-            <table width="100%" cellpadding="0" cellspacing="0" border="0">
-              <tr>
-                <td style="height:1px;background:linear-gradient(90deg,transparent,rgba(230,168,23,0.4),transparent);font-size:0;line-height:0;">&nbsp;</td>
+                
               </tr>
             </table>
           </td>
         </tr>
 
-        <!-- ─── BODY ─── -->
         <tr>
           <td
-            class="content-pad"
-            style="background-color:#1A1530;padding:44px 48px 40px;border-left:1px solid rgba(74,20,140,0.4);border-right:1px solid rgba(74,20,140,0.4);"
+            class="sk-card sk-content-pad"
+            style="background-color:#ffffff;border:1px solid #e7e1f1;border-radius:22px;padding:36px 40px;"
           >
             {{{ await $slots.content() }}}
           </td>
         </tr>
 
-        <!-- ─── FOOTER ─── -->
         <tr>
-          <td style="border-radius:0 0 20px 20px;overflow:hidden;">
-            <!-- Top border -->
-            <table width="100%" cellpadding="0" cellspacing="0" border="0">
-              <tr>
-                <td style="height:1px;background:linear-gradient(90deg,transparent,rgba(230,168,23,0.3),transparent);font-size:0;line-height:0;">&nbsp;</td>
-              </tr>
-            </table>
-            <!-- Footer body -->
-            <table width="100%" cellpadding="0" cellspacing="0" border="0">
-              <tr>
-                <td
-                  class="footer-pad"
-                  style="background:linear-gradient(180deg,#16122a 0%,#0f0c1c 100%);padding:24px 48px 28px;text-align:center;border-left:1px solid rgba(74,20,140,0.3);border-right:1px solid rgba(74,20,140,0.3);border-bottom:1px solid rgba(74,20,140,0.3);border-radius:0 0 20px 20px;"
-                >
-                  <!-- Logo small -->
-                  <p style="margin:0 0 12px;">
-                    <span style="font-family:'Pacifico',Georgia,serif;font-size:18px;color:#E6A817;">Sportykore</span>
-                  </p>
-                  <p style="margin:0 0 6px;font-family:'Open Sans',Arial,Helvetica,sans-serif;font-size:12px;color:rgba(255,255,255,0.3);line-height:1.6;">
-                    &copy; {{ new Date().getFullYear() }} Sportykore. All rights reserved.
-                  </p>
-                  <p style="margin:0 0 14px;font-family:'Open Sans',Arial,Helvetica,sans-serif;font-size:11px;color:rgba(255,255,255,0.2);line-height:1.6;">
-                    You received this email because you have an account with Sportykore.
-                  </p>
-                  <!-- Footer links -->
-                  <p style="margin:0;">
-                    <a href="https://sportykore.com/privacy" style="font-family:'Open Sans',Arial,Helvetica,sans-serif;font-size:11px;color:rgba(230,168,23,0.5);text-decoration:none;">Privacy Policy</a>
-                    <span style="color:rgba(255,255,255,0.15);margin:0 8px;">·</span>
-                    <a href="https://sportykore.com/terms" style="font-family:'Open Sans',Arial,Helvetica,sans-serif;font-size:11px;color:rgba(230,168,23,0.5);text-decoration:none;">Terms of Service</a>
-                  </p>
-                </td>
-              </tr>
-            </table>
+          <td class="sk-footer-pad" style="padding:20px 8px 0;text-align:left;">
+            <p
+              class="sk-muted"
+              style="margin:0 0 6px;font-family:'Open Sans',Arial,Helvetica,sans-serif;font-size:12px;color:#756a86;line-height:1.6;"
+            >
+              &copy; {{ new Date().getFullYear() }} SportyKore. All rights reserved.
+            </p>
+            <p
+              class="sk-muted"
+              style="margin:0 0 12px;font-family:'Open Sans',Arial,Helvetica,sans-serif;font-size:12px;color:#756a86;line-height:1.6;"
+            >
+              You received this email because you have a SportyKore account.
+            </p>
+            <p style="margin:0;font-family:'Open Sans',Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;">
+              <a href="https://sportykore.com/privacy" class="sk-accent" style="color:#9a6a00;text-decoration:none;">Privacy</a>
+              <span class="sk-muted" style="color:#756a86;padding:0 8px;">|</span>
+              <a href="https://sportykore.com/terms" class="sk-accent" style="color:#9a6a00;text-decoration:none;">Terms</a>
+            </p>
           </td>
         </tr>
-
       </table>
     </div>
-
   </body>
 </html>

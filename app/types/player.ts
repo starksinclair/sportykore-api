@@ -12,7 +12,17 @@ export type PreferredFoot = (typeof PREFERRED_FEET)[number]
 export const PLAYER_VISIBILITIES = ['active', 'private'] as const
 export type PlayerVisibility = (typeof PLAYER_VISIBILITIES)[number]
 
-export const MAX_HIGHLIGHTS_PER_PLAYER = 10
+export const PLAYER_SOCIAL_PLATFORMS = [
+  'instagram',
+  'tiktok',
+  'youtube',
+  'x',
+  'facebook',
+  'website',
+] as const
+export type PlayerSocialPlatform = (typeof PLAYER_SOCIAL_PLATFORMS)[number]
+
+export const MAX_HIGHLIGHTS_PER_PLAYER = 3
 
 /** Plausible age window enforced when a date of birth is supplied. */
 export const MIN_PLAYER_AGE = 5

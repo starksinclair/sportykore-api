@@ -5,6 +5,7 @@ import type League from '#models/league'
 
 export default class TeamAdminAssignedNotification extends BaseMail {
   subject = `You've been made a team admin on SportyKore`
+  from = 'SportyKore <noreply@notifications.sportykore.com>'
 
   constructor(
     private assignee: User,

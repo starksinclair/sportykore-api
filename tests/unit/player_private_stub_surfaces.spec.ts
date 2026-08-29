@@ -8,6 +8,7 @@ import GameLineup from '#models/game_lineup'
 import League from '#models/league'
 import LeaguePlayer from '#models/league_player'
 import Player from '#models/player'
+import PlayerSocialLink from '#models/player_social_link'
 import Season from '#models/season'
 import Stat from '#models/stat'
 import StatType from '#models/stat_type'
@@ -72,9 +73,14 @@ test.group('Private player stub — cross-surface', (group) => {
       avatarUrl: 'https://cdn.example.com/SENTINEL_PHOTO.jpg',
       primaryPosition: 'attack',
       city: 'SENTINEL_CITY',
-      socialHandle: 'SENTINEL_HANDLE',
       dateOfBirth: DateTime.now().minus({ years: 20 }),
       visibility: 'private',
+    })
+    await PlayerSocialLink.create({
+      playerId: player.id,
+      platform: 'instagram',
+      url: 'https://www.instagram.com/SENTINEL_HANDLE',
+      handle: 'SENTINEL_HANDLE',
     })
 
     await LeaguePlayer.create({

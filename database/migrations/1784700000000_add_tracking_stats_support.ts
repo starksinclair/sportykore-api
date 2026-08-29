@@ -1,18 +1,32 @@
 import { BaseSchema } from '@adonisjs/lucid/schema'
 import { DateTime } from 'luxon'
 
+import env from '#start/env'
+
 export default class extends BaseSchema {
   protected tableName = 'stats'
 
   async up() {
     // Use raw DDL so column creation completes before the unique index SQL runs.
     // Lucid schema builders are deferred until after `up` returns, which races rawQuery.
-    await this.db.rawQuery(
-      'alter table stats add column if not exists client_event_id varchar null'
-    )
-    await this.db.rawQuery(
-      "alter table stats add column if not exists qualifiers jsonb not null default '{}'::jsonb"
-    )
+    if (env.get('DB_CONNECTION') === 'sqlite') {
+      const statsColumns = await this.db.rawQuery(`pragma table_info(${this.tableName})`)
+      const columnNames = new Set(statsColumns.map((column: { name: string }) => column.name))
+
+      if (!columnNames.has('client_event_id')) {
+        await this.db.rawQuery('alter table stats add column client_event_id varchar null')
+      }
+      if (!columnNames.has('qualifiers')) {
+        await this.db.rawQuery("alter table stats add column qualifiers json not null default '{}'")
+      }
+    } else {
+      await this.db.rawQuery(
+        'alter table stats add column if not exists client_event_id varchar null'
+      )
+      await this.db.rawQuery(
+        "alter table stats add column if not exists qualifiers jsonb not null default '{}'::jsonb"
+      )
+    }
     await this.db.rawQuery(
       'create index if not exists stats_game_id_team_id_stat_type_id_index on stats (game_id, team_id, stat_type_id)'
     )
@@ -65,7 +79,15 @@ export default class extends BaseSchema {
     await this.db.rawQuery('drop index if exists stats_client_event_id_unique')
     await this.db.rawQuery('drop index if exists stats_game_id_player_id_stat_type_id_index')
     await this.db.rawQuery('drop index if exists stats_game_id_team_id_stat_type_id_index')
-    await this.db.rawQuery('alter table stats drop column if exists qualifiers')
-    await this.db.rawQuery('alter table stats drop column if exists client_event_id')
+    if (await this.schema.hasColumn(this.tableName, 'qualifiers')) {
+      await this.schema.alterTable(this.tableName, (table) => {
+        table.dropColumn('qualifiers')
+      })
+    }
+    if (await this.schema.hasColumn(this.tableName, 'client_event_id')) {
+      await this.schema.alterTable(this.tableName, (table) => {
+        table.dropColumn('client_event_id')
+      })
+    }
   }
 }

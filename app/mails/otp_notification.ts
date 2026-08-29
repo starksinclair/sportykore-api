@@ -2,14 +2,14 @@ import { BaseMail } from '@adonisjs/mail'
 
 export default class OTPNotification extends BaseMail {
   subject: string
-  from = 'Sportykore <app@notifications.sportykore.com>'
+  from = 'SportyKore <app@notifications.sportykore.com>'
 
   constructor(
     private email: string,
     private code: string
   ) {
     super()
-    this.subject = `${this.code} is your Sportykore login code`
+    this.subject = `${this.code} is your SportyKore login code`
   }
 
   prepare() {

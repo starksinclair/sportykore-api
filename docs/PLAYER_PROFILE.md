@@ -17,7 +17,6 @@ CTA. See [ROUTES.md](../ROUTES.md) for the full endpoint/payload reference.
 | `height_cm` | 100–250 |
 | `date_of_birth` | **Stored, never serialized** — see below |
 | `city`, `state`, `nationality` | Free text |
-| `social_handle` | One field: Instagram or TikTok handle |
 | `visibility` | `active` \| `private`, **not null**, default `active` — see below |
 
 Deliberately **not** added: jersey number (belongs to team membership — the
@@ -34,7 +33,18 @@ and any "looking for a team" flag (marketplace feature, out of scope).
 | `sort_order` | Rewritten wholesale on reorder |
 
 Unique on `(player_id, video_id)` — no duplicate clips on one profile. Capped
-at 10 highlights per player (`MAX_HIGHLIGHTS_PER_PLAYER` in `#types/player`).
+at 3 highlights per player (`MAX_HIGHLIGHTS_PER_PLAYER` in `#types/player`).
+
+`player_social_links` (new table):
+
+| Column | Notes |
+| --- | --- |
+| `player_id` | FK `players`, `ON DELETE CASCADE` |
+| `platform` | `instagram` \| `tiktok` \| `youtube` \| `x` \| `facebook` \| `website` |
+| `url` | Canonical profile URL, max 500 chars |
+| `handle` | Parsed display handle or hostname |
+
+Unique on `(player_id, platform)` — one link per platform per player.
 
 ---
 
@@ -69,7 +79,7 @@ The blanking behavior is implemented and tested now so it's ready:
 { "id": 42, "name": "Private Player", "visibility": "private" }
 ```
 
-No photo, bio, position, location, social handle, highlights, or stats leak
+No photo, bio, position, location, social links, highlights, or stats leak
 through. Because every other transformer that serializes a player
 (`LeaguePlayerTransformer`, `GameLineupTransformer`, `StatTransformer`,
 `TeamSeasonDetailTransformer`) calls `PlayerTransformer.transform(...)`
@@ -81,6 +91,19 @@ carry their own `visibility === 'private'` check for the same effect.
 
 See `tests/unit/player_private_stub_surfaces.spec.ts` for the surface-by-surface
 assertions.
+
+## Social profiles
+
+The player form lets the owner add multiple public profile links. Supported
+platforms are Instagram, TikTok, YouTube, X, Facebook, and website. The API
+normalizes handles and full profile URLs into `socialLinks` rows:
+
+```json
+{ "id": 1, "platform": "youtube", "url": "https://www.youtube.com/@sportykore", "handle": "@sportykore" }
+```
+
+YouTube social links are for channel/profile pages only. YouTube video links
+belong in Highlights and are rejected from `socialLinks` with a clear message.
 
 ---
 
@@ -105,7 +128,7 @@ acceptable — this repo does not validate video existence.
 
 Rules enforced in `PlayerHighlightService`:
 
-- Cap at 10 highlights per player; the 11th is rejected with a clear message.
+- Cap at 3 highlights per player; the 4th is rejected with a clear message.
 - Duplicate `video_id` on the same player is rejected (409).
 - **Only the profile owner** may add, reorder, edit, or delete their own
   highlights — every method resolves the player from the authenticated

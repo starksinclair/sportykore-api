@@ -54,7 +54,7 @@ test.group('PlayerHighlightService', (group) => {
     }
   })
 
-  test('the 11th highlight is rejected', async ({ assert }) => {
+  test('the 4th highlight is rejected', async ({ assert }) => {
     const { highlightService } = makeServices()
     const { user } = await makePlayerOwner('cap@test.com')
 
