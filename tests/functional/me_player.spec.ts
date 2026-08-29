@@ -1,5 +1,6 @@
 import env from '#start/env'
 import Country from '#models/country'
+import PlayerSocialLink from '#models/player_social_link'
 import User from '#models/user'
 import { test } from '@japa/runner'
 
@@ -61,6 +62,10 @@ test.group('GET/POST/PUT /api/v1/me/player', (group) => {
         bio: 'Box-to-box midfielder',
         primaryPosition: 'midfield',
         dateOfBirth: '2000-01-15',
+        socialLinks: [
+          { platform: 'instagram', url: '@newprofile' },
+          { platform: 'youtube', url: 'https://www.youtube.com/@newprofile' },
+        ],
       }),
     })
     assert.equal(createRes.status, 201)
@@ -73,6 +78,25 @@ test.group('GET/POST/PUT /api/v1/me/player', (group) => {
 
     assert.equal(body.data.player.name, 'New Profile')
     assert.isNumber(body.data.player.age)
+    assert.deepEqual(
+      body.data.player.socialLinks.map((link: Record<string, unknown>) => ({
+        platform: link.platform,
+        url: link.url,
+        handle: link.handle,
+      })),
+      [
+        {
+          platform: 'instagram',
+          url: 'https://www.instagram.com/newprofile',
+          handle: 'newprofile',
+        },
+        {
+          platform: 'youtube',
+          url: 'https://www.youtube.com/@newprofile',
+          handle: '@newprofile',
+        },
+      ]
+    )
     assert.isNumber(body.data.completeness)
     assert.isArray(body.data.missingFields)
     assert.equal(body.data.highlightsCount, 0)
@@ -82,6 +106,7 @@ test.group('GET/POST/PUT /api/v1/me/player', (group) => {
     assert.notProperty(body.data.player, 'dateOfBirth')
     assert.notInclude(JSON.stringify(body), '2000-01-15')
     assert.notInclude(JSON.stringify(body), 'date_of_birth')
+    assert.notProperty(body.data.player, 'socialHandle')
   })
 
   test('a second POST is rejected with 409', async ({ assert }) => {
@@ -117,13 +142,63 @@ test.group('GET/POST/PUT /api/v1/me/player', (group) => {
     const putRes = await fetch(apiUrl('/api/v1/me/player'), {
       method: 'PUT',
       headers: { ...jsonHeaders, ...authHeader },
-      body: JSON.stringify({ name: 'After', city: 'Abuja', preferredFoot: 'right' }),
+      body: JSON.stringify({
+        name: 'After',
+        city: 'Abuja',
+        preferredFoot: 'right',
+        socialLinks: [
+          { platform: 'instagram', url: '@after' },
+          { platform: 'website', url: 'https://after.example.com' },
+        ],
+      }),
     })
     assert.equal(putRes.status, 200)
     const body = await readJson(putRes)
     assert.equal(body.data.player.name, 'After')
     assert.equal(body.data.player.city, 'Abuja')
     assert.equal(body.data.player.preferredFoot, 'right')
+    assert.deepEqual(
+      body.data.player.socialLinks.map((link: Record<string, unknown>) => link.platform),
+      ['instagram', 'website']
+    )
+  })
+
+  test('PUT replaces social links and rejects YouTube video links', async ({ assert }) => {
+    const { authHeader } = await makeAuthedUser('social-links@test.com')
+    const country = await Country.findByOrFail('code', 'ng')
+
+    await fetch(apiUrl('/api/v1/me/player'), {
+      method: 'POST',
+      headers: { ...jsonHeaders, ...authHeader },
+      body: JSON.stringify({
+        name: 'Social Player',
+        countryId: country.id,
+        socialLinks: [{ platform: 'instagram', url: '@before' }],
+      }),
+    })
+
+    const bad = await fetch(apiUrl('/api/v1/me/player'), {
+      method: 'PUT',
+      headers: { ...jsonHeaders, ...authHeader },
+      body: JSON.stringify({
+        socialLinks: [{ platform: 'youtube', url: 'https://youtu.be/dQw4w9WgXcQ' }],
+      }),
+    })
+    assert.equal(bad.status, 422)
+    const badBody = await readJson(bad)
+    assert.include(JSON.stringify(badBody), 'Use Highlights for YouTube video clips.')
+
+    const good = await fetch(apiUrl('/api/v1/me/player'), {
+      method: 'PUT',
+      headers: { ...jsonHeaders, ...authHeader },
+      body: JSON.stringify({
+        socialLinks: [{ platform: 'x', url: '@after' }],
+      }),
+    })
+    assert.equal(good.status, 200)
+    const links = await PlayerSocialLink.query()
+    assert.lengthOf(links, 1)
+    assert.equal(links[0]!.platform, 'x')
   })
 })
 
@@ -161,6 +236,27 @@ test.group('Player highlights API', (group) => {
       body: JSON.stringify({ url: 'https://vimeo.com/12345' }),
     })
     assert.equal(rejected.status, 422)
+  })
+
+  test('the 4th highlight is prevented by the API', async ({ assert }) => {
+    const { authHeader } = await withProfile('highlight-cap@test.com')
+
+    for (const id of ['aaaaaaaaaaa', 'bbbbbbbbbbb', 'ccccccccccc']) {
+      const created = await fetch(apiUrl('/api/v1/me/player/highlights'), {
+        method: 'POST',
+        headers: { ...jsonHeaders, ...authHeader },
+        body: JSON.stringify({ url: `https://youtu.be/${id}` }),
+      })
+      assert.equal(created.status, 201)
+    }
+
+    const fourth = await fetch(apiUrl('/api/v1/me/player/highlights'), {
+      method: 'POST',
+      headers: { ...jsonHeaders, ...authHeader },
+      body: JSON.stringify({ url: 'https://youtu.be/ddddddddddd' }),
+    })
+    assert.equal(fourth.status, 422)
+    assert.include(JSON.stringify(await readJson(fourth)), '3')
   })
 
   test("a non-owner cannot delete another player's highlight", async ({ assert }) => {

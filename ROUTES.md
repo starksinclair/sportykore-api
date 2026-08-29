@@ -37,8 +37,9 @@ Types below reflect **transformer output** (`app/transformers/*`). Nullable DB f
 | **Team (with games)** | **Team** + `homeGames`, `awayGames` → **Game[]** |
 | **Player** | `id`, `name`, `avatarUrl` (string \| null), `visibility` (`active` \| `private`). **If `visibility: private`, every variant below collapses to just `{ id, name, visibility: "private" }`** — see [docs/PLAYER_PROFILE.md](docs/PLAYER_PROFILE.md) |
 | **Player (with stats)** | **Player** + `stats` → **Stat[]** |
-| **Player (profile)** | **Player** + `bio`, `primaryPosition`, `secondaryPosition`, `preferredFoot`, `heightCm`, `city`, `state`, `nationality`, `socialHandle`, `age` (number \| null, computed — **`dateOfBirth` is never serialized**), `country` → **Country** \| omitted, `highlights` → **PlayerHighlight[]** \| omitted |
+| **Player (profile)** | **Player** + `bio`, `primaryPosition`, `secondaryPosition`, `preferredFoot`, `heightCm`, `city`, `state`, `nationality`, `socialLinks` → **PlayerSocialLink[]**, `age` (number \| null, computed — **`dateOfBirth` is never serialized**), `country` → **Country** \| omitted, `highlights` → **PlayerHighlight[]** \| omitted |
 | **PlayerHighlight** | `id`, `videoId` (11-char YouTube ID), `title` (string \| null), `sortOrder`, `thumbnailUrl` (derived: `https://img.youtube.com/vi/{videoId}/hqdefault.jpg`) |
+| **PlayerSocialLink** | `id`, `platform` (`instagram` \| `tiktok` \| `youtube` \| `x` \| `facebook` \| `website`), `url`, `handle` (string \| null) |
 | **StatType** | `id`, `name`, `displayName`, `iconName` (string \| null), `category` (string \| null) |
 | **Stat** | `id`, `minute` (number \| null), `isStoppageTime` (boolean \| null), `numericValue` (number \| null), `clientEventId` (string \| null), `qualifiers` (object), `isUnaccredited` (boolean), `type` → **StatType** \| omitted, `team` → **Team** \| omitted, `player` → **Player** \| omitted, `relatedPlayer` → **Player** \| omitted |
 | **Standing** | `id`, `position`, `played`, `wins`, `draws`, `losses`, `goalsFor`, `goalsAgainst`, `goalDifference`, `points`, `form` (string \| null), `team` → **Team** \| omitted |
@@ -328,7 +329,7 @@ League owner only. Each team includes active admins (`removed_at` null) so the m
 | `PUT` | `/api/v1/me/player` | `apiAuth` | **Body:** `updatePlayerProfileValidator` | `{ data: { player } }` | `404` if no profile yet; `422` validation |
 | `POST` | `/api/v1/me/player/photo` | `apiAuth` | **Body:** `multipart/form-data` — `photo` (image, max 2 MB, jpg/jpeg/png/webp) | `{ data: { player } }` | `404` if no profile yet; uploads via the existing S3 drive pipeline (`players/` prefix) |
 | `GET` | `/api/v1/me/player/highlights` | `apiAuth` | none | **`{ data: PlayerHighlight[] }`**, ordered by `sortOrder` | `404` if no profile yet |
-| `POST` | `/api/v1/me/player/highlights` | `apiAuth` | **Body:** `createHighlightValidator` (`url`, optional `title`) | **201** `{ data: PlayerHighlight }` | `422` non-YouTube URL or 11th highlight; `409` duplicate video on this profile. See [docs/PLAYER_PROFILE.md](docs/PLAYER_PROFILE.md) |
+| `POST` | `/api/v1/me/player/highlights` | `apiAuth` | **Body:** `createHighlightValidator` (`url`, optional `title`) | **201** `{ data: PlayerHighlight }` | `422` non-YouTube URL or 4th highlight; `409` duplicate video on this profile. See [docs/PLAYER_PROFILE.md](docs/PLAYER_PROFILE.md) |
 | `PUT` | `/api/v1/me/player/highlights/reorder` | `apiAuth` | **Body:** `reorderHighlightsValidator` (`ids: number[]`) | `{ data: PlayerHighlight[] }` in the new order | `422` if `ids` isn't exactly the caller's highlight IDs, once each |
 | `PUT` | `/api/v1/me/player/highlights/:hid` | `apiAuth` | **Params:** `hid`. **Body:** `updateHighlightValidator` (`title`) | `{ data: PlayerHighlight }` | `404` if not the caller's own highlight |
 | `DELETE` | `/api/v1/me/player/highlights/:hid` | `apiAuth` | **Params:** `hid` | `{ message: "Highlight removed successfully" }` | `404` if not the caller's own highlight |
@@ -697,7 +698,7 @@ Use before invite accept / profile creation to decide whether to show the player
 
 ### `GET /api/v1/players/:id` → `{ player, leagues, statTypes }`
 
-- **`player`** — **Player (profile)**: `id`, `name`, `avatarUrl`, `bio`, `primaryPosition`, `secondaryPosition`, `preferredFoot`, `heightCm`, `city`, `state`, `nationality`, `socialHandle`, `age`, `country`, `highlights`.
+- **`player`** — **Player (profile)**: `id`, `name`, `avatarUrl`, `bio`, `primaryPosition`, `secondaryPosition`, `preferredFoot`, `heightCm`, `city`, `state`, `nationality`, `socialLinks`, `age`, `country`, `highlights`.
 - **`leagues`** — leagues the player belongs to (from `league_players` and/or stats), each with **`seasons`** for filtering in the UI.
 - **`statTypes`** — global stat type catalog for grouping (same shape as league detail).
 - If the player's `visibility` is `private`, `player` collapses to `{ id, name, visibility: "private" }` and `leagues` / `statTypes` are both returned empty — see [docs/PLAYER_PROFILE.md](docs/PLAYER_PROFILE.md).
@@ -741,7 +742,10 @@ Each league entry:
       "city": "Lagos",
       "state": null,
       "nationality": "Nigerian",
-      "socialHandle": "@ada.plays",
+      "socialLinks": [
+        { "id": 1, "platform": "instagram", "url": "https://www.instagram.com/ada.plays", "handle": "ada.plays" },
+        { "id": 2, "platform": "youtube", "url": "https://www.youtube.com/@adaplays", "handle": "@adaplays" }
+      ],
       "visibility": "active",
       "age": 24,
       "country": { "id": 1, "name": "Nigeria", "code": "ng" },
@@ -947,7 +951,8 @@ Optional: `jerseyNumber`, `status`, `isCaptain`, `position`, `joinedAt`, `leftAt
 | `preferredFoot` | optional nullable enum: `left` \| `right` \| `both` |
 | `heightCm` | optional nullable integer, 100–250 |
 | `dateOfBirth` | optional nullable date; server also enforces not-in-future and an implied age of 5–70 |
-| `city`, `state`, `nationality`, `socialHandle` | optional nullable, max 120 chars each |
+| `city`, `state`, `nationality` | optional nullable, max 120 chars each |
+| `socialLinks` | optional array of `{ platform, url }`, max one per supported platform; server normalizes profile URLs and handles |
 
 `updatePlayerProfileValidator` (`PUT /api/v1/me/player`) is the same shape
 with every field optional (including `name` / `countryId`).

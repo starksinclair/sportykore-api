@@ -3,7 +3,8 @@ import type User from '#models/user'
 import type League from '#models/league'
 
 export default class LeagueCreatedNotification extends BaseMail {
-  subject = 'Your league is live! 🏆'
+  subject = 'Your league is live'
+  from = 'SportyKore <noreply@notifications.sportykore.com>'
 
   constructor(
     private user: User,

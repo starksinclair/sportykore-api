@@ -4,12 +4,14 @@ import { inject } from '@adonisjs/core'
 import { DateTime } from 'luxon'
 
 import { playerAvatarKey } from '#helpers/storage_paths'
+import { normalizePlayerSocialLinks } from '#helpers/player_social_links'
 import LeaguePlayer from '#models/league_player'
 import Player from '#models/player'
 import PlayerHighlight from '#models/player_highlight'
+import PlayerSocialLink from '#models/player_social_link'
 import FileService from '#services/file_service'
 import { MAX_PLAYER_AGE, MIN_PLAYER_AGE } from '#types/player'
-import type { PlayerPosition, PreferredFoot } from '#types/player'
+import type { PlayerPosition, PlayerSocialPlatform, PreferredFoot } from '#types/player'
 
 export type PlayerProfileInput = {
   name?: string
@@ -23,7 +25,7 @@ export type PlayerProfileInput = {
   city?: string | null
   state?: string | null
   nationality?: string | null
-  socialHandle?: string | null
+  socialLinks?: Array<{ platform: PlayerSocialPlatform; url: string }>
 }
 
 export type ProfileCompleteness = {
@@ -80,6 +82,13 @@ export default class PlayerProfileService {
 
   async resolveOwn(userId: number): Promise<ResolvedProfile> {
     const player = await this.findOwnOrFail(userId)
+    await player.load('country')
+    await player.load('highlights', (highlightsQuery) => {
+      highlightsQuery.orderBy('sort_order', 'asc').orderBy('id', 'asc')
+    })
+    await player.load('socialLinks', (socialLinksQuery) => {
+      socialLinksQuery.orderBy('platform', 'asc')
+    })
     await player.load('awards', (awardsQuery) => {
       awardsQuery
         .where('award_type', 'motm')
@@ -121,7 +130,9 @@ export default class PlayerProfileService {
     }
     this.assertPlausibleDateOfBirth(input.dateOfBirth)
 
-    return Player.create({
+    const links = normalizePlayerSocialLinks(input.socialLinks)
+
+    const player = await Player.create({
       userId,
       addedBy: userId,
       name: input.name.trim(),
@@ -135,14 +146,19 @@ export default class PlayerProfileService {
       city: input.city ?? null,
       state: input.state ?? null,
       nationality: input.nationality ?? null,
-      socialHandle: input.socialHandle ?? null,
       visibility: 'active',
     })
+
+    if (links) {
+      await this.replaceSocialLinks(player.id, links)
+    }
+    return this.loadProfileRelations(player)
   }
 
   async updateOwn(userId: number, input: PlayerProfileInput): Promise<Player> {
     const player = await this.findOwnOrFail(userId)
     this.assertPlausibleDateOfBirth(input.dateOfBirth)
+    const links = normalizePlayerSocialLinks(input.socialLinks)
 
     if (input.name !== undefined) player.name = input.name.trim()
     if (input.countryId !== undefined) player.countryId = input.countryId
@@ -155,10 +171,12 @@ export default class PlayerProfileService {
     if (input.city !== undefined) player.city = input.city
     if (input.state !== undefined) player.state = input.state
     if (input.nationality !== undefined) player.nationality = input.nationality
-    if (input.socialHandle !== undefined) player.socialHandle = input.socialHandle
 
     await player.save()
-    return player
+    if (links !== undefined) {
+      await this.replaceSocialLinks(player.id, links)
+    }
+    return this.loadProfileRelations(player)
   }
 
   /** Upload/replace the profile photo via the existing Drive pipeline. */
@@ -166,7 +184,7 @@ export default class PlayerProfileService {
     const player = await this.findOwnOrFail(userId)
     player.avatarUrl = await this.fileService.upload(photo, playerAvatarKey(player, photo.extname))
     await player.save()
-    return player
+    return this.loadProfileRelations(player)
   }
 
   completenessFor(player: Player, highlightsCount: number): ProfileCompleteness {
@@ -195,5 +213,45 @@ export default class PlayerProfileService {
         { status: 422 }
       )
     }
+  }
+
+  private async replaceSocialLinks(
+    playerId: number,
+    links: Array<{ platform: PlayerSocialPlatform; url: string; handle: string | null }>
+  ) {
+    await PlayerSocialLink.query().where('player_id', playerId).delete()
+
+    if (links.length === 0) {
+      return
+    }
+
+    await PlayerSocialLink.createMany(
+      links.map((link) => ({
+        playerId,
+        platform: link.platform,
+        url: link.url,
+        handle: link.handle,
+      }))
+    )
+  }
+
+  private async loadProfileRelations(player: Player): Promise<Player> {
+    await player.load('country')
+    await player.load('highlights', (highlightsQuery) => {
+      highlightsQuery.orderBy('sort_order', 'asc').orderBy('id', 'asc')
+    })
+    await player.load('socialLinks', (socialLinksQuery) => {
+      socialLinksQuery.orderBy('platform', 'asc')
+    })
+    await player.load('awards', (awardsQuery) => {
+      awardsQuery
+        .where('award_type', 'motm')
+        .preload('game', (gameQuery) => {
+          gameQuery.preload('homeTeam').preload('awayTeam').preload('venue')
+        })
+        .preload('awardedByUser')
+        .orderBy('created_at', 'desc')
+    })
+    return player
   }
 }

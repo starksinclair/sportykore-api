@@ -1,6 +1,16 @@
 import vine from '@vinejs/vine'
 import { resourceId } from '#validators/common'
-import { PLAYER_POSITIONS, PREFERRED_FEET } from '#types/player'
+import { PLAYER_POSITIONS, PLAYER_SOCIAL_PLATFORMS, PREFERRED_FEET } from '#types/player'
+
+const socialLinks = vine
+  .array(
+    vine.object({
+      platform: vine.enum(PLAYER_SOCIAL_PLATFORMS),
+      url: vine.string().trim().minLength(1).maxLength(500),
+    })
+  )
+  .maxLength(PLAYER_SOCIAL_PLATFORMS.length)
+  .optional()
 
 const profileFields = {
   bio: vine.string().trim().maxLength(300).nullable().optional(),
@@ -13,7 +23,7 @@ const profileFields = {
   city: vine.string().trim().maxLength(120).nullable().optional(),
   state: vine.string().trim().maxLength(120).nullable().optional(),
   nationality: vine.string().trim().maxLength(120).nullable().optional(),
-  socialHandle: vine.string().trim().maxLength(120).nullable().optional(),
+  socialLinks,
 }
 
 /** POST /me/player */

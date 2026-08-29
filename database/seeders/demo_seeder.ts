@@ -11,6 +11,7 @@ import League from '#models/league'
 import LeaguePlayer from '#models/league_player'
 import Player from '#models/player'
 import PlayerHighlight from '#models/player_highlight'
+import PlayerSocialLink from '#models/player_social_link'
 import Season from '#models/season'
 import Stage from '#models/stage'
 import Standing from '#models/standing'
@@ -167,6 +168,7 @@ export default class DemoSeeder extends BaseSeeder {
       full: true,
     })
 
+    await this.ensureSocialLinks(reviewPlayer)
     await this.ensureHighlights(reviewPlayer.id)
 
     const league = await this.seedDemoLeague(admin, reviewPlayer)
@@ -914,6 +916,28 @@ export default class DemoSeeder extends BaseSeeder {
         }
       )
     }
+  }
+
+  private async ensureSocialLinks(player: Player) {
+    await PlayerSocialLink.updateOrCreate(
+      { playerId: player.id, platform: 'instagram' },
+      {
+        playerId: player.id,
+        platform: 'instagram',
+        url: 'https://www.instagram.com/jordan.okoye',
+        handle: 'jordan.okoye',
+      }
+    )
+
+    await PlayerSocialLink.updateOrCreate(
+      { playerId: player.id, platform: 'youtube' },
+      {
+        playerId: player.id,
+        platform: 'youtube',
+        url: 'https://www.youtube.com/@jordanokoye',
+        handle: '@jordanokoye',
+      }
+    )
   }
 
   private async seedLineups(game: Game, home: TeamBundle, away: TeamBundle) {

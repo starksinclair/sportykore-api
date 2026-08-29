@@ -419,6 +419,25 @@ export class PlayerHighlightSchema extends BaseModel {
   declare videoId: string
 }
 
+export class PlayerSocialLinkSchema extends BaseModel {
+  static $columns = ['createdAt', 'handle', 'id', 'platform', 'playerId', 'updatedAt', 'url'] as const
+  $columns = PlayerSocialLinkSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare handle: string | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare platform: string
+  @column()
+  declare playerId: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare url: string
+}
+
 export class PlayerSchema extends BaseModel {
   static $columns = ['addedBy', 'avatarUrl', 'bio', 'city', 'countryId', 'createdAt', 'dateOfBirth', 'heightCm', 'id', 'name', 'nationality', 'preferredFoot', 'primaryPosition', 'secondaryPosition', 'socialHandle', 'state', 'updatedAt', 'userId', 'visibility'] as const
   $columns = PlayerSchema.$columns

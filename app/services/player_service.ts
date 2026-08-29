@@ -31,6 +31,9 @@ export class PlayerService {
       .preload('highlights', (highlightsQuery) => {
         highlightsQuery.orderBy('sort_order', 'asc').orderBy('id', 'asc')
       })
+      .preload('socialLinks', (socialLinksQuery) => {
+        socialLinksQuery.orderBy('platform', 'asc')
+      })
       .preload('awards', (awardsQuery) => {
         awardsQuery
           .where('award_type', 'motm')
