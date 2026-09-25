@@ -426,31 +426,63 @@ export default class GroupStageService {
     return { games: created, count: created.length }
   }
 
-  async ensureGroupsForStage(stage: Stage): Promise<StageGroup[]> {
-    const existing = await StageGroup.query()
-      .where('stage_id', stage.id)
-      .orderBy('sequence', 'asc')
-      .orderBy('id', 'asc')
-    if (existing.length > 0) {
-      return existing
-    }
-
+  async ensureGroupsForStage(
+    stage: Stage,
+    client?: TransactionClientContract
+  ): Promise<StageGroup[]> {
     if (stage.stageType !== 'group') {
       return []
     }
 
-    const config = this.getGroupConfig(stage)
-    const groups: StageGroup[] = []
-    for (let i = 0; i < config.format.group_count; i++) {
-      groups.push(
-        await StageGroup.create({
-          stageId: stage.id,
-          name: String.fromCharCode(65 + i),
-          sequence: i + 1,
-        })
-      )
+    const run = async (trx: TransactionClientContract) => {
+      const existing = await this.queryStageGroups(stage.id, trx)
+      const config = this.getGroupConfig(stage)
+      const existingSequences = new Set(existing.map((group) => group.sequence))
+      const now = DateTime.utc().toSQL({ includeOffset: false }) ?? DateTime.utc().toISO()
+      const missingGroups = Array.from({ length: config.format.group_count }, (_, index) => {
+        const sequence = index + 1
+        if (existingSequences.has(sequence)) {
+          return null
+        }
+
+        return {
+          stage_id: stage.id,
+          name: String.fromCharCode(65 + index),
+          sequence,
+          created_at: now,
+          updated_at: now,
+        }
+      }).filter((row): row is NonNullable<typeof row> => row !== null)
+
+      if (missingGroups.length > 0) {
+        await trx
+          .table('stage_groups')
+          .multiInsert(missingGroups)
+          .onConflict(['stage_id', 'sequence'])
+          .ignore()
+      }
+
+      return this.queryStageGroups(stage.id, trx)
     }
-    return groups
+
+    if (client) {
+      return run(client)
+    }
+
+    return db.transaction(run)
+  }
+
+  private queryStageGroups(stageId: number, client?: TransactionClientContract): Promise<StageGroup[]> {
+    const query = StageGroup.query()
+      .where('stage_id', stageId)
+      .orderBy('sequence', 'asc')
+      .orderBy('id', 'asc')
+
+    if (client) {
+      query.useTransaction(client)
+    }
+
+    return query
   }
 
   private async assertTeamsInLeague(leagueId: number, teamIds: number[]) {
