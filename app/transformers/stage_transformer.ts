@@ -1,5 +1,6 @@
 import { BaseTransformer } from '@adonisjs/core/transformers'
 import type Stage from '#models/stage'
+import StageGroupTransformer from '#transformers/stage_group_transformer'
 
 function parseConfig(raw: unknown) {
   if (raw === null || raw === undefined) {
@@ -28,6 +29,7 @@ export default class StageTransformer extends BaseTransformer<Stage> {
         'sourceStageId',
       ]),
       config: parseConfig(this.resource.config),
+      groups: StageGroupTransformer.transform(this.whenLoaded(this.resource.groups)),
     }
   }
 }

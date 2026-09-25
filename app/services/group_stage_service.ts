@@ -269,13 +269,7 @@ export default class GroupStageService {
       throw new Exception('Teams are already assigned for this stage', { status: 409 })
     }
 
-    const groups = await StageGroup.query()
-      .where('stage_id', stageId)
-      .orderBy('sequence', 'asc')
-      .orderBy('id', 'asc')
-    if (groups.length === 0) {
-      throw new Exception('Group stage has no groups', { status: 422 })
-    }
+    const groups = await this.ensureGroupsForStage(stage)
 
     let assignments: Array<{ teamId: number; stageGroupId: number; seed: number }>
 
@@ -359,10 +353,7 @@ export default class GroupStageService {
     }
 
     const config = this.getGroupConfig(stage)
-    const groups = await StageGroup.query()
-      .where('stage_id', stageId)
-      .orderBy('sequence', 'asc')
-      .orderBy('id', 'asc')
+    const groups = await this.ensureGroupsForStage(stage)
 
     const season = stage.season
     const leagueId = season.leagueId
@@ -433,6 +424,33 @@ export default class GroupStageService {
     }
 
     return { games: created, count: created.length }
+  }
+
+  async ensureGroupsForStage(stage: Stage): Promise<StageGroup[]> {
+    const existing = await StageGroup.query()
+      .where('stage_id', stage.id)
+      .orderBy('sequence', 'asc')
+      .orderBy('id', 'asc')
+    if (existing.length > 0) {
+      return existing
+    }
+
+    if (stage.stageType !== 'group') {
+      return []
+    }
+
+    const config = this.getGroupConfig(stage)
+    const groups: StageGroup[] = []
+    for (let i = 0; i < config.format.group_count; i++) {
+      groups.push(
+        await StageGroup.create({
+          stageId: stage.id,
+          name: String.fromCharCode(65 + i),
+          sequence: i + 1,
+        })
+      )
+    }
+    return groups
   }
 
   private async assertTeamsInLeague(leagueId: number, teamIds: number[]) {
