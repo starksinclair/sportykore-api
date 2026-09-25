@@ -91,6 +91,150 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/secret_santa_controller').default['logout']>>>
     }
   }
+  'secret_santa.create_user': {
+    methods: ["POST"]
+    pattern: '/secret-santa/onboard/users'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/secret_santa_controller').default['createUser']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/secret_santa_controller').default['createUser']>>>
+    }
+  }
+  'secret_santa.update_user': {
+    methods: ["POST"]
+    pattern: '/secret-santa/users/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/secret_santa_controller').default['updateUser']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/secret_santa_controller').default['updateUser']>>>
+    }
+  }
+  'secret_santa.onboard_competition': {
+    methods: ["POST"]
+    pattern: '/secret-santa/onboard/competition'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/secret_santa_controller').default['onboardCompetition']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/secret_santa_controller').default['onboardCompetition']>>>
+    }
+  }
+  'secret_santa.update_competition': {
+    methods: ["POST"]
+    pattern: '/secret-santa/competitions/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/secret_santa_controller').default['updateCompetition']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/secret_santa_controller').default['updateCompetition']>>>
+    }
+  }
+  'secret_santa.update_season': {
+    methods: ["POST"]
+    pattern: '/secret-santa/seasons/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/secret_santa_controller').default['updateSeason']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/secret_santa_controller').default['updateSeason']>>>
+    }
+  }
+  'secret_santa.add_teams': {
+    methods: ["POST"]
+    pattern: '/secret-santa/onboard/teams'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/secret_santa_controller').default['addTeams']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/secret_santa_controller').default['addTeams']>>>
+    }
+  }
+  'secret_santa.update_team': {
+    methods: ["POST"]
+    pattern: '/secret-santa/teams/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/secret_santa_controller').default['updateTeam']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/secret_santa_controller').default['updateTeam']>>>
+    }
+  }
+  'secret_santa.add_venues': {
+    methods: ["POST"]
+    pattern: '/secret-santa/onboard/venues'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/secret_santa_controller').default['addVenues']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/secret_santa_controller').default['addVenues']>>>
+    }
+  }
+  'secret_santa.update_venue': {
+    methods: ["POST"]
+    pattern: '/secret-santa/venues/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/secret_santa_controller').default['updateVenue']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/secret_santa_controller').default['updateVenue']>>>
+    }
+  }
+  'secret_santa.import_players': {
+    methods: ["POST"]
+    pattern: '/secret-santa/imports/players'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/secret_santa_controller').default['importPlayers']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/secret_santa_controller').default['importPlayers']>>>
+    }
+  }
+  'secret_santa.import_staff': {
+    methods: ["POST"]
+    pattern: '/secret-santa/imports/staff'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/secret_santa_controller').default['importStaff']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/secret_santa_controller').default['importStaff']>>>
+    }
+  }
+  'secret_santa.import_games': {
+    methods: ["POST"]
+    pattern: '/secret-santa/imports/games'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/secret_santa_controller').default['importGames']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/secret_santa_controller').default['importGames']>>>
+    }
+  }
   'auth.request_otp': {
     methods: ["POST"]
     pattern: '/api/v1/auth/request-otp'
@@ -511,6 +655,18 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/players_controller').default['show']>>>
     }
   }
+  'coaches.show': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/coaches/:id'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { id: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/coaches_controller').default['show']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/coaches_controller').default['show']>>>
+    }
+  }
   'me_player.show': {
     methods: ["GET","HEAD"]
     pattern: '/api/v1/me/player'
@@ -617,6 +773,54 @@ export interface Registry {
       query: {}
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/player_highlights_controller').default['destroy']>>>
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/player_highlights_controller').default['destroy']>>>
+    }
+  }
+  'me_coach.show': {
+    methods: ["GET","HEAD"]
+    pattern: '/api/v1/me/coach'
+    types: {
+      body: {}
+      paramsTuple: []
+      params: {}
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/me_coach_controller').default['show']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/me_coach_controller').default['show']>>>
+    }
+  }
+  'me_coach.store': {
+    methods: ["POST"]
+    pattern: '/api/v1/me/coach'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/coach').createCoachProfileValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/coach').createCoachProfileValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/me_coach_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/me_coach_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'me_coach.update': {
+    methods: ["PUT"]
+    pattern: '/api/v1/me/coach'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/coach').updateCoachProfileValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/coach').updateCoachProfileValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/me_coach_controller').default['update']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/me_coach_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
+  'me_coach.photo': {
+    methods: ["POST"]
+    pattern: '/api/v1/me/coach/photo'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/coach').coachPhotoValidator)>>
+      paramsTuple: []
+      params: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/coach').coachPhotoValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/me_coach_controller').default['photo']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/me_coach_controller').default['photo']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'invites.accept': {

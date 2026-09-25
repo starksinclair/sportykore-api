@@ -11,6 +11,7 @@ import Team from '#models/team'
 import Player from '#models/player'
 import Invite from '#models/invite'
 import PlayerAward from '#models/player_award'
+import CoachProfile from '#models/coach_profile'
 
 export default class User extends compose(UserSchema, withAuthFinder(hash)) {
   static accessTokens = DbAccessTokensProvider.forModel(User, {
@@ -36,6 +37,9 @@ export default class User extends compose(UserSchema, withAuthFinder(hash)) {
 
   @hasOne(() => Player, { foreignKey: 'userId' })
   declare player: HasOne<typeof Player>
+
+  @hasOne(() => CoachProfile, { foreignKey: 'userId' })
+  declare coachProfile: HasOne<typeof CoachProfile>
 
   @hasMany(() => Player, { foreignKey: 'addedBy' })
   declare addedPlayers: HasMany<typeof Player>

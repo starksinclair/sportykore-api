@@ -1,6 +1,7 @@
 import { BaseSeeder } from '@adonisjs/lucid/seeders'
 import { DateTime } from 'luxon'
 
+import CoachProfile from '#models/coach_profile'
 import Country from '#models/country'
 import FavouriteLeague from '#models/favourite_league'
 import Formation from '#models/formation'
@@ -19,7 +20,8 @@ import PlayerHighlight from '#models/player_highlight'
 import PlayerSocialLink from '#models/player_social_link'
 import LeaguePlayer from '#models/league_player'
 import Stat from '#models/stat'
-import type { PlayerPosition, PreferredFoot } from '#types/player'
+import type { CoachAvailability } from '#types/coach'
+import type { PlayerPosition, PlayerSocialPlatform, PreferredFoot } from '#types/player'
 import StandingService from '#services/standing_service'
 import StageService from '#services/stage_service'
 import BracketService from '#services/bracket_service'
@@ -144,9 +146,35 @@ const HIGHLIGHT_TITLES = [
 ] as const
 /** Every Nth seeded player (by creation order) gets sample highlight clips. */
 const HIGHLIGHT_PLAYER_INTERVAL = 5
+const COACH_PROFILE_COUNT = 6
 
 const SEASON_STATUSES = ['completed', 'active'] as const
 const DEFAULT_FORMATION_NAME = '4-3-3'
+
+const COACH_AVAILABILITIES = [
+  'open',
+  'consulting',
+  'open',
+  'not_open',
+  'open',
+  'consulting',
+] as const satisfies readonly CoachAvailability[]
+const COACH_SPECIALTIES = [
+  'academy development',
+  'goalkeeper training',
+  'youth football',
+  'tactical analysis',
+  'strength and conditioning',
+  'player pathways',
+] as const
+const COACH_QUALIFICATIONS = [
+  'CAF C Licence, youth development certificate',
+  'Goalkeeper coaching certificate',
+  'Grassroots coaching badge, safeguarding trained',
+  'Video analysis and match preparation certificate',
+  'Sports science diploma',
+  'Talent identification workshop',
+] as const
 
 type Fixture = {
   homeTeam: Team
@@ -174,6 +202,7 @@ export default class DataSeeder extends BaseSeeder {
     const formationSlots = this.parseFormationSlots(formation)
 
     const users = await UserFactory.createMany(USER_COUNT)
+    await this.seedCoachProfiles(users, countries)
     const leagues: League[] = []
 
     for (const [userIndex, user] of users.entries()) {
@@ -260,6 +289,38 @@ export default class DataSeeder extends BaseSeeder {
     }
 
     await this.seedFavouriteLeagues(users, leagues)
+  }
+
+  private async seedCoachProfiles(users: User[], countries: Country[]) {
+    for (const [index, user] of users.slice(0, COACH_PROFILE_COUNT).entries()) {
+      const country = countries[index % countries.length]
+      if (!country) {
+        continue
+      }
+
+      const displayName = user.fullName ?? `Seed Coach ${index + 1}`
+      const specialty = COACH_SPECIALTIES[index % COACH_SPECIALTIES.length]!
+
+      const coach = await CoachProfile.updateOrCreate(
+        { userId: user.id },
+        {
+          userId: user.id,
+          displayName,
+          bio: `${displayName} is a seeded coach focused on ${specialty}.`,
+          experience: `${6 + index} years coaching grassroots and competitive football teams.`,
+          qualifications: COACH_QUALIFICATIONS[index % COACH_QUALIFICATIONS.length]!,
+          philosophy:
+            'Clear roles, brave possession, and player development that still respects match results.',
+          countryId: country.id,
+          city: `${country.name} ${CITY_SUFFIXES[index % CITY_SUFFIXES.length]}`,
+          state: null,
+          availability: COACH_AVAILABILITIES[index % COACH_AVAILABILITIES.length]!,
+          visibility: index === 5 ? 'private' : 'public',
+        }
+      )
+
+      await this.seedSocialLinksForCoach(coach)
+    }
   }
 
   private async loadAfricanCountries() {
@@ -1026,6 +1087,39 @@ export default class DataSeeder extends BaseSeeder {
           platform: 'youtube',
           url: `https://www.youtube.com/@${handle}`,
           handle: `@${handle}`,
+        }
+      )
+    }
+  }
+
+  private async seedSocialLinksForCoach(coach: CoachProfile) {
+    const handle = this.profileLinkSlug(coach.displayName ?? `coach-${coach.id}`)
+    const links = [
+      {
+        platform: 'instagram',
+        url: `https://www.instagram.com/${handle}.coach`,
+        handle: `${handle}.coach`,
+      },
+      {
+        platform: 'website',
+        url: `https://${handle}.sportykore.test/coach`,
+        handle: `${handle}.sportykore.test`,
+      },
+    ] as const satisfies ReadonlyArray<{
+      platform: PlayerSocialPlatform
+      url: string
+      handle: string
+    }>
+
+    for (const link of links) {
+      await PlayerSocialLink.updateOrCreate(
+        { coachProfileId: coach.id, platform: link.platform },
+        {
+          playerId: null,
+          coachProfileId: coach.id,
+          platform: link.platform,
+          url: link.url,
+          handle: link.handle,
         }
       )
     }

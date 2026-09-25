@@ -38,8 +38,10 @@ Types below reflect **transformer output** (`app/transformers/*`). Nullable DB f
 | **Player** | `id`, `name`, `avatarUrl` (string \| null), `visibility` (`active` \| `private`). **If `visibility: private`, every variant below collapses to just `{ id, name, visibility: "private" }`** — see [docs/PLAYER_PROFILE.md](docs/PLAYER_PROFILE.md) |
 | **Player (with stats)** | **Player** + `stats` → **Stat[]** |
 | **Player (profile)** | **Player** + `bio`, `primaryPosition`, `secondaryPosition`, `preferredFoot`, `heightCm`, `city`, `state`, `nationality`, `socialLinks` → **PlayerSocialLink[]**, `age` (number \| null, computed — **`dateOfBirth` is never serialized**), `country` → **Country** \| omitted, `highlights` → **PlayerHighlight[]** \| omitted |
+| **CoachProfile** | `id`, `displayName`, `photoUrl`, `bio`, `experience`, `qualifications`, `philosophy`, `city`, `state`, `availability` (`open` \| `not_open` \| `consulting`), `visibility` (`public` \| `private`), `country` → **Country** \| omitted, `socialLinks` → **PlayerSocialLink[]** \| omitted, `leagues` → **CoachLeagueHistory[]** |
+| **CoachLeagueHistory** | `id`, `role` (`team_admin`), `active` (boolean), `assignedAt` (ISO string \| null), `removedAt` (ISO string \| null), `league` (`id`, `name`, `logoUrl`), `team` (`id`, `name`, `logoUrl`) |
 | **PlayerHighlight** | `id`, `videoId` (11-char YouTube ID), `title` (string \| null), `sortOrder`, `thumbnailUrl` (derived: `https://img.youtube.com/vi/{videoId}/hqdefault.jpg`) |
-| **PlayerSocialLink** | `id`, `platform` (`instagram` \| `tiktok` \| `youtube` \| `x` \| `facebook` \| `website`), `url`, `handle` (string \| null) |
+| **PlayerSocialLink** | `id`, `platform` (`instagram` \| `tiktok` \| `youtube` \| `x` \| `facebook` \| `website`), `url`, `handle` (string \| null). Stored in `player_social_links`; each row belongs to exactly one `player_id` or one `coach_profile_id`. |
 | **StatType** | `id`, `name`, `displayName`, `iconName` (string \| null), `category` (string \| null) |
 | **Stat** | `id`, `minute` (number \| null), `isStoppageTime` (boolean \| null), `numericValue` (number \| null), `clientEventId` (string \| null), `qualifiers` (object), `isUnaccredited` (boolean), `type` → **StatType** \| omitted, `team` → **Team** \| omitted, `player` → **Player** \| omitted, `relatedPlayer` → **Player** \| omitted |
 | **Standing** | `id`, `position`, `played`, `wins`, `draws`, `losses`, `goalsFor`, `goalsAgainst`, `goalDifference`, `points`, `form` (string \| null), `team` → **Team** \| omitted |
@@ -53,7 +55,7 @@ Types below reflect **transformer output** (`app/transformers/*`). Nullable DB f
 | **GameLineup** | `id`, `gameId`, `teamId`, `playerId`, `formationId`, `slotKey`, `status`, `position`, `jerseyNumber`, `startingOrder`, `subbedInMinute`, `subbedOutMinute`, nested `player` → **Player**, `team` → **Team**, `formation` → **Formation** |
 | **TeamLineupGroup** | `team` → **Team**, `formation` → **Formation** \| null, `starters` → **GameLineup[]**, `substitutes` → **GameLineup[]** |
 | **Season** | `id`, `name`, `status`, optional nested: `league`, `stages` → **Stage[]**, `games`, `standings`, `stats` |
-| **SearchHit** | `id` (string), `type` (`country` \| `league` \| `team` \| `player`), `label`, optional `sublabel`, optional `countryCode`, optional `logoUrl` (string \| null; set for `league` and `team` hits from `leagues.logo_url` / `teams.logo_url`, `null` for `country` and `player`) |
+| **SearchHit** | `id` (string), `type` (`country` \| `league` \| `team` \| `player` \| `coach`), `label`, optional `sublabel`, optional `countryCode`, optional `logoUrl` (string \| null) |
 | **LeaguePlayer** | `id`, `status`, `position`, `jerseyNumber`, `isCaptain` |
 | **LeaguePlayer (with league)** | **LeaguePlayer** + `league` → **League**, `team` → **Team** |
 | **LeaguePlayer (with player)** | **LeaguePlayer** + `player` → **Player**, `team` → **Team** |
@@ -323,19 +325,24 @@ League owner only. Each team includes active admins (`removed_at` null) so the m
 | `GET` | `/api/v1/seasons/:seasonId/stages` | none | **Params:** `seasonId` | **`{ data: Stage[] }`** | Ordered by `sequence`, then `id` |
 | `GET` | `/api/v1/teams/:id` | none | **Params:** `id` (team id) | **`{ data: { team, leagues, statTypes } }`** — see below | `404` if team missing |
 | `GET` | `/api/v1/players/:id` | none | **Params:** `id` (player id) | **`{ data: { player, leagues, statTypes } }`** — see below | `404` if player missing; stubbed if `visibility: private` (empty `leagues`/`statTypes`) |
+| `GET` | `/api/v1/coaches/:id` | none | **Params:** `id` (coach profile id) | **`{ data: { coach: CoachProfile } }`** | `404` if coach missing; stubbed if `visibility: private` |
 | `GET` | `/api/v1/players/does-user-have-player-profile` | `apiAuth` | none | `{ hasPlayerProfile: boolean, playerId: number }` (not wrapped in `data`) | `401` without Bearer token; checks whether the authenticated user has a `players` row |
 | `GET` | `/api/v1/me/player` | `apiAuth` | none | **200** `{ data: { player, completeness, missingFields, highlightsCount, membership } }` — see below | **404** `{ message }` if the user has no player profile — this is the "no profile" signal for the app CTA. See [docs/PLAYER_PROFILE.md](docs/PLAYER_PROFILE.md) |
 | `POST` | `/api/v1/me/player` | `apiAuth` | **Body:** `createPlayerProfileValidator` | **201** `{ data: { player } }` (**Player (profile)**) | `409` if the user already has a profile; `422` validation |
 | `PUT` | `/api/v1/me/player` | `apiAuth` | **Body:** `updatePlayerProfileValidator` | `{ data: { player } }` | `404` if no profile yet; `422` validation |
-| `POST` | `/api/v1/me/player/photo` | `apiAuth` | **Body:** `multipart/form-data` — `photo` (image, max 2 MB, jpg/jpeg/png/webp) | `{ data: { player } }` | `404` if no profile yet; uploads via the existing S3 drive pipeline (`players/` prefix) |
+| `POST` | `/api/v1/me/player/photo` | `apiAuth` | **Body:** `multipart/form-data` — `photo` (image, max 10 MB, jpg/jpeg/png/webp) | `{ data: { player } }` | `404` if no profile yet; uploads via the existing S3 drive pipeline (`players/` prefix) |
 | `GET` | `/api/v1/me/player/highlights` | `apiAuth` | none | **`{ data: PlayerHighlight[] }`**, ordered by `sortOrder` | `404` if no profile yet |
 | `POST` | `/api/v1/me/player/highlights` | `apiAuth` | **Body:** `createHighlightValidator` (`url`, optional `title`) | **201** `{ data: PlayerHighlight }` | `422` non-YouTube URL or 4th highlight; `409` duplicate video on this profile. See [docs/PLAYER_PROFILE.md](docs/PLAYER_PROFILE.md) |
 | `PUT` | `/api/v1/me/player/highlights/reorder` | `apiAuth` | **Body:** `reorderHighlightsValidator` (`ids: number[]`) | `{ data: PlayerHighlight[] }` in the new order | `422` if `ids` isn't exactly the caller's highlight IDs, once each |
 | `PUT` | `/api/v1/me/player/highlights/:hid` | `apiAuth` | **Params:** `hid`. **Body:** `updateHighlightValidator` (`title`) | `{ data: PlayerHighlight }` | `404` if not the caller's own highlight |
 | `DELETE` | `/api/v1/me/player/highlights/:hid` | `apiAuth` | **Params:** `hid` | `{ message: "Highlight removed successfully" }` | `404` if not the caller's own highlight |
+| `GET` | `/api/v1/me/coach` | `apiAuth` | none | **200** `{ data: { coach: CoachProfile } }` | **404** if the user has no coach profile |
+| `POST` | `/api/v1/me/coach` | `apiAuth` | **Body:** `createCoachProfileValidator` | **201** `{ data: { coach: CoachProfile } }` | `409` if the user already has a coach profile; `422` validation |
+| `PUT` | `/api/v1/me/coach` | `apiAuth` | **Body:** `updateCoachProfileValidator` | `{ data: { coach: CoachProfile } }` | `404` if no coach profile yet; `422` validation |
+| `POST` | `/api/v1/me/coach/photo` | `apiAuth` | **Body:** `multipart/form-data` — `photo` (image, max 10 MB, jpg/jpeg/png/webp) | `{ data: { coach: CoachProfile } }` | `404` if no coach profile yet; uploads via the existing Drive pipeline (`coaches/` prefix) |
 | `GET` | `/api/v1/invites/generate` | `apiAuth` + `leagueOwner` | **Query:** `leagueId`, `seasonId`, `teamId`, `invitedUserId?` | `{ inviteLink: string }` (not wrapped in `data`) | See [docs/PLAYER_INVITE.md](docs/PLAYER_INVITE.md) |
 | `GET` | `/api/v1/invites/accept/:token` | `apiAuth` | **Params:** `token` | If no player profile: `{ requiresProfile: true, token: string }`. Else: `{ requiresProfile: false, leagueId: number \| null }` | `401` without Bearer token; `403` wrong user; `409` already on roster; `404` invalid/expired invite |
-| `POST` | `/api/v1/invites/complete-profile-and-accept/:token` | `apiAuth` | **Params:** `token`. **Body:** `multipart/form-data` or JSON — `name` (string, required), `countryId` (required FK to `countries`), `bio?` (string, optional), `avatar?` (image file, max 2 MB, jpg/jpeg/png/webp) | `{ leagueId: number \| null }` | `409` if player profile already exists; `422` validation |
+| `POST` | `/api/v1/invites/complete-profile-and-accept/:token` | `apiAuth` | **Params:** `token`. **Body:** `multipart/form-data` or JSON — `name` (string, required), `countryId` (required FK to `countries`), `bio?` (string, optional), `avatar?` (image file, max 10 MB, jpg/jpeg/png/webp) | `{ leagueId: number \| null }` | `409` if player profile already exists; `422` validation |
 | `GET` | `/api/v1/leagues/league-player-requests` | `apiAuth` | none | **LeaguePlayerWithLeague[]** (not wrapped in `data`) | Lists `league_players` where `player_id = auth user id` and `status = pending` |
 | `POST` | `/api/v1/leagues/accept-league-player-request` | `apiAuth` | **Body:** `acceptLeaguePlayerRequestValidator` | `{ message: "League player request accepted successfully" }` | `404` row missing; `409` already active |
 | `POST` | `/api/v1/leagues/:leagueId/seasons` | `apiAuth` + `leagueOwner` | **Params:** `leagueId`. **Body:** `createSeasonValidator` | **`201`** `{ id, leagueId, name, status, createdAt, updatedAt, stageId, format, seeded }` | Validation `422`; `format` defaults to `league`; knockout/group seasons are not auto-seeded; setting `status: active` completes other active seasons in the same league |
@@ -787,6 +794,23 @@ authenticated user has no `players` row — that 404 is the "no profile" signal
 the app's profile tab uses to show the create-profile CTA instead of parsing
 response contents.
 
+### `GET /api/v1/coaches/:id` → `{ coach }`
+
+Public coach profile endpoint. `coach` uses the **CoachProfile** shape above.
+If the coach profile is private, it collapses to:
+
+```json
+{ "id": 1, "displayName": "Coach Ada", "visibility": "private" }
+```
+
+### `GET /api/v1/me/coach` → `{ coach }`
+
+The authenticated user's own coach profile resolver. It returns **404** when
+the user has no coach profile, matching the player-profile CTA pattern.
+`POST /me/coach` creates the profile and `PUT /me/coach` updates it.
+`socialLinks` are validated and normalized server-side using the same platform
+rules as player profiles.
+
 ### `GET /api/v1/search`
 
 ```json
@@ -957,9 +981,26 @@ Optional: `jerseyNumber`, `status`, `isCaptain`, `position`, `joinedAt`, `leftAt
 `updatePlayerProfileValidator` (`PUT /api/v1/me/player`) is the same shape
 with every field optional (including `name` / `countryId`).
 
+### `createCoachProfileValidator` — `POST /api/v1/me/coach`
+
+| Field | Rules |
+| --- | --- |
+| `displayName` | required, 1–255 chars |
+| `photoUrl` | optional nullable URL |
+| `bio` | optional nullable, max 300 chars |
+| `experience`, `qualifications`, `philosophy` | optional nullable, max 1200 chars each |
+| `countryId` | optional nullable FK → `countries` |
+| `city`, `state` | optional nullable, max 120 chars each |
+| `availability` | optional enum: `open` \| `not_open` \| `consulting`; defaults to `open` |
+| `visibility` | optional enum: `public` \| `private`; defaults to `public` |
+| `socialLinks` | optional array of `{ platform, url }`, max one per supported platform; server normalizes profile URLs and handles |
+
+`updateCoachProfileValidator` (`PUT /api/v1/me/coach`) is the same shape with
+every field optional, including `displayName`.
+
 ### `playerPhotoValidator` — `POST /api/v1/me/player/photo`
 
-`photo`: required file, max 2 MB, `jpg` \| `jpeg` \| `png` \| `webp`.
+`photo`: required file, max 10 MB, `jpg` \| `jpeg` \| `png` \| `webp`.
 
 ### `createHighlightValidator` — `POST /api/v1/me/player/highlights`
 

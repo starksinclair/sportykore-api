@@ -55,6 +55,41 @@ export class AuthAccessTokenSchema extends BaseModel {
   declare updatedAt: DateTime
 }
 
+export class CoachProfileSchema extends BaseModel {
+  static $columns = ['availability', 'bio', 'city', 'countryId', 'createdAt', 'displayName', 'experience', 'id', 'philosophy', 'photoUrl', 'qualifications', 'state', 'updatedAt', 'userId', 'visibility'] as const
+  $columns = CoachProfileSchema.$columns
+  @column()
+  declare availability: string
+  @column()
+  declare bio: string | null
+  @column()
+  declare city: string | null
+  @column()
+  declare countryId: number | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime | null
+  @column()
+  declare displayName: string
+  @column()
+  declare experience: string | null
+  @column({ isPrimary: true })
+  declare id: number
+  @column()
+  declare philosophy: string | null
+  @column()
+  declare photoUrl: string | null
+  @column()
+  declare qualifications: string | null
+  @column()
+  declare state: string | null
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime | null
+  @column()
+  declare userId: number
+  @column()
+  declare visibility: string
+}
+
 export class CountrySchema extends BaseModel {
   static $columns = ['code', 'createdAt', 'flagUrl', 'id', 'name', 'updatedAt'] as const
   $columns = CountrySchema.$columns
@@ -420,8 +455,10 @@ export class PlayerHighlightSchema extends BaseModel {
 }
 
 export class PlayerSocialLinkSchema extends BaseModel {
-  static $columns = ['createdAt', 'handle', 'id', 'platform', 'playerId', 'updatedAt', 'url'] as const
+  static $columns = ['coachProfileId', 'createdAt', 'handle', 'id', 'platform', 'playerId', 'updatedAt', 'url'] as const
   $columns = PlayerSocialLinkSchema.$columns
+  @column()
+  declare coachProfileId: number | null
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime | null
   @column()
@@ -431,7 +468,7 @@ export class PlayerSocialLinkSchema extends BaseModel {
   @column()
   declare platform: string
   @column()
-  declare playerId: number
+  declare playerId: number | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
   @column()

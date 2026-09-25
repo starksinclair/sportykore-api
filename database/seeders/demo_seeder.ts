@@ -2,6 +2,7 @@ import { BaseSeeder } from '@adonisjs/lucid/seeders'
 import { DateTime } from 'luxon'
 import env from '#start/env'
 
+import CoachProfile from '#models/coach_profile'
 import Country from '#models/country'
 import FavouriteLeague from '#models/favourite_league'
 import Formation from '#models/formation'
@@ -33,7 +34,8 @@ import StatService from '#services/stat_service'
 import TieResolver from '#services/tie_resolver'
 
 import type { FormationSlot } from '#types/formation'
-import type { PlayerPosition, PreferredFoot } from '#types/player'
+import type { CoachAvailability } from '#types/coach'
+import type { PlayerPosition, PlayerSocialPlatform, PreferredFoot } from '#types/player'
 import { footballerName, teamLogoUrl } from '../data/seed_footballers.js'
 
 const DEMO_LEAGUE_NAME = 'Sportykore Demo League'
@@ -170,6 +172,22 @@ export default class DemoSeeder extends BaseSeeder {
 
     await this.ensureSocialLinks(reviewPlayer)
     await this.ensureHighlights(reviewPlayer.id)
+    await this.ensureCoachProfile(admin, {
+      displayName: 'Coach Amaka Nwosu',
+      bio: 'Demo coach profile for organisers reviewing Sportykore coaching surfaces.',
+      experience: 'Nine years leading academy squads and match-day staff.',
+      qualifications: 'CAF C Licence, youth development certificate',
+      philosophy: 'Build confident players with clear roles, simple feedback, and brave football.',
+      availability: 'consulting',
+    })
+    await this.ensureCoachProfile(reviewUser, {
+      displayName: 'Jordan Okoye',
+      bio: 'Player-coach demo profile showing how one account can appear as a player and coach.',
+      experience: 'Three years mentoring midfielders and leading small-group sessions.',
+      qualifications: 'Grassroots coaching badge',
+      philosophy: 'Teach decision-making through match-realistic touches and quick review.',
+      availability: 'open',
+    })
 
     const league = await this.seedDemoLeague(admin, reviewPlayer)
     const cup = await this.seedDemoCup(admin, reviewPlayer)
@@ -938,6 +956,69 @@ export default class DemoSeeder extends BaseSeeder {
         handle: '@jordanokoye',
       }
     )
+  }
+
+  private async ensureCoachProfile(
+    user: User,
+    profile: {
+      displayName: string
+      bio: string
+      experience: string
+      qualifications: string
+      philosophy: string
+      availability: CoachAvailability
+    }
+  ) {
+    const coach = await CoachProfile.updateOrCreate(
+      { userId: user.id },
+      {
+        userId: user.id,
+        displayName: profile.displayName,
+        bio: profile.bio,
+        experience: profile.experience,
+        qualifications: profile.qualifications,
+        philosophy: profile.philosophy,
+        countryId: this.country.id,
+        city: 'Lagos',
+        state: 'Lagos',
+        availability: profile.availability,
+        visibility: 'public',
+      }
+    )
+
+    const handle = profile.displayName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '.')
+      .replace(/^\.+|\.+$/g, '')
+    const links = [
+      {
+        platform: 'instagram',
+        url: `https://www.instagram.com/${handle}`,
+        handle,
+      },
+      {
+        platform: 'website',
+        url: `https://${handle}.sportykore.test`,
+        handle: `${handle}.sportykore.test`,
+      },
+    ] as const satisfies ReadonlyArray<{
+      platform: PlayerSocialPlatform
+      url: string
+      handle: string
+    }>
+
+    for (const link of links) {
+      await PlayerSocialLink.updateOrCreate(
+        { coachProfileId: coach.id, platform: link.platform },
+        {
+          playerId: null,
+          coachProfileId: coach.id,
+          platform: link.platform,
+          url: link.url,
+          handle: link.handle,
+        }
+      )
+    }
   }
 
   private async seedLineups(game: Game, home: TeamBundle, away: TeamBundle) {

@@ -11,6 +11,18 @@ export type ScannedRoutes = {
     'secret_santa.index': { paramsTuple?: []; params?: {} }
     'secret_santa.login': { paramsTuple?: []; params?: {} }
     'secret_santa.logout': { paramsTuple?: []; params?: {} }
+    'secret_santa.create_user': { paramsTuple?: []; params?: {} }
+    'secret_santa.update_user': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'secret_santa.onboard_competition': { paramsTuple?: []; params?: {} }
+    'secret_santa.update_competition': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'secret_santa.update_season': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'secret_santa.add_teams': { paramsTuple?: []; params?: {} }
+    'secret_santa.update_team': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'secret_santa.add_venues': { paramsTuple?: []; params?: {} }
+    'secret_santa.update_venue': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'secret_santa.import_players': { paramsTuple?: []; params?: {} }
+    'secret_santa.import_staff': { paramsTuple?: []; params?: {} }
+    'secret_santa.import_games': { paramsTuple?: []; params?: {} }
     'auth.request_otp': { paramsTuple?: []; params?: {} }
     'auth.verify_otp': { paramsTuple?: []; params?: {} }
     'auth.request_recovery': { paramsTuple?: []; params?: {} }
@@ -46,6 +58,7 @@ export type ScannedRoutes = {
     'teams.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'players.does_user_have_player_profile': { paramsTuple?: []; params?: {} }
     'players.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'coaches.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'me_player.show': { paramsTuple?: []; params?: {} }
     'me_player.store': { paramsTuple?: []; params?: {} }
     'me_player.update': { paramsTuple?: []; params?: {} }
@@ -55,6 +68,10 @@ export type ScannedRoutes = {
     'player_highlights.reorder': { paramsTuple?: []; params?: {} }
     'player_highlights.update': { paramsTuple: [ParamValue]; params: {'hid': ParamValue} }
     'player_highlights.destroy': { paramsTuple: [ParamValue]; params: {'hid': ParamValue} }
+    'me_coach.show': { paramsTuple?: []; params?: {} }
+    'me_coach.store': { paramsTuple?: []; params?: {} }
+    'me_coach.update': { paramsTuple?: []; params?: {} }
+    'me_coach.photo': { paramsTuple?: []; params?: {} }
     'invites.accept': { paramsTuple: [ParamValue]; params: {'token': ParamValue} }
     'invites.complete_profile_and_accept': { paramsTuple: [ParamValue]; params: {'token': ParamValue} }
     'players.accept_league_player_request': { paramsTuple?: []; params?: {} }
@@ -147,8 +164,10 @@ export type ScannedRoutes = {
     'teams.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'players.does_user_have_player_profile': { paramsTuple?: []; params?: {} }
     'players.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'coaches.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'me_player.show': { paramsTuple?: []; params?: {} }
     'player_highlights.index': { paramsTuple?: []; params?: {} }
+    'me_coach.show': { paramsTuple?: []; params?: {} }
     'invites.accept': { paramsTuple: [ParamValue]; params: {'token': ParamValue} }
     'players.league_player_requests': { paramsTuple?: []; params?: {} }
     'venues.index': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
@@ -186,8 +205,10 @@ export type ScannedRoutes = {
     'teams.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'players.does_user_have_player_profile': { paramsTuple?: []; params?: {} }
     'players.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'coaches.show': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
     'me_player.show': { paramsTuple?: []; params?: {} }
     'player_highlights.index': { paramsTuple?: []; params?: {} }
+    'me_coach.show': { paramsTuple?: []; params?: {} }
     'invites.accept': { paramsTuple: [ParamValue]; params: {'token': ParamValue} }
     'players.league_player_requests': { paramsTuple?: []; params?: {} }
     'venues.index': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
@@ -203,6 +224,18 @@ export type ScannedRoutes = {
     'unsubscribe': { paramsTuple?: []; params?: {} }
     'secret_santa.login': { paramsTuple?: []; params?: {} }
     'secret_santa.logout': { paramsTuple?: []; params?: {} }
+    'secret_santa.create_user': { paramsTuple?: []; params?: {} }
+    'secret_santa.update_user': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'secret_santa.onboard_competition': { paramsTuple?: []; params?: {} }
+    'secret_santa.update_competition': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'secret_santa.update_season': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'secret_santa.add_teams': { paramsTuple?: []; params?: {} }
+    'secret_santa.update_team': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'secret_santa.add_venues': { paramsTuple?: []; params?: {} }
+    'secret_santa.update_venue': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
+    'secret_santa.import_players': { paramsTuple?: []; params?: {} }
+    'secret_santa.import_staff': { paramsTuple?: []; params?: {} }
+    'secret_santa.import_games': { paramsTuple?: []; params?: {} }
     'auth.request_otp': { paramsTuple?: []; params?: {} }
     'auth.verify_otp': { paramsTuple?: []; params?: {} }
     'auth.request_recovery': { paramsTuple?: []; params?: {} }
@@ -214,6 +247,8 @@ export type ScannedRoutes = {
     'me_player.store': { paramsTuple?: []; params?: {} }
     'me_player.photo': { paramsTuple?: []; params?: {} }
     'player_highlights.store': { paramsTuple?: []; params?: {} }
+    'me_coach.store': { paramsTuple?: []; params?: {} }
+    'me_coach.photo': { paramsTuple?: []; params?: {} }
     'invites.complete_profile_and_accept': { paramsTuple: [ParamValue]; params: {'token': ParamValue} }
     'players.accept_league_player_request': { paramsTuple?: []; params?: {} }
     'favourite_leagues.store': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
@@ -268,6 +303,7 @@ export type ScannedRoutes = {
     'me_player.update': { paramsTuple?: []; params?: {} }
     'player_highlights.reorder': { paramsTuple?: []; params?: {} }
     'player_highlights.update': { paramsTuple: [ParamValue]; params: {'hid': ParamValue} }
+    'me_coach.update': { paramsTuple?: []; params?: {} }
     'player_awards.set_motm': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
     'game_lineups.set': { paramsTuple: [ParamValue]; params: {'gameId': ParamValue} }
     'leagues.update': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }

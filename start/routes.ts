@@ -21,21 +21,42 @@ import {
   otpVerifyThrottle,
   scoreUpdateThrottle,
   searchThrottle,
+  secretSantaLoginThrottle,
   statUpdateThrottle,
 } from '#start/limiter'
 
 const PushNotificationsController = () => import('#controllers/push_notifications_controller')
 const SecretSantaController = () => import('#controllers/secret_santa_controller')
+const CoachesController = () => import('#controllers/coaches_controller')
+const MeCoachController = () => import('#controllers/me_coach_controller')
 
 transmit.registerRoutes()
 
 router
   .group(() => {
     router.get('/', [SecretSantaController, 'index'])
-    router.post('/', [SecretSantaController, 'login'])
+    router.post('/', [SecretSantaController, 'login']).use(secretSantaLoginThrottle)
     router.post('/logout', [SecretSantaController, 'logout'])
+
+    router
+      .group(() => {
+        router.post('/onboard/users', [SecretSantaController, 'createUser'])
+        router.post('/users/:id', [SecretSantaController, 'updateUser'])
+        router.post('/onboard/competition', [SecretSantaController, 'onboardCompetition'])
+        router.post('/competitions/:id', [SecretSantaController, 'updateCompetition'])
+        router.post('/seasons/:id', [SecretSantaController, 'updateSeason'])
+        router.post('/onboard/teams', [SecretSantaController, 'addTeams'])
+        router.post('/teams/:id', [SecretSantaController, 'updateTeam'])
+        router.post('/onboard/venues', [SecretSantaController, 'addVenues'])
+        router.post('/venues/:id', [SecretSantaController, 'updateVenue'])
+        router.post('/imports/players', [SecretSantaController, 'importPlayers'])
+        router.post('/imports/staff', [SecretSantaController, 'importStaff'])
+        router.post('/imports/games', [SecretSantaController, 'importGames'])
+      })
+      .use(middleware.secretSantaAuth())
   })
   .prefix('/secret-santa')
+  .use(globalThrottle)
 
 /**
  * Mobile / JSON API authentication (OTP + Bearer tokens).
@@ -120,6 +141,7 @@ router
       ])
       .use(middleware.apiAuth())
     router.get('players/:id', [controllers.Players, 'show'])
+    router.get('coaches/:id', [CoachesController, 'show'])
 
     // Own player profile (two-state CTA resolver) + personal YouTube highlights.
     // Ownership here is the authenticated user's own player record, not leagueOwner.
@@ -135,6 +157,15 @@ router
         router.put('me/player/highlights/reorder', [controllers.PlayerHighlights, 'reorder'])
         router.put('me/player/highlights/:hid', [controllers.PlayerHighlights, 'update'])
         router.delete('me/player/highlights/:hid', [controllers.PlayerHighlights, 'destroy'])
+      })
+      .use(middleware.apiAuth())
+
+    router
+      .group(() => {
+        router.get('me/coach', [MeCoachController, 'show'])
+        router.post('me/coach', [MeCoachController, 'store'])
+        router.put('me/coach', [MeCoachController, 'update'])
+        router.post('me/coach/photo', [MeCoachController, 'photo'])
       })
       .use(middleware.apiAuth())
     router.get('invites/accept/:token', [controllers.Invites, 'accept']).use(middleware.apiAuth())
