@@ -1,6 +1,7 @@
 import type { MultipartFile } from '@adonisjs/core/bodyparser'
 import { Exception } from '@adonisjs/core/exceptions'
 import { inject } from '@adonisjs/core'
+import db from '@adonisjs/lucid/services/db'
 import { DateTime } from 'luxon'
 
 import { playerAvatarKey } from '#helpers/storage_paths'
@@ -132,22 +133,30 @@ export default class PlayerProfileService {
 
     const links = normalizePlayerSocialLinks(input.socialLinks)
 
-    const player = await Player.create({
-      userId,
-      addedBy: userId,
-      name: input.name.trim(),
-      countryId: input.countryId,
-      bio: input.bio ?? null,
-      primaryPosition: input.primaryPosition ?? null,
-      secondaryPosition: input.secondaryPosition ?? null,
-      preferredFoot: input.preferredFoot ?? null,
-      heightCm: input.heightCm ?? null,
-      dateOfBirth: input.dateOfBirth ?? null,
-      city: input.city ?? null,
-      state: input.state ?? null,
-      nationality: input.nationality ?? null,
-      visibility: 'active',
-    })
+    let player: Player
+    try {
+      player = await Player.create({
+        userId,
+        addedBy: userId,
+        name: input.name.trim(),
+        countryId: input.countryId,
+        bio: input.bio ?? null,
+        primaryPosition: input.primaryPosition ?? null,
+        secondaryPosition: input.secondaryPosition ?? null,
+        preferredFoot: input.preferredFoot ?? null,
+        heightCm: input.heightCm ?? null,
+        dateOfBirth: input.dateOfBirth ?? null,
+        city: input.city ?? null,
+        state: input.state ?? null,
+        nationality: input.nationality ?? null,
+        visibility: 'active',
+      })
+    } catch (error) {
+      if (this.isUniqueConstraintError(error)) {
+        throw new Exception('You already have a player profile', { status: 409 })
+      }
+      throw error
+    }
 
     if (links) {
       await this.replaceSocialLinks(player.id, links)
@@ -219,19 +228,37 @@ export default class PlayerProfileService {
     playerId: number,
     links: Array<{ platform: PlayerSocialPlatform; url: string; handle: string | null }>
   ) {
-    await PlayerSocialLink.query().where('player_id', playerId).delete()
+    await db.transaction(async (trx) => {
+      await PlayerSocialLink.query({ client: trx }).where('player_id', playerId).delete()
 
-    if (links.length === 0) {
-      return
+      if (links.length === 0) {
+        return
+      }
+
+      await PlayerSocialLink.createMany(
+        links.map((link) => ({
+          playerId,
+          coachProfileId: null,
+          platform: link.platform,
+          url: link.url,
+          handle: link.handle,
+        })),
+        { client: trx }
+      )
+    })
+  }
+
+  private isUniqueConstraintError(error: unknown): boolean {
+    if (!error || typeof error !== 'object') {
+      return false
     }
-
-    await PlayerSocialLink.createMany(
-      links.map((link) => ({
-        playerId,
-        platform: link.platform,
-        url: link.url,
-        handle: link.handle,
-      }))
+    const message = 'message' in error ? String((error as { message: unknown }).message) : ''
+    const code = 'code' in error ? String((error as { code: unknown }).code) : ''
+    return (
+      code === 'SQLITE_CONSTRAINT_UNIQUE' ||
+      code === '23505' ||
+      /UNIQUE constraint failed/i.test(message) ||
+      /duplicate key/i.test(message)
     )
   }
 

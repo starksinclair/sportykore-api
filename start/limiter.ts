@@ -101,6 +101,18 @@ export const searchThrottle = limiter.define('search', (ctx: HttpContext) => {
   return limiter.allowRequests(20).every('1 minute').usingKey(`search_ip_${ctx.request.ip()}`)
 })
 
+// /secret-santa dashboard login, max 5 attempts per 15 minutes per IP
+export const secretSantaLoginThrottle = limiter.define('secret_santa_login', (ctx: HttpContext) => {
+  return limiter
+    .allowRequests(5)
+    .every('15 mins')
+    .blockFor('30 mins')
+    .usingKey(`secret_santa_login_${ctx.request.ip()}`)
+    .limitExceeded((error: any) => {
+      error.setMessage(`Too many attempts. Try again in ${error.response.availableIn} seconds`)
+    })
+})
+
 // prevent OTP spam, max 15 requests per 10 minutes per email
 export const otpRequestThrottle = limiter.define('otp_request', (ctx: HttpContext) => {
   const email = ctx.request.body().email ?? ctx.request.ip()

@@ -5,6 +5,12 @@ type NamedEntity = {
   name: string | null | undefined
 }
 
+type CoachNamedEntity = {
+  id: number
+  displayName?: string | null | undefined
+  name?: string | null | undefined
+}
+
 function slugify(value: string | null | undefined, fallback: string): string {
   const slug = (value ?? fallback)
     .normalize('NFKD')
@@ -43,6 +49,13 @@ export function teamLogoKey(
 
 export function playerAvatarKey(player: NamedEntity, extname: string | null | undefined): string {
   return `players/${player.id}-${slugify(player.name, 'player')}/avatar/${string.uuid()}.${extension(
+    extname
+  )}`
+}
+
+export function coachPhotoKey(coach: CoachNamedEntity, extname: string | null | undefined): string {
+  const label = coach.displayName ?? coach.name
+  return `coaches/${coach.id}-${slugify(label, 'coach')}/photo/${string.uuid()}.${extension(
     extname
   )}`
 }

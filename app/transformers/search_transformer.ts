@@ -3,7 +3,7 @@ import { BaseTransformer } from '@adonisjs/core/transformers'
 
 export type SearchHit = {
   id: string
-  type: 'country' | 'league' | 'team' | 'player'
+  type: 'country' | 'league' | 'team' | 'player' | 'coach'
   label: string
   sublabel?: string
   countryCode?: string

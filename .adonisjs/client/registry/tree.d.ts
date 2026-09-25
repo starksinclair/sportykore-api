@@ -14,6 +14,18 @@ export interface ApiDefinition {
     index: typeof routes['secret_santa.index']
     login: typeof routes['secret_santa.login']
     logout: typeof routes['secret_santa.logout']
+    createUser: typeof routes['secret_santa.create_user']
+    updateUser: typeof routes['secret_santa.update_user']
+    onboardCompetition: typeof routes['secret_santa.onboard_competition']
+    updateCompetition: typeof routes['secret_santa.update_competition']
+    updateSeason: typeof routes['secret_santa.update_season']
+    addTeams: typeof routes['secret_santa.add_teams']
+    updateTeam: typeof routes['secret_santa.update_team']
+    addVenues: typeof routes['secret_santa.add_venues']
+    updateVenue: typeof routes['secret_santa.update_venue']
+    importPlayers: typeof routes['secret_santa.import_players']
+    importStaff: typeof routes['secret_santa.import_staff']
+    importGames: typeof routes['secret_santa.import_games']
   }
   auth: {
     requestOtp: typeof routes['auth.request_otp']
@@ -96,6 +108,9 @@ export interface ApiDefinition {
     leaguePlayerRequests: typeof routes['players.league_player_requests']
     assignTeam: typeof routes['players.assign_team']
   }
+  coaches: {
+    show: typeof routes['coaches.show']
+  }
   mePlayer: {
     show: typeof routes['me_player.show']
     store: typeof routes['me_player.store']
@@ -108,6 +123,12 @@ export interface ApiDefinition {
     reorder: typeof routes['player_highlights.reorder']
     update: typeof routes['player_highlights.update']
     destroy: typeof routes['player_highlights.destroy']
+  }
+  meCoach: {
+    show: typeof routes['me_coach.show']
+    store: typeof routes['me_coach.store']
+    update: typeof routes['me_coach.update']
+    photo: typeof routes['me_coach.photo']
   }
   invites: {
     accept: typeof routes['invites.accept']

@@ -94,9 +94,11 @@ assertions.
 
 ## Social profiles
 
-The player form lets the owner add multiple public profile links. Supported
-platforms are Instagram, TikTok, YouTube, X, Facebook, and website. The API
-normalizes handles and full profile URLs into `socialLinks` rows:
+The player form lets the owner add multiple public profile links. Coach
+profiles reuse the same parser and the same `player_social_links` table by
+setting `coach_profile_id` instead of `player_id`. Supported platforms are
+Instagram, TikTok, YouTube, X, Facebook, and website. The API normalizes
+handles and full profile URLs into `socialLinks` rows:
 
 ```json
 { "id": 1, "platform": "youtube", "url": "https://www.youtube.com/@sportykore", "handle": "@sportykore" }
@@ -104,6 +106,11 @@ normalizes handles and full profile URLs into `socialLinks` rows:
 
 YouTube social links are for channel/profile pages only. YouTube video links
 belong in Highlights and are rejected from `socialLinks` with a clear message.
+
+Coach profiles also return a derived `leagues` history from `team_admins`.
+Each item includes the league, team, role, assignment date, removal date, and
+an `active` flag so the app can show current and past coaching roles without
+adding a separate history table.
 
 ---
 

@@ -31,8 +31,19 @@ const RESERVED_PATHS = new Set([
   'search',
 ])
 
+export type SocialLinkNormalizeOptions = {
+  /**
+   * Shown when a YouTube link points at a video/short rather than a
+   * channel. Defaults to the player-profile copy, which points people at
+   * the Highlights feature — callers without that feature (e.g. coach
+   * profiles) should pass their own message.
+   */
+  youTubeVideoLinkMessage?: string
+}
+
 export function normalizePlayerSocialLinks(
-  links: Array<{ platform: PlayerSocialPlatform; url: string }> | undefined
+  links: Array<{ platform: PlayerSocialPlatform; url: string }> | undefined,
+  options: SocialLinkNormalizeOptions = {}
 ): NormalizedSocialLink[] | undefined {
   if (links === undefined) {
     return undefined
@@ -46,7 +57,7 @@ export function normalizePlayerSocialLinks(
       throw new Exception('Only one link is allowed per social platform.', { status: 422 })
     }
     seen.add(link.platform)
-    normalized.push(normalizePlayerSocialLink(link.platform, link.url))
+    normalized.push(normalizePlayerSocialLink(link.platform, link.url, options))
   }
 
   return normalized
@@ -54,7 +65,8 @@ export function normalizePlayerSocialLinks(
 
 function normalizePlayerSocialLink(
   platform: PlayerSocialPlatform,
-  input: string
+  input: string,
+  options: SocialLinkNormalizeOptions
 ): NormalizedSocialLink {
   if (!PLAYER_SOCIAL_PLATFORMS.includes(platform)) {
     throw new Exception('Choose a supported social platform.', { status: 422 })
@@ -70,10 +82,10 @@ function normalizePlayerSocialLink(
   }
 
   if (/^https?:\/\//i.test(raw) || /^[a-z0-9.-]+\.[a-z]{2,}/i.test(raw)) {
-    return normalizePlatformUrl(platform, raw)
+    return normalizePlatformUrl(platform, raw, options)
   }
 
-  return normalizePlatformHandle(platform, raw)
+  return normalizePlatformHandle(platform, raw, options)
 }
 
 function normalizeWebsiteLink(input: string): NormalizedSocialLink {
@@ -100,7 +112,11 @@ function normalizeWebsiteLink(input: string): NormalizedSocialLink {
   }
 }
 
-function normalizePlatformUrl(platform: Exclude<PlayerSocialPlatform, 'website'>, input: string) {
+function normalizePlatformUrl(
+  platform: Exclude<PlayerSocialPlatform, 'website'>,
+  input: string,
+  options: SocialLinkNormalizeOptions
+) {
   let url: URL
   try {
     url = new URL(/^https?:\/\//i.test(input) ? input : `https://${input}`)
@@ -115,7 +131,7 @@ function normalizePlatformUrl(platform: Exclude<PlayerSocialPlatform, 'website'>
   }
 
   if (platform === 'youtube') {
-    return normalizeYouTubeProfileUrl(url)
+    return normalizeYouTubeProfileUrl(url, options.youTubeVideoLinkMessage)
   }
 
   const handle = firstPathSegment(url)
@@ -133,10 +149,11 @@ function normalizePlatformUrl(platform: Exclude<PlayerSocialPlatform, 'website'>
 
 function normalizePlatformHandle(
   platform: Exclude<PlayerSocialPlatform, 'website'>,
-  input: string
+  input: string,
+  options: SocialLinkNormalizeOptions = {}
 ) {
   if (platform === 'youtube' && input.includes('/')) {
-    return normalizePlatformUrl('youtube', input)
+    return normalizePlatformUrl('youtube', input, options)
   }
 
   const handle = cleanHandle(platform, input)
@@ -151,7 +168,10 @@ function normalizePlatformHandle(
   }
 }
 
-function normalizeYouTubeProfileUrl(url: URL): NormalizedSocialLink {
+function normalizeYouTubeProfileUrl(
+  url: URL,
+  videoLinkMessage = 'Use Highlights for YouTube video clips.'
+): NormalizedSocialLink {
   const segments = url.pathname.split('/').filter(Boolean)
   const first = segments[0]?.toLowerCase()
 
@@ -161,7 +181,7 @@ function normalizeYouTubeProfileUrl(url: URL): NormalizedSocialLink {
     first === 'embed' ||
     first === 'shorts'
   ) {
-    throw new Exception('Use Highlights for YouTube video clips.', { status: 422 })
+    throw new Exception(videoLinkMessage, { status: 422 })
   }
 
   if (!segments[0]) {
