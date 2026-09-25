@@ -320,13 +320,23 @@ export default class LeagueService {
       await this.standingService.ensureLeagueTeamsInSeason(leagueId, selectedSeasonId)
     }
 
+    const groupStages = await Stage.query()
+      .where('season_id', selectedSeasonId)
+      .where('stage_type', 'group')
+    await Promise.all(groupStages.map((stage) => this.groupStageService.ensureGroupsForStage(stage)))
+
     const [season, statTypes] = await Promise.all([
       Season.query()
         .where('id', selectedSeasonId)
         .where('league_id', leagueId)
         .preload('league')
         .preload('stages', (stagesQuery) => {
-          stagesQuery.orderBy('sequence', 'asc').orderBy('id', 'asc')
+          stagesQuery
+            .orderBy('sequence', 'asc')
+            .orderBy('id', 'asc')
+            .preload('groups', (groupsQuery) => {
+              groupsQuery.orderBy('sequence', 'asc').orderBy('id', 'asc')
+            })
         })
         .preload('games', (gamesQuery) => {
           gamesQuery

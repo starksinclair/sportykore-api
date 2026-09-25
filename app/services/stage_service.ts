@@ -5,6 +5,7 @@ import Season from '#models/season'
 import Stage from '#models/stage'
 import Team from '#models/team'
 import type { KnockoutStageConfig, StageStatus } from '#types/stage'
+import GroupStageService from '#services/group_stage_service'
 
 function parseConfig(raw: unknown): KnockoutStageConfig | Record<string, unknown> {
   if (raw === null || raw === undefined) {
@@ -21,6 +22,8 @@ function parseConfig(raw: unknown): KnockoutStageConfig | Record<string, unknown
 }
 
 export default class StageService {
+  private groupStageService = new GroupStageService()
+
   async ensureRoundRobinStage(
     seasonId: number,
     client?: TransactionClientContract
@@ -51,7 +54,16 @@ export default class StageService {
 
   async listBySeason(seasonId: number): Promise<Stage[]> {
     await Season.findOrFail(seasonId)
-    return Stage.query().where('season_id', seasonId).orderBy('sequence', 'asc').orderBy('id', 'asc')
+    const groupStages = await Stage.query().where('season_id', seasonId).where('stage_type', 'group')
+    await Promise.all(groupStages.map((stage) => this.groupStageService.ensureGroupsForStage(stage)))
+
+    return Stage.query()
+      .where('season_id', seasonId)
+      .orderBy('sequence', 'asc')
+      .orderBy('id', 'asc')
+      .preload('groups', (groupsQuery) => {
+        groupsQuery.orderBy('sequence', 'asc').orderBy('id', 'asc')
+      })
   }
 
   async createKnockoutStage(
