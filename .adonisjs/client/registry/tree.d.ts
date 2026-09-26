@@ -49,6 +49,9 @@ export interface ApiDefinition {
     show: typeof routes['leagues.show']
     store: typeof routes['leagues.store']
     update: typeof routes['leagues.update']
+    softDelete: typeof routes['leagues.soft_delete']
+    reactivate: typeof routes['leagues.reactivate']
+    destroy: typeof routes['leagues.destroy']
   }
   searches: {
     search: typeof routes['searches.search']

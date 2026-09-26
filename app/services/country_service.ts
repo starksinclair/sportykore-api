@@ -8,6 +8,7 @@ import LeaguePlayer from '#models/league_player'
 import Player from '#models/player'
 import Team from '#models/team'
 import { LIVE_GAME_STATUSES } from '#types/game_status'
+import { ACTIVE_LEAGUE_STATUS } from '#types/league_status'
 import { avatarInitialsFromName, formatPlayerPosition } from '#helpers/player_format'
 
 export type CountryDetailStats = {
@@ -79,9 +80,15 @@ export default class CountryService {
 
     const [stats, leagues, teams, featuredPlayers, recentMatches] = await Promise.all([
       this.loadStats(country.id),
-      League.query().where('country_id', country.id).preload('country').orderBy('name', 'asc'),
+      League.query()
+        .where('country_id', country.id)
+        .where('status', ACTIVE_LEAGUE_STATUS)
+        .preload('country')
+        .orderBy('name', 'asc'),
       Team.query()
-        .whereHas('league', (leagueQuery) => leagueQuery.where('country_id', country.id))
+        .whereHas('league', (leagueQuery) =>
+          leagueQuery.where('country_id', country.id).where('status', ACTIVE_LEAGUE_STATUS)
+        )
         .orderBy('name', 'asc')
         .select('id', 'name', 'logo_url', 'league_id'),
       this.loadFeaturedPlayers(country),
@@ -93,7 +100,9 @@ export default class CountryService {
 
   private async loadRecentMatches(countryId: number): Promise<Game[]> {
     const games = await Game.query()
-      .whereHas('league', (leagueQuery) => leagueQuery.where('country_id', countryId))
+      .whereHas('league', (leagueQuery) =>
+        leagueQuery.where('country_id', countryId).where('status', ACTIVE_LEAGUE_STATUS)
+      )
       .preload('homeTeam')
       .preload('awayTeam')
       .preload('league', (leagueQuery) => leagueQuery.preload('country'))
@@ -132,14 +141,21 @@ export default class CountryService {
 
   private async loadStats(countryId: number): Promise<CountryDetailStats> {
     const [leagues, teams, players, liveMatches] = await Promise.all([
-      League.query().where('country_id', countryId).count('* as total'),
+      League.query()
+        .where('country_id', countryId)
+        .where('status', ACTIVE_LEAGUE_STATUS)
+        .count('* as total'),
       Team.query()
-        .whereHas('league', (leagueQuery) => leagueQuery.where('country_id', countryId))
+        .whereHas('league', (leagueQuery) =>
+          leagueQuery.where('country_id', countryId).where('status', ACTIVE_LEAGUE_STATUS)
+        )
         .count('* as total'),
       Player.query().where('country_id', countryId).count('* as total'),
       Game.query()
         .whereIn('status', LIVE_GAME_STATUSES)
-        .whereHas('league', (leagueQuery) => leagueQuery.where('country_id', countryId))
+        .whereHas('league', (leagueQuery) =>
+          leagueQuery.where('country_id', countryId).where('status', ACTIVE_LEAGUE_STATUS)
+        )
         .count('* as total'),
     ])
 
@@ -157,6 +173,7 @@ export default class CountryService {
       .innerJoin('leagues', 'stats.league_id', 'leagues.id')
       .innerJoin('stat_types', 'stats.stat_type_id', 'stat_types.id')
       .where('leagues.country_id', country.id)
+      .where('leagues.status', ACTIVE_LEAGUE_STATUS)
       .groupBy('stats.player_id')
       .select('stats.player_id')
       .select(
@@ -175,7 +192,10 @@ export default class CountryService {
     }
 
     const playerIds = rows.map((row) => row.player_id)
-    const leagueIds = await League.query().where('country_id', country.id).select('id')
+    const leagueIds = await League.query()
+      .where('country_id', country.id)
+      .where('status', ACTIVE_LEAGUE_STATUS)
+      .select('id')
     const leagueIdList = leagueIds.map((league) => league.id)
 
     const [players, memberships] = await Promise.all([

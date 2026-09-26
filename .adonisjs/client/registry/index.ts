@@ -552,6 +552,24 @@ const routes = {
     tokens: [{"old":"/api/v1/leagues/:leagueId","type":0,"val":"api","end":""},{"old":"/api/v1/leagues/:leagueId","type":0,"val":"v1","end":""},{"old":"/api/v1/leagues/:leagueId","type":0,"val":"leagues","end":""},{"old":"/api/v1/leagues/:leagueId","type":1,"val":"leagueId","end":""}],
     types: placeholder as Registry['leagues.update']['types'],
   },
+  'leagues.soft_delete': {
+    methods: ["PATCH"],
+    pattern: '/api/v1/leagues/:leagueId/soft-delete',
+    tokens: [{"old":"/api/v1/leagues/:leagueId/soft-delete","type":0,"val":"api","end":""},{"old":"/api/v1/leagues/:leagueId/soft-delete","type":0,"val":"v1","end":""},{"old":"/api/v1/leagues/:leagueId/soft-delete","type":0,"val":"leagues","end":""},{"old":"/api/v1/leagues/:leagueId/soft-delete","type":1,"val":"leagueId","end":""},{"old":"/api/v1/leagues/:leagueId/soft-delete","type":0,"val":"soft-delete","end":""}],
+    types: placeholder as Registry['leagues.soft_delete']['types'],
+  },
+  'leagues.reactivate': {
+    methods: ["PATCH"],
+    pattern: '/api/v1/leagues/:leagueId/reactivate',
+    tokens: [{"old":"/api/v1/leagues/:leagueId/reactivate","type":0,"val":"api","end":""},{"old":"/api/v1/leagues/:leagueId/reactivate","type":0,"val":"v1","end":""},{"old":"/api/v1/leagues/:leagueId/reactivate","type":0,"val":"leagues","end":""},{"old":"/api/v1/leagues/:leagueId/reactivate","type":1,"val":"leagueId","end":""},{"old":"/api/v1/leagues/:leagueId/reactivate","type":0,"val":"reactivate","end":""}],
+    types: placeholder as Registry['leagues.reactivate']['types'],
+  },
+  'leagues.destroy': {
+    methods: ["DELETE"],
+    pattern: '/api/v1/leagues/:leagueId',
+    tokens: [{"old":"/api/v1/leagues/:leagueId","type":0,"val":"api","end":""},{"old":"/api/v1/leagues/:leagueId","type":0,"val":"v1","end":""},{"old":"/api/v1/leagues/:leagueId","type":0,"val":"leagues","end":""},{"old":"/api/v1/leagues/:leagueId","type":1,"val":"leagueId","end":""}],
+    types: placeholder as Registry['leagues.destroy']['types'],
+  },
   'seasons.store': {
     methods: ["POST"],
     pattern: '/api/v1/leagues/:leagueId/seasons',
