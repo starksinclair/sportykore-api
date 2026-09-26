@@ -3,7 +3,11 @@ import { Exception } from '@adonisjs/core/exceptions'
 
 import { resolveRequestTimeZone } from '#helpers/time_zone'
 import LeagueService from '#services/league_service'
-import { createLeagueWithSeasonValidator, updateLeagueValidator } from '#validators/league'
+import {
+  createLeagueWithSeasonValidator,
+  removeLeagueValidator,
+  updateLeagueValidator,
+} from '#validators/league'
 import CountryTransformer from '#transformers/country_transformer'
 import { inject } from '@adonisjs/core'
 import SeasonTransformer from '#transformers/season_transformer'
@@ -176,9 +180,10 @@ export default class LeaguesController {
       ),
     })
   }
-  async show({ params, serialize, request }: HttpContext) {
+  async show({ auth, params, serialize, request }: HttpContext) {
     const leagueId = Number(params.leagueId)
     const seasonIdRaw = request.qs().seasonId
+    const includeInactive = request.qs().includeInactive === 'true'
     const seasonId =
       seasonIdRaw !== undefined && seasonIdRaw !== '' ? Number(seasonIdRaw) : undefined
 
@@ -189,7 +194,15 @@ export default class LeaguesController {
       throw new Exception('Invalid season id', { status: 400 })
     }
 
-    const { seasons, season, statTypes } = await this.leagueService.getLeague(leagueId, seasonId)
+    const isLoggedIn = await auth.use('api').check()
+    const userId = isLoggedIn ? auth.use('api').getUserOrFail().id : undefined
+    const { seasons, season, statTypes } = await this.leagueService.getLeague(
+      leagueId,
+      seasonId,
+      {
+        includeInactiveForUserId: includeInactive ? userId : undefined,
+      }
+    )
 
     return serialize({
       seasons: SeasonTransformer.transform(seasons),
@@ -224,5 +237,49 @@ export default class LeaguesController {
     }
 
     return response.ok({ message: 'League updated successfully' })
+  }
+
+  async destroy({ auth, params, request, response }: HttpContext) {
+    const leagueId = Number(params.leagueId)
+    if (!Number.isFinite(leagueId) || leagueId <= 0) {
+      throw new Exception('Invalid league id', { status: 400 })
+    }
+
+    const { confirmationName } = await request.validateUsing(removeLeagueValidator)
+
+    await this.leagueService.remove(leagueId, confirmationName, {
+      actorId: auth.user?.id ?? null,
+      ipAddress: request.ip(),
+    })
+
+    return response.ok({ message: 'League removed successfully' })
+  }
+
+  async softDelete({ auth, params, request, response }: HttpContext) {
+    const leagueId = Number(params.leagueId)
+    if (!Number.isFinite(leagueId) || leagueId <= 0) {
+      throw new Exception('Invalid league id', { status: 400 })
+    }
+
+    await this.leagueService.softDelete(leagueId, {
+      actorId: auth.user?.id ?? null,
+      ipAddress: request.ip(),
+    })
+
+    return response.ok({ message: 'League archived successfully' })
+  }
+
+  async reactivate({ auth, params, request, response }: HttpContext) {
+    const leagueId = Number(params.leagueId)
+    if (!Number.isFinite(leagueId) || leagueId <= 0) {
+      throw new Exception('Invalid league id', { status: 400 })
+    }
+
+    await this.leagueService.reactivate(leagueId, {
+      actorId: auth.user?.id ?? null,
+      ipAddress: request.ip(),
+    })
+
+    return response.ok({ message: 'League reactivated successfully' })
   }
 }

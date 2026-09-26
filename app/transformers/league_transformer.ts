@@ -16,6 +16,7 @@ export default class LeagueTransformer extends BaseTransformer<League> {
         'name',
         'logoUrl',
         'description',
+        'status',
         'tiebreaker',
         'startDate',
         'endDate',

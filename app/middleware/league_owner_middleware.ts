@@ -10,12 +10,17 @@ import Stage from '#models/stage'
 import StandingAdjustment from '#models/standing_adjustment'
 import StandingOverride from '#models/standing_override'
 import StandingZone from '#models/standing_zone'
+import { DELETED_LEAGUE_STATUS } from '#types/league_status'
 
 export default class LeagueOwnerMiddleware {
   async handle(ctx: HttpContext, next: NextFn) {
     const user = ctx.auth.getUserOrFail()
     const leagueId = await this.resolveLeagueId(ctx)
     const league = await League.findOrFail(leagueId)
+
+    if (league.status === DELETED_LEAGUE_STATUS) {
+      throw new Exception('League not found', { status: 404 })
+    }
 
     if (league.userId !== user.id) {
       throw new Exception('You are not authorized to manage this league', { status: 403 })

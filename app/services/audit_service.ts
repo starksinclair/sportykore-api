@@ -1,4 +1,5 @@
 import AdminAuditLog from '#models/admin_audit_log'
+import type { QueryClientContract } from '@adonisjs/lucid/types/database'
 
 export type AuditLogInput = {
   leagueId: number
@@ -8,11 +9,12 @@ export type AuditLogInput = {
   entityId?: number | null
   metadata?: Record<string, unknown>
   ipAddress?: string | null
+  client?: QueryClientContract
 }
 
 export default class AuditService {
   async log(input: AuditLogInput): Promise<AdminAuditLog> {
-    return AdminAuditLog.create({
+    const payload = {
       leagueId: input.leagueId,
       actorId: input.actorId ?? null,
       action: input.action,
@@ -20,7 +22,11 @@ export default class AuditService {
       entityId: input.entityId ?? null,
       metadata: input.metadata ?? {},
       ipAddress: input.ipAddress ?? null,
-    })
+    }
+
+    return input.client
+      ? AdminAuditLog.create(payload, { client: input.client })
+      : AdminAuditLog.create(payload)
   }
 
   async list(leagueId: number, page = 1, perPage = 50) {

@@ -1099,6 +1099,42 @@ export interface Registry {
       errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/leagues_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
+  'leagues.soft_delete': {
+    methods: ["PATCH"]
+    pattern: '/api/v1/leagues/:leagueId/soft-delete'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { leagueId: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/leagues_controller').default['softDelete']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/leagues_controller').default['softDelete']>>>
+    }
+  }
+  'leagues.reactivate': {
+    methods: ["PATCH"]
+    pattern: '/api/v1/leagues/:leagueId/reactivate'
+    types: {
+      body: {}
+      paramsTuple: [ParamValue]
+      params: { leagueId: ParamValue }
+      query: {}
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/leagues_controller').default['reactivate']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/leagues_controller').default['reactivate']>>>
+    }
+  }
+  'leagues.destroy': {
+    methods: ["DELETE"]
+    pattern: '/api/v1/leagues/:leagueId'
+    types: {
+      body: ExtractBody<InferInput<(typeof import('#validators/league').removeLeagueValidator)>>
+      paramsTuple: [ParamValue]
+      params: { leagueId: ParamValue }
+      query: ExtractQuery<InferInput<(typeof import('#validators/league').removeLeagueValidator)>>
+      response: ExtractResponse<Awaited<ReturnType<import('#controllers/leagues_controller').default['destroy']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/leagues_controller').default['destroy']>>> | { status: 422; response: { errors: SimpleError[] } }
+    }
+  }
   'seasons.store': {
     methods: ["POST"]
     pattern: '/api/v1/leagues/:leagueId/seasons'

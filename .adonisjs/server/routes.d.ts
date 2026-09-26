@@ -95,6 +95,9 @@ export type ScannedRoutes = {
     'game_lineups.update': { paramsTuple: [ParamValue,ParamValue]; params: {'gameId': ParamValue,'id': ParamValue} }
     'game_lineups.destroy': { paramsTuple: [ParamValue,ParamValue]; params: {'gameId': ParamValue,'id': ParamValue} }
     'leagues.update': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
+    'leagues.soft_delete': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
+    'leagues.reactivate': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
+    'leagues.destroy': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'seasons.store': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'seasons.update': { paramsTuple: [ParamValue,ParamValue]; params: {'leagueId': ParamValue,'seasonId': ParamValue} }
     'teams.store': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
@@ -286,6 +289,7 @@ export type ScannedRoutes = {
     'player_highlights.destroy': { paramsTuple: [ParamValue]; params: {'hid': ParamValue} }
     'favourite_leagues.destroy': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'game_lineups.destroy': { paramsTuple: [ParamValue,ParamValue]; params: {'gameId': ParamValue,'id': ParamValue} }
+    'leagues.destroy': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
     'teams.destroy': { paramsTuple: [ParamValue,ParamValue]; params: {'leagueId': ParamValue,'id': ParamValue} }
     'team_admins.destroy': { paramsTuple: [ParamValue,ParamValue,ParamValue]; params: {'leagueId': ParamValue,'teamId': ParamValue,'userId': ParamValue} }
     'venues.destroy': { paramsTuple: [ParamValue]; params: {'id': ParamValue} }
@@ -319,6 +323,8 @@ export type ScannedRoutes = {
   PATCH: {
     'game_score.accredit': { paramsTuple: [ParamValue,ParamValue]; params: {'gameId': ParamValue,'statId': ParamValue} }
     'game_lineups.update': { paramsTuple: [ParamValue,ParamValue]; params: {'gameId': ParamValue,'id': ParamValue} }
+    'leagues.soft_delete': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
+    'leagues.reactivate': { paramsTuple: [ParamValue]; params: {'leagueId': ParamValue} }
   }
 }
 declare module '@adonisjs/core/types/http' {

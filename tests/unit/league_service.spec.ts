@@ -2,6 +2,7 @@ import { Exception } from '@adonisjs/core/exceptions'
 import { test } from '@japa/runner'
 import { DateTime } from 'luxon'
 
+import AdminAuditLog from '#models/admin_audit_log'
 import Country from '#models/country'
 import Game from '#models/game'
 import League from '#models/league'
@@ -15,6 +16,7 @@ import User from '#models/user'
 import LeagueService from '#services/league_service'
 import StageService from '#services/stage_service'
 import StandingService from '#services/standing_service'
+import { UserManageService } from '#services/user_manage_service'
 import CountryTransformer from '#transformers/country_transformer'
 import GameTransformer from '#transformers/game_transformer'
 import LeagueTransformer from '#transformers/league_transformer'
@@ -30,6 +32,12 @@ async function createUser() {
 
 function createLeagueService() {
   return new LeagueService(new StandingService())
+}
+
+function auditMetadata(row: AdminAuditLog): Record<string, unknown> {
+  return typeof row.metadata === 'string'
+    ? (JSON.parse(row.metadata) as Record<string, unknown>)
+    : row.metadata
 }
 
 test.group('LeagueService', (group) => {
@@ -403,6 +411,167 @@ test.group('LeagueService', (group) => {
       assert.instanceOf(error, Exception)
       assert.equal((error as Exception).status, 404)
     }
+  })
+
+  test('softDelete archives league and writes audit row', async ({ assert }) => {
+    const service = createLeagueService()
+    const owner = await createUser()
+    const ng = await Country.findByOrFail('code', 'ng')
+    const league = await League.create({
+      userId: owner.id,
+      name: 'Archive Me',
+      countryId: ng.id,
+    })
+
+    await service.softDelete(league.id, { actorId: owner.id, ipAddress: '127.0.0.1' })
+    await league.refresh()
+
+    assert.equal(league.status, 'inactive')
+
+    const audit = await AdminAuditLog.query().where('league_id', league.id).firstOrFail()
+    const metadata = auditMetadata(audit)
+    assert.equal(audit.action, 'league.archived')
+    assert.equal(audit.actorId, owner.id)
+    assert.equal(metadata.leagueName, 'Archive Me')
+    assert.equal(metadata.previousStatus, 'active')
+    assert.equal(metadata.nextStatus, 'inactive')
+  })
+
+  test('reactivate restores archived league and writes audit row', async ({ assert }) => {
+    const service = createLeagueService()
+    const owner = await createUser()
+    const ng = await Country.findByOrFail('code', 'ng')
+    const league = await League.create({
+      userId: owner.id,
+      name: 'Bring Back',
+      countryId: ng.id,
+      status: 'inactive',
+    })
+
+    await service.reactivate(league.id, { actorId: owner.id, ipAddress: '127.0.0.1' })
+    await league.refresh()
+
+    assert.equal(league.status, 'active')
+
+    const audit = await AdminAuditLog.query().where('league_id', league.id).firstOrFail()
+    const metadata = auditMetadata(audit)
+    assert.equal(audit.action, 'league.reactivated')
+    assert.equal(metadata.previousStatus, 'inactive')
+    assert.equal(metadata.nextStatus, 'active')
+  })
+
+  test('remove requires matching confirmation name', async ({ assert }) => {
+    const service = createLeagueService()
+    const owner = await createUser()
+    const ng = await Country.findByOrFail('code', 'ng')
+    const league = await League.create({
+      userId: owner.id,
+      name: 'Exact Name League',
+      countryId: ng.id,
+    })
+
+    try {
+      await service.remove(league.id, 'Wrong Name', { actorId: owner.id })
+      assert.fail('expected Exception')
+    } catch (error) {
+      assert.instanceOf(error, Exception)
+      assert.equal((error as Exception).status, 422)
+    }
+
+    await league.refresh()
+    assert.equal(league.status, 'active')
+    const auditCount = await AdminAuditLog.query().where('league_id', league.id).count('* as total').first()
+    assert.equal(Number(auditCount?.$extras.total ?? 0), 0)
+  })
+
+  test('remove marks league deleted, retains rows, and hides it from managed list', async ({
+    assert,
+  }) => {
+    const service = createLeagueService()
+    const owner = await createUser()
+    const ng = await Country.findByOrFail('code', 'ng')
+    const league = await League.create({
+      userId: owner.id,
+      name: 'Remove But Retain',
+      countryId: ng.id,
+    })
+    const season = await Season.create({
+      leagueId: league.id,
+      name: 'Current',
+      status: 'active',
+    })
+    const home = await Team.create({ leagueId: league.id, name: 'Home', addedBy: owner.id })
+    const away = await Team.create({ leagueId: league.id, name: 'Away', addedBy: owner.id })
+    await Game.create({
+      leagueId: league.id,
+      seasonId: season.id,
+      homeTeamId: home.id,
+      awayTeamId: away.id,
+      playedAt: DateTime.utc(),
+      status: 'full_time',
+      homeScore: 1,
+      awayScore: 0,
+    })
+
+    await service.remove(league.id, league.name, { actorId: owner.id, ipAddress: '127.0.0.1' })
+    await league.refresh()
+
+    assert.equal(league.status, 'deleted')
+    assert.equal(await Team.query().where('league_id', league.id).count('* as total').first().then((row) => Number(row?.$extras.total ?? 0)), 2)
+    assert.equal(await Game.query().where('league_id', league.id).count('* as total').first().then((row) => Number(row?.$extras.total ?? 0)), 1)
+
+    const managed = await new UserManageService().listOwnedLeagues(owner.id)
+    assert.lengthOf(managed, 0)
+
+    const audit = await AdminAuditLog.query().where('league_id', league.id).firstOrFail()
+    const metadata = auditMetadata(audit)
+    assert.equal(audit.action, 'league.deleted')
+    assert.equal(metadata.retainedRecords, true)
+    assert.equal(metadata.nextStatus, 'deleted')
+  })
+
+  test('archive and remove reject live games', async ({ assert }) => {
+    const service = createLeagueService()
+    const owner = await createUser()
+    const ng = await Country.findByOrFail('code', 'ng')
+    const league = await League.create({
+      userId: owner.id,
+      name: 'Live League',
+      countryId: ng.id,
+    })
+    const season = await Season.create({
+      leagueId: league.id,
+      name: 'Current',
+      status: 'active',
+    })
+    const home = await Team.create({ leagueId: league.id, name: 'Home', addedBy: owner.id })
+    const away = await Team.create({ leagueId: league.id, name: 'Away', addedBy: owner.id })
+    await Game.create({
+      leagueId: league.id,
+      seasonId: season.id,
+      homeTeamId: home.id,
+      awayTeamId: away.id,
+      playedAt: DateTime.utc(),
+      status: 'first_half',
+      homeScore: 0,
+      awayScore: 0,
+    })
+
+    for (const action of [
+      () => service.softDelete(league.id, { actorId: owner.id }),
+      () => service.remove(league.id, league.name, { actorId: owner.id }),
+    ]) {
+      try {
+        await action()
+        assert.fail('expected Exception')
+      } catch (error) {
+        assert.instanceOf(error, Exception)
+        assert.equal((error as Exception).status, 409)
+      }
+    }
+
+    await league.refresh()
+    assert.equal(league.status, 'active')
   })
 
   test('CountryTransformer forList exposes id, name, and code', async ({ assert }) => {

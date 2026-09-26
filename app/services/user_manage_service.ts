@@ -5,6 +5,7 @@ import Season from '#models/season'
 import Team from '#models/team'
 import TeamAdmin from '#models/team_admin'
 import User from '#models/user'
+import { ACTIVE_LEAGUE_STATUS, DELETED_LEAGUE_STATUS } from '#types/league_status'
 
 export type AdminTeamManagedResource = Team & {
   league: League
@@ -16,6 +17,7 @@ export class UserManageService {
   async listOwnedLeagues(userId: number) {
     const leagues = await League.query()
       .where('user_id', userId)
+      .whereNot('status', DELETED_LEAGUE_STATUS)
       .preload('seasons', (seasonQuery) => {
         seasonQuery.orderByRaw(
           `CASE status WHEN 'active' THEN 0 WHEN 'completed' THEN 1 ELSE 2 END, created_at DESC`
@@ -52,6 +54,9 @@ export class UserManageService {
 
     for (const row of adminRows) {
       if (ownedLeagueIds.has(row.leagueId)) {
+        continue
+      }
+      if (row.league.status !== ACTIVE_LEAGUE_STATUS) {
         continue
       }
 

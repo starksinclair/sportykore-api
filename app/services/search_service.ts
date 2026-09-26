@@ -25,6 +25,7 @@ export class SearchService {
         FROM leagues l
                LEFT JOIN countries c ON c.id = l.country_id
         WHERE LOWER(l.name) LIKE ?
+          AND l.status = 'active'
 
         UNION ALL
 
@@ -38,6 +39,7 @@ export class SearchService {
                LEFT JOIN leagues l ON l.id = t.league_id
                LEFT JOIN countries c ON c.id = l.country_id
         WHERE LOWER(t.name) LIKE ?
+          AND l.status = 'active'
 
         UNION ALL
 

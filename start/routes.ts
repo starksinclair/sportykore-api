@@ -251,6 +251,9 @@ router
     router
       .group(() => {
         router.put('leagues/:leagueId', [controllers.Leagues, 'update'])
+        router.patch('leagues/:leagueId/soft-delete', [controllers.Leagues, 'softDelete'])
+        router.patch('leagues/:leagueId/reactivate', [controllers.Leagues, 'reactivate'])
+        router.delete('leagues/:leagueId', [controllers.Leagues, 'destroy'])
 
         router.post('leagues/:leagueId/seasons', [controllers.Seasons, 'store'])
         router.put('leagues/:leagueId/seasons/:seasonId', [controllers.Seasons, 'update'])

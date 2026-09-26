@@ -103,7 +103,7 @@ type CompetitionDetail = {
     description: string | null
     gender: string | null
     countryId: number | null
-    userId: number
+    userId: number | null
     logoUrl: string | null
     startDate: string
     endDate: string
@@ -1010,7 +1010,7 @@ export default class SecretSantaController {
 
   private async createVenues(
     leagueId: number,
-    userId: number,
+    userId: number | null,
     rows: Array<{ name: string; address: string | null; city: string | null; capacity: number | null }>
   ) {
     if (rows.length === 0) return []

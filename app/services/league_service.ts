@@ -1,16 +1,24 @@
 import db from '@adonisjs/lucid/services/db'
+import type { QueryClientContract } from '@adonisjs/lucid/types/database'
 import { Exception } from '@adonisjs/core/exceptions'
 import { inject } from '@adonisjs/core'
 import { DateTime, IANAZone } from 'luxon'
 
 import Country from '#models/country'
+import Game from '#models/game'
 import League from '#models/league'
 import Season from '#models/season'
 import Stage from '#models/stage'
 import StatType from '#models/stat_type'
 import Team from '#models/team'
 import StandingService from '#services/standing_service'
+import AuditService from '#services/audit_service'
 import { LIVE_GAME_STATUSES } from '#types/game_status'
+import {
+  ACTIVE_LEAGUE_STATUS,
+  DELETED_LEAGUE_STATUS,
+  INACTIVE_LEAGUE_STATUS,
+} from '#types/league_status'
 
 import { DEFAULT_LEAGUE_TIEBREAKER, type LeagueTiebreaker } from '#types/tiebreaker'
 import type { GroupStageConfig, KnockoutStageConfig } from '#types/stage'
@@ -64,12 +72,18 @@ export type MatchDayContext = MatchDayWindow & {
   timeZone: string
 }
 
+type LeagueMutationAudit = {
+  actorId?: number | null
+  ipAddress?: string | null
+}
+
 @inject()
 export default class LeagueService {
   constructor(
     private standingService: StandingService,
     private stageService: StageService = new StageService(),
-    private groupStageService: GroupStageService = new GroupStageService()
+    private groupStageService: GroupStageService = new GroupStageService(),
+    private auditService: AuditService = new AuditService()
   ) {}
 
   async createWithSeason(
@@ -189,6 +203,113 @@ export default class LeagueService {
     await this.standingService.recalculatePositionsForLeague(leagueId)
   }
 
+  private async assertNoLiveGames(leagueId: number, client: QueryClientContract) {
+    const liveGame = await Game.query({ client })
+      .where('league_id', leagueId)
+      .whereIn('status', [...LIVE_GAME_STATUSES])
+      .first()
+
+    if (liveGame) {
+      throw new Exception('End or cancel live games before deleting this league', { status: 409 })
+    }
+  }
+
+  async softDelete(leagueId: number, audit?: LeagueMutationAudit): Promise<void> {
+    await db.transaction(async (trx) => {
+      const league = await League.query({ client: trx }).where('id', leagueId).firstOrFail()
+      if (league.status === DELETED_LEAGUE_STATUS) {
+        throw new Exception('League not found', { status: 404 })
+      }
+      await this.assertNoLiveGames(leagueId, trx)
+      const previousStatus = league.status
+
+      league.status = INACTIVE_LEAGUE_STATUS
+      league.useTransaction(trx)
+      await league.save()
+
+      await this.auditService.log({
+        leagueId,
+        actorId: audit?.actorId ?? null,
+        action: 'league.archived',
+        entityType: 'league',
+        entityId: leagueId,
+        metadata: {
+          leagueName: league.name,
+          previousStatus,
+          nextStatus: league.status,
+        },
+        ipAddress: audit?.ipAddress ?? null,
+        client: trx,
+      })
+    })
+  }
+
+  async reactivate(leagueId: number, audit?: LeagueMutationAudit): Promise<void> {
+    await db.transaction(async (trx) => {
+      const league = await League.query({ client: trx }).where('id', leagueId).firstOrFail()
+      if (league.status === DELETED_LEAGUE_STATUS) {
+        throw new Exception('League not found', { status: 404 })
+      }
+      const previousStatus = league.status
+      league.status = ACTIVE_LEAGUE_STATUS
+      league.useTransaction(trx)
+      await league.save()
+
+      await this.auditService.log({
+        leagueId,
+        actorId: audit?.actorId ?? null,
+        action: 'league.reactivated',
+        entityType: 'league',
+        entityId: leagueId,
+        metadata: {
+          leagueName: league.name,
+          previousStatus,
+          nextStatus: league.status,
+        },
+        ipAddress: audit?.ipAddress ?? null,
+        client: trx,
+      })
+    })
+  }
+
+  async remove(
+    leagueId: number,
+    confirmationName: string,
+    audit?: LeagueMutationAudit
+  ): Promise<void> {
+    await db.transaction(async (trx) => {
+      const league = await League.query({ client: trx }).where('id', leagueId).firstOrFail()
+      if (league.status === DELETED_LEAGUE_STATUS) {
+        throw new Exception('League not found', { status: 404 })
+      }
+      await this.assertNoLiveGames(leagueId, trx)
+      if (confirmationName.trim() !== league.name) {
+        throw new Exception('League name confirmation does not match', { status: 422 })
+      }
+      const previousStatus = league.status
+
+      league.status = DELETED_LEAGUE_STATUS
+      league.useTransaction(trx)
+      await league.save()
+
+      await this.auditService.log({
+        leagueId,
+        actorId: audit?.actorId ?? null,
+        action: 'league.deleted',
+        entityType: 'league',
+        entityId: leagueId,
+        metadata: {
+          leagueName: league.name,
+          previousStatus,
+          nextStatus: league.status,
+          retainedRecords: true,
+        },
+        ipAddress: audit?.ipAddress ?? null,
+        client: trx,
+      })
+    })
+  }
+
   /**
    * Countries/leagues/games for the matches feed.
    * `gameDate` is a calendar day in `timeZone` (not a UTC day). `played_at` is filtered using
@@ -225,10 +346,13 @@ export default class LeagueService {
     return Country.query()
       .if(parsedCountryId, (query) => query.where('id', parsedCountryId!))
       .whereHas('leagues', (leagueQuery) => {
-        leagueQuery.whereHas('games', (gameQuery) => this.applyMatchDayFilters(gameQuery, window))
+        leagueQuery
+          .where('status', ACTIVE_LEAGUE_STATUS)
+          .whereHas('games', (gameQuery) => this.applyMatchDayFilters(gameQuery, window))
       })
       .preload('leagues', (leagueQuery) => {
         leagueQuery
+          .where('status', ACTIVE_LEAGUE_STATUS)
           .whereHas('games', (gameQuery) => this.applyMatchDayFilters(gameQuery, window))
           .withAggregate('favouritedBy', (favQuery) => {
             favQuery.count('*').as('favourites_count')
@@ -257,7 +381,7 @@ export default class LeagueService {
               .preload('venue')
               .orderBy('played_at', 'asc')
           })
-          .select('leagues.id', 'leagues.name', 'leagues.logo_url')
+          .select('leagues.id', 'leagues.name', 'leagues.logo_url', 'leagues.status')
       })
       .orderBy('name', 'asc')
   }
@@ -265,10 +389,13 @@ export default class LeagueService {
   async listCountriesWithLeagues(countryId?: number, userId?: number): Promise<Country[]> {
     return Country.query()
       .if(countryId, (query) => query.where('id', countryId as number))
-      .has('leagues')
+      .whereHas('leagues', (leagueQuery) => {
+        leagueQuery.where('status', ACTIVE_LEAGUE_STATUS)
+      })
       .preload('leagues', (leagueQuery) =>
         leagueQuery
-          .select('name', 'id', 'logo_url')
+          .where('status', ACTIVE_LEAGUE_STATUS)
+          .select('name', 'id', 'logo_url', 'status')
           .withAggregate('favouritedBy', (favQuery) => {
             favQuery.count('*').as('favourites_count')
           })
@@ -293,9 +420,19 @@ export default class LeagueService {
 
   async getLeague(
     leagueId: number,
-    seasonId?: number
+    seasonId?: number,
+    options: { includeInactiveForUserId?: number } = {}
   ): Promise<{ seasons: Season[]; season: Season; statTypes: StatType[] }> {
-    await League.findOrFail(leagueId)
+    const league = await League.findOrFail(leagueId)
+    if (
+      league.status !== ACTIVE_LEAGUE_STATUS &&
+      !(
+        league.status === INACTIVE_LEAGUE_STATUS &&
+        league.userId === options.includeInactiveForUserId
+      )
+    ) {
+      throw new Exception('League not found', { status: 404 })
+    }
 
     const seasons = await Season.query()
       .where('league_id', leagueId)

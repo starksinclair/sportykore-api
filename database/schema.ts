@@ -350,7 +350,7 @@ export class LeaguePlayerSchema extends BaseModel {
 }
 
 export class LeagueSchema extends BaseModel {
-  static $columns = ['countryId', 'createdAt', 'description', 'endDate', 'gender', 'id', 'logoUrl', 'name', 'startDate', 'tiebreaker', 'updatedAt', 'userId'] as const
+  static $columns = ['countryId', 'createdAt', 'description', 'endDate', 'gender', 'id', 'logoUrl', 'name', 'startDate', 'status', 'tiebreaker', 'updatedAt', 'userId'] as const
   $columns = LeagueSchema.$columns
   @column()
   declare countryId: number | null
@@ -371,11 +371,13 @@ export class LeagueSchema extends BaseModel {
   @column.date()
   declare startDate: DateTime | null
   @column()
+  declare status: string
+  @column()
   declare tiebreaker: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
   @column()
-  declare userId: number
+  declare userId: number | null
 }
 
 export class OtpCodeSchema extends BaseModel {
@@ -487,7 +489,7 @@ export class PlayerSchema extends BaseModel {
   @column()
   declare city: string | null
   @column()
-  declare countryId: number
+  declare countryId: number | null
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime | null
   @column.date()
@@ -513,7 +515,7 @@ export class PlayerSchema extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
   @column()
-  declare userId: number
+  declare userId: number | null
   @column()
   declare visibility: string
 }
@@ -791,7 +793,7 @@ export class TeamSchema extends BaseModel {
   static $columns = ['addedBy', 'createdAt', 'id', 'leagueId', 'logoUrl', 'name', 'updatedAt'] as const
   $columns = TeamSchema.$columns
   @column()
-  declare addedBy: number
+  declare addedBy: number | null
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime | null
   @column({ isPrimary: true })
