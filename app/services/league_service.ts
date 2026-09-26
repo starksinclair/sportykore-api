@@ -239,35 +239,40 @@ export default class LeagueService {
           nextStatus: league.status,
         },
         ipAddress: audit?.ipAddress ?? null,
+        client: trx,
       })
     })
   }
 
   async reactivate(leagueId: number, audit?: LeagueMutationAudit): Promise<void> {
-    const league = await League.findOrFail(leagueId)
-    if (league.status === DELETED_LEAGUE_STATUS) {
-      throw new Exception('League not found', { status: 404 })
-    }
-    const previousStatus = league.status
-    league.status = ACTIVE_LEAGUE_STATUS
-    await league.save()
+    await db.transaction(async (trx) => {
+      const league = await League.query({ client: trx }).where('id', leagueId).firstOrFail()
+      if (league.status === DELETED_LEAGUE_STATUS) {
+        throw new Exception('League not found', { status: 404 })
+      }
+      const previousStatus = league.status
+      league.status = ACTIVE_LEAGUE_STATUS
+      league.useTransaction(trx)
+      await league.save()
 
-    await this.auditService.log({
-      leagueId,
-      actorId: audit?.actorId ?? null,
-      action: 'league.reactivated',
-      entityType: 'league',
-      entityId: leagueId,
-      metadata: {
-        leagueName: league.name,
-        previousStatus,
-        nextStatus: league.status,
-      },
-      ipAddress: audit?.ipAddress ?? null,
+      await this.auditService.log({
+        leagueId,
+        actorId: audit?.actorId ?? null,
+        action: 'league.reactivated',
+        entityType: 'league',
+        entityId: leagueId,
+        metadata: {
+          leagueName: league.name,
+          previousStatus,
+          nextStatus: league.status,
+        },
+        ipAddress: audit?.ipAddress ?? null,
+        client: trx,
+      })
     })
   }
 
-  async hardDelete(
+  async remove(
     leagueId: number,
     confirmationName: string,
     audit?: LeagueMutationAudit
@@ -300,6 +305,7 @@ export default class LeagueService {
           retainedRecords: true,
         },
         ipAddress: audit?.ipAddress ?? null,
+        client: trx,
       })
     })
   }

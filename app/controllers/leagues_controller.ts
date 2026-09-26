@@ -3,7 +3,11 @@ import { Exception } from '@adonisjs/core/exceptions'
 
 import { resolveRequestTimeZone } from '#helpers/time_zone'
 import LeagueService from '#services/league_service'
-import { createLeagueWithSeasonValidator, updateLeagueValidator } from '#validators/league'
+import {
+  createLeagueWithSeasonValidator,
+  removeLeagueValidator,
+  updateLeagueValidator,
+} from '#validators/league'
 import CountryTransformer from '#transformers/country_transformer'
 import { inject } from '@adonisjs/core'
 import SeasonTransformer from '#transformers/season_transformer'
@@ -241,12 +245,9 @@ export default class LeaguesController {
       throw new Exception('Invalid league id', { status: 400 })
     }
 
-    const confirmationName = String(request.input('confirmationName') ?? '').trim()
-    if (!confirmationName) {
-      throw new Exception('confirmationName is required', { status: 422 })
-    }
+    const { confirmationName } = await request.validateUsing(removeLeagueValidator)
 
-    await this.leagueService.hardDelete(leagueId, confirmationName, {
+    await this.leagueService.remove(leagueId, confirmationName, {
       actorId: auth.user?.id ?? null,
       ipAddress: request.ip(),
     })

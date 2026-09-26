@@ -59,3 +59,7 @@ export const updateLeagueValidator = vine.create({
   startDate: vine.date({ formats: dateFormats }).nullable().optional(),
   endDate: vine.date({ formats: dateFormats }).nullable().optional(),
 })
+
+export const removeLeagueValidator = vine.create({
+  confirmationName: vine.string().trim().minLength(1).maxLength(255),
+})

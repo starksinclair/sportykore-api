@@ -1127,12 +1127,12 @@ export interface Registry {
     methods: ["DELETE"]
     pattern: '/api/v1/leagues/:leagueId'
     types: {
-      body: {}
+      body: ExtractBody<InferInput<(typeof import('#validators/league').removeLeagueValidator)>>
       paramsTuple: [ParamValue]
       params: { leagueId: ParamValue }
-      query: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/league').removeLeagueValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/leagues_controller').default['destroy']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/leagues_controller').default['destroy']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/leagues_controller').default['destroy']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'seasons.store': {
